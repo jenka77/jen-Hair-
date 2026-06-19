@@ -91,6 +91,30 @@ function preparerFormulaireCommande(user) {
   }
 }
 
+function cheminPageCompte(query = "") {
+  const sousDossierLangue = /\/(fr|de|en)\//.test(window.location.pathname);
+  const base = sousDossierLangue ? "../compte.html" : "compte.html";
+  return query ? `${base}?${query}` : base;
+}
+
+function injecterAuthMenuMobile() {
+  const nav = document.getElementById("site-nav");
+  if (!nav || nav.querySelector(".nav-auth-mobile")) return;
+
+  const bloc = document.createElement("div");
+  bloc.className = "nav-auth-mobile";
+  bloc.innerHTML = `
+    <a href="${cheminPageCompte("mode=login")}" class="auth-btn auth-btn--outline" data-i18n="nav.login" data-auth-guest>Anmelden</a>
+    <a href="${cheminPageCompte("mode=register")}" class="auth-btn auth-btn--fill" data-i18n="nav.register" data-auth-guest>Registrieren</a>
+    <a href="${cheminPageCompte()}" class="auth-btn auth-btn--fill" data-i18n="nav.account" data-auth-user hidden>Mon compte</a>
+  `;
+  nav.appendChild(bloc);
+
+  if (typeof appliquerTraductions === "function") {
+    appliquerTraductions();
+  }
+}
+
 function mettreAJourNavbarAuth() {
   const connecte = !!sessionCourante?.user;
   const email = sessionCourante?.user?.email || "";
@@ -121,6 +145,7 @@ async function initialiserAuth() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  injecterAuthMenuMobile();
   initialiserAuth();
 });
 
