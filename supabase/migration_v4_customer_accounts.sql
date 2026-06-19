@@ -31,4 +31,7 @@ using (
 
 -- Activer l'inscription e-mail dans Supabase Dashboard :
 -- Authentication → Providers → Email → Enable Email provider
+-- Authentication → URL Configuration :
+--   Site URL : https://www.jens-flora.com
+--   Redirect URLs : https://www.jens-flora.com/** , https://jens-flora.com/** , http://localhost:8000/**
 -- (Optionnel en dev : désactiver "Confirm email" pour tester sans validation)

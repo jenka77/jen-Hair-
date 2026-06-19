@@ -28,8 +28,23 @@ function baseConfiguree() {
   );
 }
 
+function urlAuthParDefaut() {
+  try {
+    return new URL("compte.html", window.location.href).href;
+  } catch {
+    return `${window.location.origin}/compte.html`;
+  }
+}
+
 const clientSupabase = baseConfiguree()
-  ? window.supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.ANON_KEY)
+  ? window.supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: "pkce",
+      },
+    })
   : null;
 
 window.clientSupabase = clientSupabase;

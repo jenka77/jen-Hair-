@@ -113,7 +113,29 @@ async function basculerVueConnecte() {
   afficherMode(modeDepuisUrl());
 }
 
+async function finaliserRetourAuthEmail() {
+  const client = typeof clientAuth === "function" ? clientAuth() : null;
+  if (!client) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const aUnCodeAuth =
+    params.has("code") ||
+    hashParams.has("access_token") ||
+    hashParams.has("type");
+
+  if (!aUnCodeAuth) return;
+
+  await client.auth.getSession();
+
+  const url = new URL(window.location.href);
+  url.hash = "";
+  ["code", "error", "error_description"].forEach((cle) => url.searchParams.delete(cle));
+  window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  finaliserRetourAuthEmail().finally(() => {
   document.querySelectorAll(".account-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       const mode = tab.dataset.mode;
@@ -169,6 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   setTimeout(basculerVueConnecte, 100);
+  });
 });
 
 document.addEventListener("authchange", () => {

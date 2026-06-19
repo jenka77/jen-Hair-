@@ -32,6 +32,13 @@ async function obtenirUtilisateur() {
   return session?.user || null;
 }
 
+function urlRetourAuthApresEmail() {
+  const url = new URL("compte.html", window.location.href);
+  const retour = new URLSearchParams(window.location.search).get("return");
+  if (retour) url.searchParams.set("return", retour);
+  return url.href;
+}
+
 async function inscrireClient(email, password) {
   const client = clientAuth();
   if (!client) throw new Error("Authentification indisponible");
@@ -39,6 +46,9 @@ async function inscrireClient(email, password) {
   const { data, error } = await client.auth.signUp({
     email: email.trim().toLowerCase(),
     password,
+    options: {
+      emailRedirectTo: urlRetourAuthApresEmail(),
+    },
   });
 
   if (error) throw error;
