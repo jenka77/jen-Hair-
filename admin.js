@@ -17,7 +17,20 @@ const STATUTS = [
 let commandesCache = [];
 
 function apiBase() {
-  return typeof API_BASE_URL !== "undefined" ? API_BASE_URL : "http://127.0.0.1:4000";
+  if (typeof API_BASE_URL !== "undefined") return API_BASE_URL;
+  const { protocol, hostname } = window.location;
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return `${protocol}//${hostname}:4000`;
+  }
+  return "https://jen-hair-api.onrender.com";
+}
+
+function echapperHtml(texte) {
+  return String(texte ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function motDePasseAdmin() {
@@ -118,11 +131,11 @@ function afficherCommandes(orders) {
         <span class="status-badge admin-status-badge ${order.status}">${libelleStatut(order.status)}</span>
       </div>
       <ul class="admin-order-meta">
-        <li><span>Cliente</span><strong>${order.customerName}</strong></li>
-        <li><span>Téléphone</span><strong>${extraireTelephone(order.customerContact)}</strong></li>
-        <li><span>Email</span><strong>${extraireEmail(order.customerContact)}</strong></li>
-        <li><span>Mode</span><strong>${order.pickupMode || "—"}</strong></li>
-        <li><span>Adresse</span><strong>${order.deliveryAddress || "—"}</strong></li>
+        <li><span>Cliente</span><strong>${echapperHtml(order.customerName)}</strong></li>
+        <li><span>Téléphone</span><strong>${echapperHtml(extraireTelephone(order.customerContact))}</strong></li>
+        <li><span>Email</span><strong>${echapperHtml(extraireEmail(order.customerContact))}</strong></li>
+        <li><span>Mode</span><strong>${echapperHtml(order.pickupMode || "—")}</strong></li>
+        <li><span>Adresse</span><strong>${echapperHtml(order.deliveryAddress || "—")}</strong></li>
         <li><span>Total</span><strong>${formaterPrixAdmin(order.totalAmount)}</strong></li>
       </ul>
       <div class="admin-order-actions">
@@ -209,8 +222,10 @@ async function mettreAJourStatut(orderId, status) {
 }
 
 function afficherApp(connecte) {
-  document.getElementById("admin-login").hidden = connecte;
-  document.getElementById("admin-app").hidden = !connecte;
+  const login = document.getElementById("admin-login");
+  const app = document.getElementById("admin-app");
+  if (login) login.toggleAttribute("hidden", connecte);
+  if (app) app.toggleAttribute("hidden", !connecte);
 }
 
 async function tenterConnexion(motDePasse) {
@@ -229,18 +244,54 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("admin-login-form");
   const loginError = document.getElementById("admin-login-error");
 
+  const loginSubmit = loginForm?.querySelector('button[type="submit"]');
+
   loginForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    loginError.hidden = true;
+    if (loginError) {
+      loginError.hidden = true;
+      loginError.textContent = "";
+      loginError.className = "account-message account-message--error";
+    }
+
     const mdp = document.getElementById("admin-password")?.value || "";
+    if (!mdp.trim()) return;
+
+    if (loginSubmit) {
+      loginSubmit.disabled = true;
+      loginSubmit.textContent = "Connexion…";
+    }
+
+    const slowTimer = setTimeout(() => {
+      if (!loginError) return;
+      loginError.hidden = false;
+      loginError.className = "account-message account-message--success";
+      loginError.textContent =
+        "Le serveur démarre (première connexion). Patientez jusqu'à 60 secondes…";
+    }, 8000);
+
     try {
       await tenterConnexion(mdp);
     } catch (err) {
-      loginError.hidden = false;
-      loginError.textContent =
-        err.message === "Accès admin refusé"
-          ? "Mot de passe incorrect."
-          : err.message;
+      if (loginError) {
+        loginError.hidden = false;
+        loginError.className = "account-message account-message--error";
+        if (err.message === "Accès admin refusé") {
+          loginError.textContent =
+            "Mot de passe incorrect. Vérifiez ADMIN_PASSWORD sur Render (doit être identique à backend/.env).";
+        } else if (err.message.includes("Failed to fetch") || err.name === "TypeError") {
+          loginError.textContent =
+            "Impossible de joindre le serveur. Attendez 1 minute et réessayez (Render redémarre).";
+        } else {
+          loginError.textContent = err.message;
+        }
+      }
+    } finally {
+      clearTimeout(slowTimer);
+      if (loginSubmit) {
+        loginSubmit.disabled = false;
+        loginSubmit.textContent = "Se connecter";
+      }
     }
   });
 

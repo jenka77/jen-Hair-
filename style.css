@@ -2860,6 +2860,10 @@ img {
    Admin — gestion des commandes
    ============================================================ */
 
+.admin-body [hidden] {
+  display: none !important;
+}
+
 .admin-body {
   min-height: 100vh;
   background: var(--black);
