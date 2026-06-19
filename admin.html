@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Administration — Jen's &amp; Flora</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20260620" />
+</head>
+<body class="admin-body">
+
+  <div id="admin-login" class="admin-login-wrap">
+    <form id="admin-login-form" class="account-card admin-login-card">
+      <p class="section-kicker">Administration</p>
+      <h1 class="account-title">Jen's &amp; Flora</h1>
+      <p class="account-lead">Espace réservé à Sa'a Mokolo — gestion des commandes.</p>
+      <label class="field">
+        <span>Mot de passe admin</span>
+        <input type="password" id="admin-password" name="password" required autocomplete="current-password" />
+      </label>
+      <button type="submit" class="btn-order account-submit">Se connecter</button>
+      <p id="admin-login-error" class="account-message account-message--error" hidden></p>
+    </form>
+  </div>
+
+  <div id="admin-app" class="admin-app" hidden>
+    <header class="admin-header">
+      <div>
+        <p class="section-kicker">Administration</p>
+        <h1 class="admin-title">Commandes</h1>
+      </div>
+      <div class="admin-header-actions">
+        <button type="button" id="admin-refresh" class="auth-btn auth-btn--outline">Actualiser</button>
+        <button type="button" id="admin-logout" class="auth-btn auth-btn--outline">Déconnexion</button>
+      </div>
+    </header>
+
+    <div class="admin-filters">
+      <label class="admin-filter">
+        <span>Filtrer par statut</span>
+        <select id="admin-filter-status">
+          <option value="">Toutes</option>
+          <option value="pending_payment">En attente de paiement</option>
+          <option value="paid">Payée</option>
+          <option value="preparing">En préparation</option>
+          <option value="ready">Prête (retrait)</option>
+          <option value="delivered">Livrée</option>
+          <option value="accepted">Confirmée</option>
+          <option value="cancelled">Annulée</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="admin-orders" class="admin-orders">
+      <p class="account-loading">Chargement des commandes…</p>
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

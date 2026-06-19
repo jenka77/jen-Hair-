@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GTC — Jen's &amp; Flora</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css?v=20260615m" />
+</head>
+<body>
+  <header class="navbar">
+    <a href="../index.html#hero" class="brand">
+      <span class="brand-main">Jen's <i>&amp; Flora</i></span>
+      <span class="brand-sub">by Sa'a Mokolo</span>
+    </a>
+    <nav class="nav-links" id="site-nav">
+      <a href="../index.html#hero" data-i18n="nav.home">Accueil</a>
+      <a href="../maison.html" data-i18n="nav.maison">La Maison</a>
+      <a href="../index.html#contact" data-i18n="nav.contact">Contact</a>
+    </nav>
+    <div class="navbar-tools">
+      <div class="lang-switch" role="group" aria-label="Langue">
+        <button type="button" data-lang="fr">FR</button>
+        <button type="button" data-lang="de">DE</button>
+        <button type="button" data-lang="en">EN</button>
+      </div>
+      <button type="button" class="nav-menu-btn" aria-expanded="false" aria-controls="site-nav" data-i18n-aria="nav.menu">
+        <span class="nav-menu-bar"></span>
+        <span class="nav-menu-bar"></span>
+        <span class="nav-menu-bar"></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="legal-page">
+    <nav class="legal-sister-lang" aria-label="Language versions">
+      <a href="../fr/cgv.html" hreflang="fr">FR</a>
+      <a href="gtc.html" class="active" hreflang="en">EN</a>
+      <a href="../de/agb.html" hreflang="de">DE</a>
+    </nav>
+
+    <article class="legal-card">
+      <h1>General Terms and Conditions of Sale (GTC)</h1>
+      <p class="legal-updated">Jen's &amp; Flora by Sa'a Mokolo — Steinstraße 70, 35390 Gießen, Germany</p>
+
+      <h2>Article 1: Scope and applicability</h2>
+      <p>These General Terms and Conditions of Sale (GTC) exclusively govern the contractual relationship between the e-commerce website <strong>Jen's &amp; Flora</strong> (hereinafter "the Seller") and any person making a purchase on said website (hereinafter "the Customer").</p>
+
+      <h2>Article 2: Order process and confirmation</h2>
+      <p>Any order placed on the website implies the Customer's full and unreserved acceptance of these GTC. After validation and confirmation of payment, an order confirmation e-mail will be automatically sent to the e-mail address provided by the Customer during checkout.</p>
+
+      <h2>Article 3: Payment methods</h2>
+      <p>Payment for your purchases is made exclusively via the secure <strong>PayPal</strong> platform. This exclusivity applies without exception to online payments as well as payments made in person when collecting orders in store. No other payment method will be accepted.</p>
+
+      <h2>Article 4: Delivery and pickup times</h2>
+      <ul>
+        <li><strong>In-store pickup (Sa'á Mokolo boutique)</strong> — Steinstraße 70, 35390 Gießen: orders will be available within <strong>two (2) business days</strong> after order confirmation.</li>
+        <li><strong>Home delivery</strong>: items will be delivered within <strong>four (4) business days</strong> from order confirmation. A delivery fee of 7.50&nbsp;€ applies.</li>
+      </ul>
+
+      <p>See also: <a href="returns.html" style="color:var(--gold-light)">Return and Refund Policy</a> · <a href="privacy.html" style="color:var(--gold-light)">Privacy Policy</a></p>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand-col">
+        <div class="footer-brand">Jen's <span>&amp; Flora</span></div>
+        <p class="footer-by">by Sa'a Mokolo</p>
+        <p class="footer-tag" data-i18n="footer.tag">L'élégance dans chaque détail.</p>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-col-title" data-i18n="footer.navTitle">Navigation</h4>
+        <nav class="footer-nav">
+          <a href="../index.html#hero" data-i18n="nav.home">Accueil</a>
+          <a href="../maison.html" data-i18n="nav.maison">La Maison</a>
+          <a href="../index.html#contact" data-i18n="nav.contact">Contact</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-col-title" data-i18n="footer.legalTitle">Informations légales</h4>
+        <nav class="footer-nav footer-legal-nav">
+          <a href="gtc.html" data-legal="cgv" data-i18n="footer.cgv">Conditions Générales de Vente (CGV)</a>
+          <a href="returns.html" data-legal="retours" data-i18n="footer.returns">Politique de Retour et de Remboursement</a>
+          <a href="privacy.html" data-legal="privacy" data-i18n="footer.privacy">Politique de Confidentialité</a>
+        </nav>
+      </div>
+    </div>
+    <p class="footer-copy" data-i18n="footer.copy">© 2026 Jen's &amp; Flora. Tous droits réservés.</p>
+  </footer>
+
+  <script src="../i18n.js"></script>
+  <script src="../legal-links.js"></script>
+</body>
+</html>

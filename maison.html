@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Maison — Jen's &amp; Flora by Sa'a Mokolo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20260615m" />
+</head>
+<body>
+
+  <button class="back-button" type="button" data-back-button aria-label="Retour à la page précédente">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 18l-6-6 6-6"></path>
+    </svg>
+  </button>
+
+  <!-- ======================= NAVBAR ======================= -->
+  <header class="navbar">
+    <a href="index.html#hero" class="brand">
+      <span class="brand-main">Jen's <i>&amp; Flora</i></span>
+      <span class="brand-sub">by Sa'a Mokolo</span>
+    </a>
+    <nav class="nav-links" id="site-nav">
+      <a href="index.html#hero" data-i18n="nav.home">Accueil</a>
+      <a href="maison.html" class="active" data-i18n="nav.maison">La Maison</a>
+      <a href="index.html#contact" data-i18n="nav.contact">Contact</a>
+    </nav>
+    <div class="navbar-tools">
+      <div class="auth-nav" id="auth-nav">
+        <a href="compte.html?mode=login" class="auth-btn auth-btn--outline" data-i18n="nav.login" data-auth-guest>Se connecter</a>
+        <a href="compte.html?mode=register" class="auth-btn auth-btn--fill" data-i18n="nav.register" data-auth-guest>S'inscrire</a>
+        <a href="compte.html" class="auth-btn auth-btn--fill" data-i18n="nav.account" data-auth-user hidden>Mon compte</a>
+      </div>
+      <div class="lang-switch" role="group" aria-label="Langue">
+        <button type="button" data-lang="fr">FR</button>
+        <button type="button" data-lang="de">DE</button>
+        <button type="button" data-lang="en">EN</button>
+      </div>
+      <button type="button" class="nav-menu-btn" aria-expanded="false" aria-controls="site-nav" data-i18n-aria="nav.menu">
+        <span class="nav-menu-bar"></span>
+        <span class="nav-menu-bar"></span>
+        <span class="nav-menu-bar"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================= EN-TÊTE ======================= -->
+  <section class="maison-header">
+    <p class="section-kicker" data-i18n="maison.kicker">La Maison Jen's &amp; Flora</p>
+    <h1 class="section-title" data-i18n="maison.title">Nos Types de Perruques</h1>
+    <p class="section-desc" data-i18n="maison.desc">Découvrez tous les styles de notre collection — de la coupe lisse aux boucles les plus glamour — ainsi que notre espace apprentissage.</p>
+  </section>
+
+  <!-- ======================= LISTE DES TYPES ======================= -->
+  <section class="maison-list">
+    <ul class="types-grid">
+      <li>
+        <a class="type-card" href="type.html?type=bone-straight">
+          <span class="type-index">01</span>
+          <h3 class="type-name">Bone Straight</h3>
+          <p class="type-desc" data-i18n="maison.d1">Lisse absolu, brillance miroir et tombé impeccable.</p>
+        </a>
+      </li>
+      <li>
+        <a class="type-card" href="type.html?type=body-waves">
+          <span class="type-index">02</span>
+          <h3 class="type-name">Body Waves</h3>
+          <p class="type-desc" data-i18n="maison.d2">Ondulations souples et volumineuses, naturellement chic.</p>
+        </a>
+      </li>
+      <li>
+        <a class="type-card" href="type.html?type=deep-waves">
+          <span class="type-index">03</span>
+          <h3 class="type-name">Deep Waves</h3>
+          <p class="type-desc" data-i18n="maison.d3">Vagues profondes et marquées pour un effet sophistiqué.</p>
+        </a>
+      </li>
+      <li>
+        <a class="type-card" href="type.html?type=pixies-curls">
+          <span class="type-index">04</span>
+          <h3 class="type-name">Pixies Curls</h3>
+          <p class="type-desc" data-i18n="maison.d6">Petites boucles serrées, pleines de caractère et de volume.</p>
+        </a>
+      </li>
+      <li>
+        <a class="type-card" href="type.html?type=bob">
+          <span class="type-index">05</span>
+          <h3 class="type-name">Bob</h3>
+          <p class="type-desc" data-i18n="maison.d7">Carré intemporel et structuré, élégance affirmée.</p>
+        </a>
+      </li>
+      <li>
+        <a class="type-card" href="type.html?type=pixie-cut">
+          <span class="type-index">06</span>
+          <h3 class="type-name">Pixie Cut</h3>
+          <p class="type-desc" data-i18n="maison.d8">Coupe courte audacieuse, féminine et moderne.</p>
+        </a>
+      </li>
+      <li>
+        <a class="type-card" href="type.html?type=layered-hair">
+          <span class="type-index">07</span>
+          <h3 class="type-name">Layered Hair</h3>
+          <p class="type-desc" data-i18n="maison.d9">Coupe dégradée pour du mouvement et de la légèreté.</p>
+        </a>
+      </li>
+
+      <!-- Extensions (mèches) -->
+      <li>
+        <a class="type-card" href="type.html?type=extensions">
+          <span class="type-index">08</span>
+          <h3 class="type-name" data-i18n="maison.ext">Extensions (Mèches)</h3>
+          <p class="type-desc" data-i18n="maison.extDesc">Mèches et bundles 100% naturels pour tissages et coiffures protectrices.</p>
+        </a>
+      </li>
+
+      <!-- Produits d'entretien -->
+      <li>
+        <a class="type-card" href="type.html?type=entretien">
+          <span class="type-index">09</span>
+          <h3 class="type-name" data-i18n="maison.care">Entretien des Cheveux</h3>
+          <p class="type-desc" data-i18n="maison.careDesc">Soins et produits pour préserver l'éclat de vos perruques et extensions.</p>
+        </a>
+      </li>
+
+      <!-- Élément spécial : Apprentissage -->
+      <li>
+        <a class="type-card type-card--learn" href="type.html?type=apprentissage">
+          <span class="type-index">10</span>
+          <h3 class="type-name" data-i18n="maison.learn">Apprentissage</h3>
+          <p class="type-desc" data-i18n="maison.learnDesc">Conseils, tutoriels et accompagnement pour poser, entretenir et sublimer votre perruque.</p>
+          <span class="type-tag" data-i18n="maison.learnTag">Espace dédié</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ======================= FOOTER ======================= -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand-col">
+        <div class="footer-brand">Jen's <span>&amp; Flora</span></div>
+        <p class="footer-by">by Sa'a Mokolo</p>
+        <p class="footer-tag" data-i18n="footer.tag">L'élégance dans chaque détail.</p>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-col-title" data-i18n="footer.navTitle">Navigation</h4>
+        <nav class="footer-nav">
+          <a href="index.html#hero" data-i18n="nav.home">Accueil</a>
+          <a href="maison.html" data-i18n="nav.maison">La Maison</a>
+          <a href="index.html#contact" data-i18n="nav.contact">Contact</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-col-title" data-i18n="footer.legalTitle">Informations légales</h4>
+        <nav class="footer-nav footer-legal-nav">
+          <a href="fr/cgv.html" data-legal="cgv" data-i18n="footer.cgv">Conditions Générales de Vente (CGV)</a>
+          <a href="fr/retours.html" data-legal="retours" data-i18n="footer.returns">Politique de Retour et de Remboursement</a>
+          <a href="fr/confidentialite.html" data-legal="privacy" data-i18n="footer.privacy">Politique de Confidentialité</a>
+        </nav>
+      </div>
+    </div>
+    <p class="footer-copy" data-i18n="footer.copy">© 2026 Jen's &amp; Flora. Tous droits réservés.</p>
+  </footer>
+
+  <script src="i18n.js"></script>
+  <script src="legal-links.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="db.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    document.querySelectorAll("[data-back-button]").forEach((bouton) => {
+      bouton.addEventListener("click", () => {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "index.html#hero";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

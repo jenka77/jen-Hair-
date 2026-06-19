@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jen's &amp; Flora — L'Art de la Perruque de Luxe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20260620" />
+</head>
+<body>
+
+  <button class="back-button" type="button" data-back-button aria-label="Retour à la page précédente">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 18l-6-6 6-6"></path>
+    </svg>
+  </button>
+
+  <!-- ======================= NAVBAR ======================= -->
+  <header class="navbar">
+    <a href="#hero" class="brand">
+      <span class="brand-main">Jen's <i>&amp; Flora</i></span>
+      <span class="brand-sub">by Sa'a Mokolo</span>
+    </a>
+    <nav class="nav-links" id="site-nav">
+      <a href="#hero" data-i18n="nav.home">Accueil</a>
+      <a href="maison.html" data-i18n="nav.maison">La Maison</a>
+      <a href="#contact" data-i18n="nav.contact">Contact</a>
+    </nav>
+    <div class="navbar-tools">
+      <div class="auth-nav" id="auth-nav">
+        <a href="compte.html?mode=login" class="auth-btn auth-btn--outline" data-i18n="nav.login" data-auth-guest>Anmelden</a>
+        <a href="compte.html?mode=register" class="auth-btn auth-btn--fill" data-i18n="nav.register" data-auth-guest>Registrieren</a>
+        <a href="compte.html" class="auth-btn auth-btn--fill" data-i18n="nav.account" data-auth-user hidden>Mon compte</a>
+      </div>
+      <div class="lang-switch" role="group" aria-label="Langue">
+        <button type="button" data-lang="fr">FR</button>
+        <button type="button" data-lang="de">DE</button>
+        <button type="button" data-lang="en">EN</button>
+      </div>
+      <button id="cart-toggle" class="cart-toggle" aria-label="Ouvrir le panier">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <span id="cart-count" class="cart-count">0</span>
+      </button>
+      <button type="button" class="nav-menu-btn" aria-expanded="false" aria-controls="site-nav" data-i18n-aria="nav.menu">
+        <span class="nav-menu-bar"></span>
+        <span class="nav-menu-bar"></span>
+        <span class="nav-menu-bar"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================= HERO (inspiré de jenF.jpg) ======================= -->
+  <section id="hero" class="hero">
+    <div class="hero-grid">
+      <article class="hero-panel">
+        <span class="hero-letter">J</span>
+        <img src="1.jpg" alt="Modèle perruque lisse Jen's & Flora" />
+        <div class="hero-caption">
+          <p data-i18n="hero.cap1">Lisse &amp; Brillant — l'élégance intemporelle qui sublime chaque regard.</p>
+        </div>
+      </article>
+
+      <article class="hero-panel">
+        <span class="hero-letter">E</span>
+        <img src="2.jpg" alt="Modèle carré plongeant Jen's & Flora" />
+        <div class="hero-caption">
+          <p data-i18n="hero.cap2">Le carré plongeant, signature d'une féminité affirmée et raffinée.</p>
+        </div>
+      </article>
+
+      <article class="hero-panel">
+        <span class="hero-letter">N</span>
+        <img src="3.jpg" alt="Modèle blond miel Jen's & Flora" />
+        <div class="hero-caption">
+          <p data-i18n="hero.cap3">Reflets miel et lumière dorée pour un éclat résolument chic.</p>
+        </div>
+      </article>
+
+      <article class="hero-panel">
+        <span class="hero-letter">F</span>
+        <img src="4.jpg" alt="Modèle ondulé glamour Jen's & Flora" />
+        <div class="hero-caption">
+          <p data-i18n="hero.cap4">Des ondulations glamour qui révèlent toute votre splendeur.</p>
+        </div>
+      </article>
+    </div>
+
+    <div class="hero-overlay">
+      <p class="hero-kicker" data-i18n="hero.kicker">SUBLIMEZ VOTRE BEAUTÉ</p>
+      <p class="hero-brand">Jen's <i>&amp; Flora</i></p>
+      <p class="hero-brand-by">by Sa'a Mokolo</p>
+      <h1 class="hero-title" data-i18n-html="hero.title">L'Art de la Perruque<br />de Luxe</h1>
+      <p class="hero-sub" data-i18n="hero.sub">Des cheveux d'exception, sélectionnés à la main pour les femmes qui osent briller.</p>
+      <a href="maison.html" class="btn btn-gold" data-i18n="hero.cta">Voir la Collection</a>
+    </div>
+  </section>
+
+  <!-- ======================= ABOUT ======================= -->
+  <section id="about" class="about">
+    <div class="about-text">
+      <p class="section-kicker" data-i18n="about.kicker">La Maison Jen's &amp; Flora</p>
+      <h2 class="section-title" data-i18n="about.title">La Beauté, Élevée au Rang d'Art</h2>
+      <p data-i18n="about.p1">Chez Jen's &amp; Flora, nous croyons que chaque femme mérite de se sentir resplendissante. Nos perruques de luxe sont créées à partir de cheveux 100% naturels, sélectionnés avec exigence pour offrir une tenue parfaite et un éclat incomparable.</p>
+      <p data-i18n="about.p2">De la coupe lisse à l'ondulé glamour, notre collection célèbre toutes les facettes de votre élégance.</p>
+    </div>
+    <div class="about-stats">
+      <div class="stat"><span>100%</span><p data-i18n="about.stat1">Cheveux naturels</p></div>
+      <div class="stat"><span>+5000</span><p data-i18n="about.stat2">Clientes conquises</p></div>
+      <div class="stat"><span>24/7</span><p data-i18n="about.stat3">Service privilège</p></div>
+    </div>
+  </section>
+
+  <!-- ======================= CONTACT ======================= -->
+  <section id="contact" class="contact">
+    <div class="section-head">
+      <p class="section-kicker" data-i18n="contact.kicker">Nous Contacter</p>
+      <h2 class="section-title" data-i18n="contact.title">Prenons Contact</h2>
+      <p class="section-desc" data-i18n="contact.desc">Une question, un conseil ou une commande ? Écrivez-nous directement sur WhatsApp ou passez nous voir en boutique.</p>
+    </div>
+
+    <div class="contact-cards">
+      <div class="contact-card">
+        <span class="contact-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+        </span>
+        <h3 data-i18n="contact.shop">Boutique</h3>
+        <p>Steinstraße 70<br />35390 Gießen</p>
+        <a class="contact-link" href="https://maps.google.com/?q=Steinstra%C3%9Fe+70,+35390+Gie%C3%9Fen" target="_blank" rel="noopener" data-i18n="contact.map">Voir sur la carte</a>
+      </div>
+
+      <div class="contact-card">
+        <span class="contact-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+            <path d="M17.47 14.38c-.3-.15-1.74-.86-2-.95-.27-.1-.46-.15-.66.15-.2.3-.76.95-.93 1.14-.17.2-.34.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.66-1.59-.9-2.18-.24-.57-.48-.5-.66-.5l-.56-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.88 1.22 3.08.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.74-.71 1.99-1.4.25-.69.25-1.28.17-1.4-.07-.13-.27-.2-.57-.35z"></path>
+            <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38c1.45.79 3.08 1.21 4.78 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm0 18.13h-.01c-1.52 0-3-.41-4.3-1.18l-.31-.18-3.12.82.83-3.04-.2-.31a8.13 8.13 0 0 1-1.25-4.35c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.24 8.23z"></path>
+          </svg>
+        </span>
+        <h3 data-i18n="contact.whatsapp">WhatsApp</h3>
+        <p>+49 152 17868134</p>
+        <a class="contact-link" href="https://wa.me/4915217868134" target="_blank" rel="noopener" data-i18n="contact.write">Écrire sur WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= FOOTER ======================= -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand-col">
+        <div class="footer-brand">Jen's <span>&amp; Flora</span></div>
+        <p class="footer-by">by Sa'a Mokolo</p>
+        <p class="footer-tag" data-i18n="footer.tag">L'élégance dans chaque détail.</p>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-col-title" data-i18n="footer.navTitle">Navigation</h4>
+        <nav class="footer-nav">
+          <a href="#hero" data-i18n="nav.home">Accueil</a>
+          <a href="maison.html" data-i18n="nav.maison">La Maison</a>
+          <a href="#contact" data-i18n="nav.contact">Contact</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-col-title" data-i18n="footer.legalTitle">Informations légales</h4>
+        <nav class="footer-nav footer-legal-nav">
+          <a href="fr/cgv.html" data-legal="cgv" data-i18n="footer.cgv">Conditions Générales de Vente (CGV)</a>
+          <a href="fr/retours.html" data-legal="retours" data-i18n="footer.returns">Politique de Retour et de Remboursement</a>
+          <a href="fr/confidentialite.html" data-legal="privacy" data-i18n="footer.privacy">Politique de Confidentialité</a>
+        </nav>
+      </div>
+    </div>
+    <p class="footer-copy" data-i18n="footer.copy">© 2026 Jen's &amp; Flora. Tous droits réservés.</p>
+  </footer>
+
+  <!-- ======================= PANIER (tiroir latéral) ======================= -->
+  <div id="overlay" class="overlay"></div>
+
+  <aside id="cart-drawer" class="cart-drawer" aria-label="Panier">
+    <div class="cart-header">
+      <h3 data-i18n="cart.title">Votre Panier</h3>
+      <button id="cart-close" class="icon-btn" aria-label="Fermer le panier">&times;</button>
+    </div>
+
+    <div id="cart-items" class="cart-items">
+      <!-- Articles injectés par script.js -->
+    </div>
+
+    <div class="cart-footer">
+      <div class="cart-total-row">
+        <span data-i18n="cart.total">Total</span>
+        <span id="cart-total" class="cart-total">0,00 €</span>
+      </div>
+      <button id="checkout-btn" class="btn-order" data-i18n="cart.checkout" disabled>Passer commande</button>
+    </div>
+  </aside>
+
+  <!-- ======================= FORMULAIRE DE COMMANDE (modale) ======================= -->
+  <div id="order-modal" class="order-modal">
+    <div class="order-box">
+      <button id="order-close" class="icon-btn order-close" aria-label="Fermer">&times;</button>
+      <p class="section-kicker" data-i18n="order.step">Finaliser</p>
+      <h3 class="order-title" data-i18n="order.title">Votre Commande</h3>
+
+      <div id="order-summary" class="order-summary">
+        <!-- Récapitulatif injecté par script.js -->
+      </div>
+
+      <form id="order-form" class="order-form" novalidate>
+        <div class="field">
+          <label for="nomComplet" data-i18n="order.fullname">Nom complet *</label>
+          <input type="text" id="nomComplet" name="nomComplet" required />
+        </div>
+
+        <div class="field">
+          <label for="telephone" data-i18n="order.phone">Téléphone *</label>
+          <input type="tel" id="telephone" name="telephone" required
+            inputmode="tel" autocomplete="tel"
+            pattern="^\+?[0-9\s().-]{8,20}$"
+            data-i18n-placeholder="order.phonePlaceholder"
+            placeholder="ex : +49 152 12345678" />
+        </div>
+
+        <div class="field">
+          <label for="email" data-i18n="order.email">Adresse email *</label>
+          <input type="email" id="email" name="email" required
+            data-i18n-placeholder="order.emailPlaceholder"
+            placeholder="ex : prenom@email.com" />
+          <small class="field-hint" data-i18n="order.emailHint">Obligatoire pour recevoir la confirmation de commande.</small>
+        </div>
+
+        <div class="field">
+          <label data-i18n="order.mode">Mode de récupération *</label>
+          <div class="mode-options">
+            <label class="mode-option">
+              <input type="radio" name="mode" value="Retrait en boutique chez Saá Mokolo" required />
+              <span class="mode-card">
+                <strong data-i18n="order.pickup">Retrait en boutique</strong>
+                <small data-i18n="order.pickupSub">Chez Saá Mokolo</small>
+              </span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="mode" value="Livraison à domicile" />
+              <span class="mode-card">
+                <strong data-i18n="order.delivery">Livraison à domicile</strong>
+                <small data-i18n="order.deliverySub">Indiquez votre adresse</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="delivery-address" id="adresse-field" hidden>
+          <p class="field-group-title" data-i18n="order.address">Adresse de livraison complète *</p>
+          <small class="field-hint" data-i18n="order.addressHint">Requise pour une livraison en Allemagne : rue, numéro, code postal, ville et pays.</small>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="adresseRue" data-i18n="order.street">Rue *</label>
+              <input type="text" id="adresseRue" name="adresseRue" data-delivery-required
+                data-i18n-placeholder="order.streetPlaceholder" placeholder="ex : Steinstraße" />
+            </div>
+            <div class="field field-small">
+              <label for="adresseNumero" data-i18n="order.houseNumber">N° *</label>
+              <input type="text" id="adresseNumero" name="adresseNumero" data-delivery-required
+                data-i18n-placeholder="order.houseNumberPlaceholder" placeholder="70" />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field field-small">
+              <label for="adresseCp" data-i18n="order.postalCode">Code postal *</label>
+              <input type="text" id="adresseCp" name="adresseCp" inputmode="numeric" pattern="^[0-9]{5}$"
+                data-delivery-required data-i18n-placeholder="order.postalCodePlaceholder" placeholder="35390" />
+            </div>
+            <div class="field">
+              <label for="adresseVille" data-i18n="order.city">Ville *</label>
+              <input type="text" id="adresseVille" name="adresseVille" data-delivery-required
+                data-i18n-placeholder="order.cityPlaceholder" placeholder="Gießen" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="adressePays" data-i18n="order.country">Pays *</label>
+            <input type="text" id="adressePays" name="adressePays" value="Deutschland" data-delivery-required
+              data-i18n-placeholder="order.countryPlaceholder" placeholder="Deutschland" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn-order order-submit" data-i18n="order.confirm">Confirmer la commande</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================= MODALE VIDÉO ======================= -->
+  <div id="video-modal" class="video-modal">
+    <div class="video-box">
+      <button id="video-close" class="icon-btn video-close" aria-label="Fermer la vidéo">&times;</button>
+      <p id="video-title" class="video-title"></p>
+      <video id="video-player" class="video-player" controls playsinline></video>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Logique e-commerce -->
+  <script src="i18n.js"></script>
+  <script src="legal-links.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="db.js"></script>
+  <script src="auth.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

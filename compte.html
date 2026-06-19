@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mon compte — Jen's &amp; Flora</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20260620" />
+</head>
+<body>
+
+  <header class="navbar">
+    <a href="index.html#hero" class="brand">
+      <span class="brand-main">Jen's <i>&amp; Flora</i></span>
+      <span class="brand-sub">by Sa'a Mokolo</span>
+    </a>
+    <nav class="nav-links" id="site-nav">
+      <a href="index.html#hero" data-i18n="nav.home">Accueil</a>
+      <a href="maison.html" data-i18n="nav.maison">La Maison</a>
+      <a href="index.html#contact" data-i18n="nav.contact">Contact</a>
+    </nav>
+    <div class="navbar-tools">
+      <div class="auth-nav" id="auth-nav">
+        <a href="compte.html?mode=login" class="auth-btn auth-btn--outline" data-i18n="nav.login" data-auth-guest>Se connecter</a>
+        <a href="compte.html?mode=register" class="auth-btn auth-btn--fill" data-i18n="nav.register" data-auth-guest>S'inscrire</a>
+        <a href="compte.html" class="auth-btn auth-btn--fill" data-i18n="nav.account" data-auth-user hidden>Mon compte</a>
+      </div>
+      <div class="lang-switch" role="group" aria-label="Langue">
+        <button type="button" data-lang="fr">FR</button>
+        <button type="button" data-lang="de">DE</button>
+        <button type="button" data-lang="en">EN</button>
+      </div>
+      <button type="button" class="nav-menu-btn" aria-expanded="false" aria-controls="site-nav" data-i18n-aria="nav.menu">
+        <span class="nav-menu-bar"></span>
+        <span class="nav-menu-bar"></span>
+        <span class="nav-menu-bar"></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="account-page">
+    <section class="account-card" id="account-guest">
+      <div class="account-tabs" role="tablist">
+        <button type="button" class="account-tab active" data-mode="login" data-i18n="nav.login">Se connecter</button>
+        <button type="button" class="account-tab" data-mode="register" data-i18n="nav.register">S'inscrire</button>
+      </div>
+
+      <form id="form-login" class="account-form" autocomplete="on">
+        <h1 class="account-title" data-i18n="auth.loginTitle">Connexion</h1>
+        <p class="account-lead" data-i18n="auth.loginLead">Accédez à l'historique de vos commandes.</p>
+        <label class="field">
+          <span data-i18n="auth.email">Adresse e-mail</span>
+          <input type="email" name="email" required autocomplete="email" />
+        </label>
+        <label class="field">
+          <span data-i18n="auth.password">Mot de passe</span>
+          <input type="password" name="password" required minlength="6" autocomplete="current-password" />
+        </label>
+        <button type="submit" class="btn-order account-submit" data-i18n="nav.login">Se connecter</button>
+      </form>
+
+      <form id="form-register" class="account-form" hidden autocomplete="on">
+        <h1 class="account-title" data-i18n="auth.registerTitle">Créer un compte</h1>
+        <p class="account-lead" data-i18n="auth.registerLead">Vos commandes seront enregistrées dans votre espace personnel.</p>
+        <label class="field">
+          <span data-i18n="auth.email">Adresse e-mail</span>
+          <input type="email" name="email" required autocomplete="email" />
+        </label>
+        <label class="field">
+          <span data-i18n="auth.password">Mot de passe</span>
+          <input type="password" name="password" required minlength="6" autocomplete="new-password" />
+        </label>
+        <label class="field">
+          <span data-i18n="auth.passwordConfirm">Confirmer le mot de passe</span>
+          <input type="password" name="passwordConfirm" required minlength="6" autocomplete="new-password" />
+        </label>
+        <button type="submit" class="btn-order account-submit" data-i18n="nav.register">S'inscrire</button>
+      </form>
+
+      <p id="account-message" class="account-message" role="status" hidden></p>
+    </section>
+
+    <section class="account-card" id="account-user" hidden>
+      <div class="account-user-header">
+        <div>
+          <h1 class="account-title" data-i18n="auth.welcome">Mon espace</h1>
+          <p class="account-email" id="account-email"></p>
+        </div>
+        <button type="button" id="btn-logout" class="auth-btn auth-btn--outline" data-i18n="auth.logout">Se déconnecter</button>
+      </div>
+
+      <h2 class="account-subtitle" data-i18n="auth.ordersTitle">Historique de mes commandes</h2>
+      <div id="orders-list" class="orders-list">
+        <p class="account-loading" data-i18n="auth.ordersLoading">Chargement…</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand-col">
+        <div class="footer-brand">Jen's <span>&amp; Flora</span></div>
+        <p class="footer-by">by Sa'a Mokolo</p>
+        <p class="footer-tag" data-i18n="footer.tag">L'élégance dans chaque détail.</p>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-col-title" data-i18n="footer.navTitle">Navigation</h4>
+        <nav class="footer-nav">
+          <a href="index.html#hero" data-i18n="nav.home">Accueil</a>
+          <a href="maison.html" data-i18n="nav.maison">La Maison</a>
+          <a href="index.html#contact" data-i18n="nav.contact">Contact</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-col-title" data-i18n="footer.legalTitle">Informations légales</h4>
+        <nav class="footer-nav footer-legal-nav">
+          <a href="fr/cgv.html" data-legal="cgv" data-i18n="footer.cgv">CGV</a>
+          <a href="fr/retours.html" data-legal="retours" data-i18n="footer.returns">Retours</a>
+          <a href="fr/confidentialite.html" data-legal="privacy" data-i18n="footer.privacy">Confidentialité</a>
+        </nav>
+      </div>
+    </div>
+    <p class="footer-copy" data-i18n="footer.copy">© 2026 Jen's &amp; Flora. Tous droits réservés.</p>
+  </footer>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="i18n.js"></script>
+  <script src="legal-links.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="db.js"></script>
+  <script src="auth.js"></script>
+  <script src="script.js"></script>
+  <script src="compte.js"></script>
+</body>
+</html>
