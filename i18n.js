@@ -693,11 +693,28 @@ function basculerMenuMobile() {
   mettreAJourAriaMenuMobile();
 }
 
+function ancrerNavMobile() {
+  const navbar = document.querySelector(".navbar");
+  const nav = document.getElementById("site-nav");
+  const tools = navbar?.querySelector(".navbar-tools");
+  if (!navbar || !nav) return;
+
+  if (window.innerWidth <= 900) {
+    if (nav.parentElement !== document.body) {
+      document.body.appendChild(nav);
+    }
+  } else if (tools && nav.parentElement !== navbar) {
+    navbar.insertBefore(nav, tools);
+  }
+}
+
 function initMenuMobile() {
   const navbar = document.querySelector(".navbar");
   const btn = document.querySelector(".nav-menu-btn");
   const nav = document.getElementById("site-nav");
   if (!navbar || !btn || !nav) return;
+
+  ancrerNavMobile();
 
   btn.addEventListener("click", basculerMenuMobile);
 
@@ -712,6 +729,7 @@ function initMenuMobile() {
   });
 
   window.addEventListener("resize", () => {
+    ancrerNavMobile();
     if (window.innerWidth > 900) fermerMenuMobile();
   });
 }

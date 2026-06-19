@@ -1839,6 +1839,8 @@ img {
     gap: 8px;
     padding-left: max(12px, env(safe-area-inset-left));
     padding-right: max(12px, env(safe-area-inset-right));
+    backdrop-filter: none;
+    background: rgba(5, 5, 5, 0.96);
   }
 
   .brand {
@@ -1944,10 +1946,12 @@ img {
     right: 0;
     bottom: 0;
     z-index: 110;
+    display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 0;
     padding: 12px 6vw 40px;
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
     background: rgba(5, 5, 5, 0.98);
     backdrop-filter: blur(16px);
     border-top: 1px solid var(--border);
@@ -1956,9 +1960,11 @@ img {
     transform: translateY(-12px);
     transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .navbar.menu-open .nav-links {
+  .navbar.menu-open .nav-links,
+  body.menu-open #site-nav.nav-links {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
