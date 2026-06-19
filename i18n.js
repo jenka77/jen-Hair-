@@ -31,6 +31,7 @@ const I18N = {
     "auth.loginError": "E-mail ou mot de passe incorrect",
     "auth.registerSuccess": "Compte créé avec succès",
     "auth.registerError": "Impossible de créer le compte",
+    "auth.rateLimit": "Trop de tentatives d'inscription. Attendez 30 à 60 minutes, puis réessayez. Vérifiez aussi vos spams si vous avez déjà reçu un e-mail de confirmation.",
     "auth.confirmEmail": "Compte créé. Vérifiez votre boîte e-mail pour confirmer votre inscription.",
     "auth.passwordMismatch": "Les mots de passe ne correspondent pas",
     "auth.logoutSuccess": "Vous êtes déconnectée",
@@ -113,6 +114,12 @@ const I18N = {
     "footer.returns": "Politique de Retour et de Remboursement",
     "footer.privacy": "Politique de Confidentialité",
     "footer.copy": "© 2026 Jen's & Flora. Tous droits réservés.",
+
+    "page.index": "Jen's & Flora — L'Art de la Perruque de Luxe",
+    "page.maison": "La Maison — Jen's & Flora by Sa'a Mokolo",
+    "page.compte": "Mon compte — Jen's & Flora",
+    "page.confirm": "Jen's & Flora — Confirmation de commande",
+    "page.typeTitle": "Jen's & Flora — {name}",
 
     "maison.kicker": "La Maison Jen's & Flora",
     "maison.title": "Nos Types de Perruques",
@@ -228,6 +235,7 @@ const I18N = {
     "auth.loginError": "E-Mail oder Passwort falsch",
     "auth.registerSuccess": "Konto erfolgreich erstellt",
     "auth.registerError": "Konto konnte nicht erstellt werden",
+    "auth.rateLimit": "Zu viele Anmeldeversuche. Bitte warten Sie 30–60 Minuten und versuchen Sie es erneut. Prüfen Sie auch Ihren Spam-Ordner.",
     "auth.confirmEmail": "Konto erstellt. Bitte bestätigen Sie Ihre E-Mail.",
     "auth.passwordMismatch": "Passwörter stimmen nicht überein",
     "auth.logoutSuccess": "Sie sind abgemeldet",
@@ -310,6 +318,12 @@ const I18N = {
     "footer.returns": "Widerrufs- & Rückerstattungsrichtlinie",
     "footer.privacy": "Datenschutzerklärung",
     "footer.copy": "© 2026 Jen's & Flora. Alle Rechte vorbehalten.",
+
+    "page.index": "Jen's & Flora — Die Kunst der Luxus-Perücke",
+    "page.maison": "Das Haus — Jen's & Flora by Sa'a Mokolo",
+    "page.compte": "Mein Konto — Jen's & Flora",
+    "page.confirm": "Jen's & Flora — Bestellbestätigung",
+    "page.typeTitle": "Jen's & Flora — {name}",
 
     "maison.kicker": "Das Haus Jen's & Flora",
     "maison.title": "Unsere Perücken-Typen",
@@ -425,6 +439,7 @@ const I18N = {
     "auth.loginError": "Incorrect email or password",
     "auth.registerSuccess": "Account created successfully",
     "auth.registerError": "Unable to create account",
+    "auth.rateLimit": "Too many sign-up attempts. Please wait 30–60 minutes and try again. Also check your spam folder.",
     "auth.confirmEmail": "Account created. Please check your email to confirm.",
     "auth.passwordMismatch": "Passwords do not match",
     "auth.logoutSuccess": "You are logged out",
@@ -507,6 +522,12 @@ const I18N = {
     "footer.returns": "Return & Refund Policy",
     "footer.privacy": "Privacy Policy",
     "footer.copy": "© 2026 Jen's & Flora. All rights reserved.",
+
+    "page.index": "Jen's & Flora — The Art of the Luxury Wig",
+    "page.maison": "The House — Jen's & Flora by Sa'a Mokolo",
+    "page.compte": "My Account — Jen's & Flora",
+    "page.confirm": "Jen's & Flora — Order Confirmation",
+    "page.typeTitle": "Jen's & Flora — {name}",
 
     "maison.kicker": "The House of Jen's & Flora",
     "maison.title": "Our Wig Types",
@@ -595,6 +616,31 @@ const I18N = {
   },
 };
 
+const TYPE_CATALOGUE_I18N = {
+  "bone-straight": { desc: "maison.d1" },
+  "body-waves": { desc: "maison.d2" },
+  "deep-waves": { desc: "maison.d3" },
+  "pixies-curls": { desc: "maison.d6" },
+  bob: { desc: "maison.d7" },
+  "pixie-cut": { desc: "maison.d8" },
+  "layered-hair": { desc: "maison.d9" },
+  extensions: { title: "maison.ext", desc: "maison.extDesc" },
+  entretien: { title: "maison.care", desc: "maison.careDesc" },
+  apprentissage: { title: "maison.learn", desc: "maison.learnDesc" },
+};
+
+function libelleTypeCatalogue(slug, nomDefaut) {
+  const meta = TYPE_CATALOGUE_I18N[slug];
+  if (meta?.title) return t(meta.title);
+  return nomDefaut || slug;
+}
+
+function descriptionTypeCatalogue(slug, descDefaut) {
+  const meta = TYPE_CATALOGUE_I18N[slug];
+  if (meta?.desc) return t(meta.desc);
+  return descDefaut || "";
+}
+
 const LANG_CLE = "jf_lang";
 let langueActuelle = "fr";
 
@@ -650,6 +696,13 @@ function appliquerTraductions() {
   mettreAJourAriaMenuMobile();
   if (typeof mettreAJourLiensLegaux === "function") mettreAJourLiensLegaux();
   if (typeof mettreAJourNavbarAuth === "function") mettreAJourNavbarAuth();
+  if (typeof mettreAJourEnteteType === "function") mettreAJourEnteteType();
+  if (typeof actualiserLibellesCatalogueMenu === "function") actualiserLibellesCatalogueMenu();
+
+  const docTitleKey = document.body?.dataset.i18nDocTitle;
+  if (docTitleKey) {
+    document.title = t(docTitleKey);
+  }
 
   // État actif des boutons de langue
   document.querySelectorAll(".lang-switch button").forEach((b) => {

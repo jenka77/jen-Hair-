@@ -1,8 +1,16 @@
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8000";
+const FRONTEND_URL = (process.env.FRONTEND_URL || "http://localhost:8000")
+  .split(",")[0]
+  .trim();
 
 const ORIGINES_AUTORISEES = new Set(
   [
-    FRONTEND_URL,
+    ...(process.env.FRONTEND_URL || "http://localhost:8000")
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean),
+    "https://www.jens-flora.com",
+    "https://jens-flora.com",
+    "https://jen-hair.vercel.app",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://localhost:5500",

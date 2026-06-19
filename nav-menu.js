@@ -57,7 +57,10 @@ async function injecterCatalogueMenuMobile() {
     const lien = document.createElement("a");
     lien.href = cheminTypeCatalogue(slug);
     lien.className = "nav-catalogue-link";
-    lien.textContent = name;
+    lien.dataset.slug = slug;
+    lien.dataset.nameFallback = name;
+    lien.textContent =
+      typeof libelleTypeCatalogue === "function" ? libelleTypeCatalogue(slug, name) : name;
     bloc.appendChild(lien);
   });
 
@@ -72,6 +75,20 @@ async function injecterCatalogueMenuMobile() {
     appliquerTraductions();
   }
 }
+
+function actualiserLibellesCatalogueMenu() {
+  document.querySelectorAll(".nav-catalogue-link[data-slug]").forEach((lien) => {
+    const slug = lien.dataset.slug;
+    const fallback = lien.dataset.nameFallback || lien.textContent;
+    if (typeof libelleTypeCatalogue === "function") {
+      lien.textContent = libelleTypeCatalogue(slug, fallback);
+    }
+  });
+}
+
+window.actualiserLibellesCatalogueMenu = actualiserLibellesCatalogueMenu;
+
+document.addEventListener("langchange", actualiserLibellesCatalogueMenu);
 
 document.addEventListener("DOMContentLoaded", () => {
   injecterCatalogueMenuMobile();

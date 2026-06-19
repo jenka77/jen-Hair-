@@ -34,7 +34,7 @@ function specLigne(label, valeur) {
 }
 
 // État courant (pour re-render au changement de langue)
-let etatType = { produits: [], apprentissage: false };
+let etatType = { produits: [], apprentissage: false, slug: "", nom: "", description: "" };
 let filtreRecherche = "";
 
 function normaliserRecherche(texte) {
@@ -257,6 +257,30 @@ function carteApprentissage(p) {
   `;
 }
 
+/* ---------------- En-tête de page ---------------- */
+function mettreAJourEnteteType() {
+  const { slug, nom, description } = etatType;
+  if (!slug) return;
+
+  const label =
+    typeof libelleTypeCatalogue === "function" ? libelleTypeCatalogue(slug, nom) : nom;
+  const desc =
+    typeof descriptionTypeCatalogue === "function"
+      ? descriptionTypeCatalogue(slug, description)
+      : description;
+
+  const titreEl = document.getElementById("type-title");
+  const descEl = document.getElementById("type-desc");
+  const crumbEl = document.getElementById("crumb-type");
+
+  if (titreEl) titreEl.textContent = label;
+  if (descEl) descEl.textContent = desc;
+  if (crumbEl) crumbEl.textContent = label;
+  document.title = t("page.typeTitle", { name: label });
+}
+
+window.mettreAJourEnteteType = mettreAJourEnteteType;
+
 /* ---------------- Chargement ---------------- */
 async function charger() {
   const params = new URLSearchParams(window.location.search);
@@ -265,6 +289,7 @@ async function charger() {
   const titre = document.getElementById("type-title");
 
   if (!slug || !TYPES.has(slug)) {
+    etatType = { produits: [], apprentissage: false, slug: "", nom: "", description: "" };
     titre.textContent = t("type.notFound");
     grille.innerHTML = `<p class="cart-empty">${t("type.notExist")} <a href="maison.html" style="color:var(--gold-light)">${t("type.back")}</a></p>`;
     mettreAJourBarreRecherche(0, 0);
@@ -272,6 +297,7 @@ async function charger() {
   }
 
   reinitialiserRecherche();
+  if (titre) titre.textContent = t("type.loading");
 
   try {
     let data = null;
@@ -283,11 +309,6 @@ async function charger() {
     if (!data) {
       throw new Error("Catalogue indisponible");
     }
-
-    document.title = `Jen's & Flora — ${data.type}`;
-    titre.textContent = data.type;
-    document.getElementById("type-desc").textContent = data.description || "";
-    document.getElementById("crumb-type").textContent = data.type;
 
     const produits = data.produits || [];
 
@@ -301,7 +322,14 @@ async function charger() {
       produitsMap[p.uid] = p;
     });
 
-    etatType = { produits, apprentissage: !!data.apprentissage };
+    etatType = {
+      produits,
+      apprentissage: !!data.apprentissage,
+      slug,
+      nom: data.type,
+      description: data.description || "",
+    };
+    mettreAJourEnteteType();
     if (typeof synchroniserPanierAvecProduits === "function") {
       synchroniserPanierAvecProduits(produits);
     }

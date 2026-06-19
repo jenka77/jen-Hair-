@@ -141,6 +141,14 @@ async function finaliserRetourAuthEmail() {
   window.history.replaceState({}, "", `${url.pathname}${url.search}`);
 }
 
+function traduireErreurAuth(message, fallbackKey = "auth.registerError") {
+  const msg = String(message || "").toLowerCase();
+  if (msg.includes("rate limit") || msg.includes("over_email_send")) {
+    return t("auth.rateLimit");
+  }
+  return message || t(fallbackKey);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   finaliserRetourAuthEmail().finally(async () => {
   document.querySelectorAll(".account-tab").forEach((tab) => {
@@ -163,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (redirigerApresConnexion()) return;
       await basculerVueConnecte();
     } catch (err) {
-      afficherMessage(err.message || t("auth.loginError"), "error");
+      afficherMessage(traduireErreurAuth(err.message, "auth.loginError"), "error");
     }
   });
 
@@ -187,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
         afficherMessage(t("auth.confirmEmail"), "success");
       }
     } catch (err) {
-      afficherMessage(err.message || t("auth.registerError"), "error");
+      afficherMessage(traduireErreurAuth(err.message), "error");
     }
   });
 
