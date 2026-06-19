@@ -38,6 +38,7 @@ const I18N = {
     "auth.status.pending_payment": "En attente",
     "auth.status.preparing": "En préparation",
     "auth.status.delivered": "Livrée",
+    "auth.status.ready": "Prête",
     "auth.status.accepted": "Confirmée",
     "auth.status.cancelled": "Annulée",
 
@@ -234,6 +235,7 @@ const I18N = {
     "auth.status.pending_payment": "Ausstehend",
     "auth.status.preparing": "In Vorbereitung",
     "auth.status.delivered": "Geliefert",
+    "auth.status.ready": "Abholbereit",
     "auth.status.accepted": "Bestätigt",
     "auth.status.cancelled": "Storniert",
 
@@ -430,6 +432,7 @@ const I18N = {
     "auth.status.pending_payment": "Pending",
     "auth.status.preparing": "Preparing",
     "auth.status.delivered": "Delivered",
+    "auth.status.ready": "Ready",
     "auth.status.accepted": "Confirmed",
     "auth.status.cancelled": "Cancelled",
 

@@ -44,13 +44,21 @@ router.get("/me", authObligatoire, async (req, res) => {
 
 router.get("/me/orders", authObligatoire, async (req, res, next) => {
   try {
-    const { data, error } = await supabase
+    const email = String(req.user.email || "").trim().toLowerCase();
+    let requete = supabase
       .from("orders")
       .select(
         "id, total_amount, status, pickup_mode, delivery_address, created_at, order_items(product_name, quantity, unit_price)"
       )
-      .eq("user_id", req.user.id)
       .order("created_at", { ascending: false });
+
+    if (email) {
+      requete = requete.or(`user_id.eq.${req.user.id},customer_email.eq.${email}`);
+    } else {
+      requete = requete.eq("user_id", req.user.id);
+    }
+
+    const { data, error } = await requete;
 
     if (error) throw error;
 

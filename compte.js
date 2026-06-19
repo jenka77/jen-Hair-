@@ -119,14 +119,21 @@ async function finaliserRetourAuthEmail() {
 
   const params = new URLSearchParams(window.location.search);
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-  const aUnCodeAuth =
-    params.has("code") ||
-    hashParams.has("access_token") ||
-    hashParams.has("type");
+  if (params.has("code")) {
+    const { error } = await client.auth.exchangeCodeForSession(params.get("code"));
+    if (error) console.warn("Confirmation e-mail :", error.message);
+  } else if (hashParams.has("access_token") || hashParams.has("type")) {
+    await client.auth.getSession();
+  }
 
-  if (!aUnCodeAuth) return;
-
-  await client.auth.getSession();
+  if (
+    !params.has("code") &&
+    !params.has("error") &&
+    !hashParams.has("access_token") &&
+    !hashParams.has("type")
+  ) {
+    return;
+  }
 
   const url = new URL(window.location.href);
   url.hash = "";
@@ -135,7 +142,7 @@ async function finaliserRetourAuthEmail() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  finaliserRetourAuthEmail().finally(() => {
+  finaliserRetourAuthEmail().finally(async () => {
   document.querySelectorAll(".account-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       const mode = tab.dataset.mode;
@@ -190,7 +197,8 @@ document.addEventListener("DOMContentLoaded", () => {
     await basculerVueConnecte();
   });
 
-  setTimeout(basculerVueConnecte, 100);
+  if (typeof obtenirSession === "function") await obtenirSession();
+  await basculerVueConnecte();
   });
 });
 
