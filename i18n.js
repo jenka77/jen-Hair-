@@ -731,6 +731,7 @@ function initMenuMobile() {
   window.addEventListener("resize", () => {
     ancrerNavMobile();
     if (window.innerWidth > 900) fermerMenuMobile();
+    else if (typeof injecterCatalogueMenuMobile === "function") injecterCatalogueMenuMobile();
   });
 }
 

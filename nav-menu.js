@@ -41,6 +41,7 @@ async function chargerCategoriesMenu() {
 async function injecterCatalogueMenuMobile() {
   const nav = document.getElementById("site-nav");
   if (!nav || nav.querySelector(".nav-catalogue-mobile")) return;
+  if (window.innerWidth > 900) return;
 
   const categories = await chargerCategoriesMenu();
   const bloc = document.createElement("div");

@@ -2840,7 +2840,8 @@ img {
 }
 
 @media (min-width: 901px) {
-  .nav-auth-mobile {
+  .nav-auth-mobile,
+  .nav-catalogue-mobile {
     display: none !important;
   }
 }
