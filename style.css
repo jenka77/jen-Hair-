@@ -1904,13 +1904,46 @@ img {
     letter-spacing: 0.1em;
   }
 
+  .nav-mobile-section-title {
+    margin: 20px 0 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .nav-catalogue-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .nav-catalogue-link {
+    padding: 14px 0;
+    font-size: 0.88rem;
+    letter-spacing: 0.06em;
+    color: var(--cream);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .nav-catalogue-link:hover {
+    color: var(--gold-light);
+  }
+
+  .page-accueil .back-button {
+    display: none !important;
+  }
+
   .nav-links {
     position: fixed;
     top: var(--nav-height);
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 99;
+    z-index: 110;
     flex-direction: column;
     align-items: stretch;
     gap: 0;

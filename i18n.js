@@ -12,6 +12,7 @@ const I18N = {
     "nav.login": "Se connecter",
     "nav.register": "S'inscrire",
     "nav.account": "Mon compte",
+    "nav.collection": "Collection",
 
     "auth.loginTitle": "Connexion",
     "auth.loginLead": "Accédez à l'historique de vos commandes.",
@@ -207,6 +208,7 @@ const I18N = {
     "nav.login": "Anmelden",
     "nav.register": "Registrieren",
     "nav.account": "Mein Konto",
+    "nav.collection": "Kollektion",
 
     "auth.loginTitle": "Anmelden",
     "auth.loginLead": "Greifen Sie auf Ihre Bestellhistorie zu.",
@@ -402,6 +404,7 @@ const I18N = {
     "nav.login": "Log in",
     "nav.register": "Register",
     "nav.account": "My account",
+    "nav.collection": "Collection",
 
     "auth.loginTitle": "Log in",
     "auth.loginLead": "Access your order history.",
@@ -698,8 +701,8 @@ function initMenuMobile() {
 
   btn.addEventListener("click", basculerMenuMobile);
 
-  nav.querySelectorAll("a").forEach((lien) => {
-    lien.addEventListener("click", fermerMenuMobile);
+  nav.addEventListener("click", (e) => {
+    if (e.target.closest("a")) fermerMenuMobile();
   });
 
   document.addEventListener("keydown", (e) => {
