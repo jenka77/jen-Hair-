@@ -6,7 +6,7 @@ const SUPABASE_CONFIG = {
   URL: "https://bapnudbxblqawqcuvycy.supabase.co",
   ANON_KEY: "sb_publishable_Q_dkU48tjqDlb9cbFG_35w_t0HPzmq-",
 };
-
+const API_BASE_URL_PROD = "https://jen-hair-api.onrender.com";
 // En local, le backend tourne sur le port 4000 (même hôte que la page).
 // Quand le backend sera en ligne, remplacez cette logique par son URL publique.
 function resoudreApiBaseUrl() {
@@ -14,7 +14,7 @@ function resoudreApiBaseUrl() {
   if (hostname === "localhost" || hostname === "127.0.0.1") {
     return `${protocol}//${hostname}:4000`;
   }
-  return "http://localhost:4000";
+  return API_BASE_URL_PROD;
 }
 
 const API_BASE_URL = resoudreApiBaseUrl();
