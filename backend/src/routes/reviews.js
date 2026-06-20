@@ -5,6 +5,12 @@ const { authOptionnelle } = require("../middleware/auth");
 
 const router = express.Router();
 
+const COLS_BASE =
+  "id, author_name, rating, comment, created_at";
+const COLS_REPLY = "admin_reply, replied_at, reply_visible";
+const COLS_PUBLIC = `${COLS_BASE}, ${COLS_REPLY}`;
+const COLS_ADMIN = `id, author_name, author_email, rating, comment, created_at, ${COLS_REPLY}, is_published`;
+
 const avisSchema = z.object({
   authorName: z.string().trim().min(2).max(80).optional(),
   rating: z.coerce.number().int().min(1).max(5),
@@ -16,6 +22,15 @@ const avisAdminSchema = z.object({
   replyVisible: z.boolean().optional(),
   isPublished: z.boolean().optional(),
 });
+
+function colonnesReponseManquantes(error) {
+  const msg = String(error?.message || error?.details || "").toLowerCase();
+  return (
+    msg.includes("admin_reply") ||
+    msg.includes("replied_at") ||
+    msg.includes("reply_visible")
+  );
+}
 
 function verifierAdmin(req, res) {
   const motDePasse = req.headers["x-admin-password"];
@@ -48,24 +63,57 @@ function normaliserAvis(row, { publicView = false } = {}) {
       : {
           authorEmail: row.author_email || null,
           isPublished: row.is_published !== false,
-          replyVisible,
+          replyVisible: row.reply_visible !== false,
         }),
   };
 }
 
-router.get("/reviews", async (req, res, next) => {
-  try {
-    const { data, error } = await supabase
+async function selectionnerAvisPublics() {
+  let requete = supabase
+    .from("site_reviews")
+    .select(COLS_PUBLIC)
+    .eq("is_published", true)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  let { data, error } = await requete;
+
+  if (error && colonnesReponseManquantes(error)) {
+    ({ data, error } = await supabase
       .from("site_reviews")
-      .select(
-        "id, author_name, rating, comment, created_at, admin_reply, replied_at, reply_visible"
-      )
+      .select(COLS_BASE)
       .eq("is_published", true)
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(100));
+  }
 
-    if (error) throw error;
-    res.json({ reviews: (data || []).map((row) => normaliserAvis(row, { publicView: true })) });
+  if (error) throw error;
+  return data || [];
+}
+
+async function selectionnerAvisAdmin() {
+  let { data, error } = await supabase
+    .from("site_reviews")
+    .select(COLS_ADMIN)
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error && colonnesReponseManquantes(error)) {
+    ({ data, error } = await supabase
+      .from("site_reviews")
+      .select("id, author_name, author_email, rating, comment, created_at, is_published")
+      .order("created_at", { ascending: false })
+      .limit(200));
+  }
+
+  if (error) throw error;
+  return data || [];
+}
+
+router.get("/reviews", async (req, res, next) => {
+  try {
+    const data = await selectionnerAvisPublics();
+    res.json({ reviews: data.map((row) => normaliserAvis(row, { publicView: true })) });
   } catch (error) {
     next(error);
   }
@@ -113,9 +161,7 @@ router.post("/reviews", authOptionnelle, async (req, res, next) => {
         comment: comment.trim(),
         is_published: true,
       })
-      .select(
-        "id, author_name, rating, comment, created_at, admin_reply, replied_at, reply_visible"
-      )
+      .select(COLS_BASE)
       .single();
 
     if (error) throw error;
@@ -129,16 +175,8 @@ router.get("/admin/reviews", async (req, res, next) => {
   if (!verifierAdmin(req, res)) return;
 
   try {
-    const { data, error } = await supabase
-      .from("site_reviews")
-      .select(
-        "id, author_name, author_email, rating, comment, created_at, admin_reply, replied_at, reply_visible, is_published"
-      )
-      .order("created_at", { ascending: false })
-      .limit(200);
-
-    if (error) throw error;
-    res.json({ reviews: (data || []).map((row) => normaliserAvis(row)) });
+    const data = await selectionnerAvisAdmin();
+    res.json({ reviews: data.map((row) => normaliserAvis(row)) });
   } catch (error) {
     next(error);
   }
@@ -180,10 +218,15 @@ router.patch("/admin/reviews/:id", async (req, res, next) => {
       .from("site_reviews")
       .update(payload)
       .eq("id", req.params.id)
-      .select(
-        "id, author_name, author_email, rating, comment, created_at, admin_reply, replied_at, reply_visible, is_published"
-      )
+      .select(COLS_ADMIN)
       .single();
+
+    if (error && colonnesReponseManquantes(error)) {
+      return res.status(503).json({
+        error:
+          "Les réponses admin ne sont pas encore activées. Exécutez supabase/migration_v6_review_replies.sql dans Supabase.",
+      });
+    }
 
     if (error) throw error;
     res.json({ review: normaliserAvis(data) });
