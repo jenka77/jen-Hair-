@@ -531,20 +531,29 @@ img {
 .type-search-clear {
   position: absolute;
   right: 14px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   width: 42px;
   height: 42px;
+  padding: 0;
   border: 1px solid rgba(201, 162, 75, 0.45);
   border-radius: 50%;
   background: rgba(201, 162, 75, 0.12);
   color: #6b4f1d;
-  font-size: 1.5rem;
-  line-height: 1;
   cursor: pointer;
   transition:
     color 0.2s ease,
     background 0.2s ease,
     border-color 0.2s ease,
-    transform 0.2s ease;
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.type-search-clear[hidden] {
+  display: none !important;
 }
 
 .type-search-clear:hover {

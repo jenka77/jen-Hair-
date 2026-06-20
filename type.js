@@ -70,17 +70,20 @@ function produitsFiltres() {
   return etatType.produits.filter((p) => produitCorrespondRecherche(p, query));
 }
 
+function mettreAJourBoutonEffacer() {
+  const clearBtn = document.getElementById("type-search-clear");
+  const input = document.getElementById("type-search");
+  const visible = !!(input?.value.trim() || filtreRecherche.trim());
+  if (clearBtn) clearBtn.hidden = !visible;
+}
+
 function mettreAJourBarreRecherche(total, affiches) {
   const wrap = document.getElementById("type-search-wrap");
   const status = document.getElementById("type-search-status");
-  const clearBtn = document.getElementById("type-search-clear");
   if (!wrap) return;
 
   wrap.hidden = total === 0;
-
-  if (clearBtn) {
-    clearBtn.hidden = !filtreRecherche.trim();
-  }
+  mettreAJourBoutonEffacer();
 
   if (!status) return;
 
@@ -448,7 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   searchInput?.addEventListener("input", () => {
     filtreRecherche = searchInput.value;
-    if (searchClear) searchClear.hidden = !filtreRecherche.trim();
+    mettreAJourBoutonEffacer();
     rendreGrille();
   });
 
@@ -456,6 +459,14 @@ document.addEventListener("DOMContentLoaded", () => {
     reinitialiserRecherche();
     searchInput?.focus();
     rendreGrille();
+  });
+
+  searchInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && searchInput.value) {
+      e.preventDefault();
+      reinitialiserRecherche();
+      rendreGrille();
+    }
   });
 
   charger();
