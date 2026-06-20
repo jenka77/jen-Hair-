@@ -11,6 +11,7 @@ const productsRouter = require("./src/routes/products");
 const ordersRouter = require("./src/routes/orders");
 const paypalRouter = require("./src/routes/paypal");
 const accountRouter = require("./src/routes/account");
+const reviewsRouter = require("./src/routes/reviews");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -49,6 +50,7 @@ app.use("/api", productsRouter);
 app.use("/api", ordersRouter);
 app.use("/api", paypalRouter);
 app.use("/api", accountRouter);
+app.use("/api", reviewsRouter);
 
 app.use((req, res) => {
   res.status(404).json({

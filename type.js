@@ -15,6 +15,7 @@ const TYPES = new Set([
   "extensions",
   "entretien",
   "apprentissage",
+  "commentaires",
 ]);
 
 // Map uid -> produit (pour retrouver un produit au clic "Commander")
@@ -34,7 +35,7 @@ function specLigne(label, valeur) {
 }
 
 // État courant (pour re-render au changement de langue)
-let etatType = { produits: [], apprentissage: false, slug: "", nom: "", description: "" };
+let etatType = { produits: [], apprentissage: false, commentaires: false, slug: "", nom: "", description: "" };
 let filtreRecherche = "";
 
 function normaliserRecherche(texte) {
@@ -292,7 +293,7 @@ async function charger() {
   const titre = document.getElementById("type-title");
 
   if (!slug || !TYPES.has(slug)) {
-    etatType = { produits: [], apprentissage: false, slug: "", nom: "", description: "" };
+    etatType = { produits: [], apprentissage: false, commentaires: false, slug: "", nom: "", description: "" };
     titre.textContent = t("type.notFound");
     grille.innerHTML = `<p class="cart-empty">${t("type.notExist")} <a href="maison.html" style="color:var(--gold-light)">${t("type.back")}</a></p>`;
     mettreAJourBarreRecherche(0, 0);
@@ -301,6 +302,27 @@ async function charger() {
 
   reinitialiserRecherche();
   if (titre) titre.textContent = t("type.loading");
+
+  if (slug === "commentaires") {
+    etatType = {
+      produits: [],
+      apprentissage: false,
+      commentaires: true,
+      slug,
+      nom: typeof libelleTypeCatalogue === "function" ? libelleTypeCatalogue(slug, "Vos avis") : "Vos avis",
+      description:
+        typeof descriptionTypeCatalogue === "function"
+          ? descriptionTypeCatalogue(slug, "")
+          : "",
+    };
+    mettreAJourEnteteType();
+    if (typeof rendrePageCommentaires === "function") {
+      await rendrePageCommentaires();
+    } else {
+      grille.innerHTML = `<p class="cart-empty">${t("type.loadError")}</p>`;
+    }
+    return;
+  }
 
   try {
     let data = null;
@@ -328,6 +350,7 @@ async function charger() {
     etatType = {
       produits,
       apprentissage: !!data.apprentissage,
+      commentaires: false,
       slug,
       nom: data.type,
       description: data.description || "",
@@ -349,6 +372,10 @@ async function charger() {
 function rendreGrille() {
   const grille = document.getElementById("type-grid");
   if (!grille) return;
+
+  if (etatType.commentaires) return;
+
+  grille.className = "product-grid";
 
   const total = etatType.produits.length;
   if (total === 0) {

@@ -13,6 +13,7 @@ const TYPES_MENU_FALLBACK = [
   { slug: "extensions", name: "Extensions" },
   { slug: "entretien", name: "Entretien" },
   { slug: "apprentissage", name: "Apprentissage" },
+  { slug: "commentaires", name: "Vos avis" },
 ];
 
 function cheminTypeCatalogue(slug) {
