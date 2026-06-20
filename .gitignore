@@ -3,6 +3,11 @@ backend/.env
 .env
 .env.*
 
+# Supabase — migrations, scripts SQL et docs internes (ne pas publier)
+supabase/
+SUPABASE_PROTOCOL.md
+SUPABASE_STORAGE_PROTOCOL.md
+
 # Dépendances
 node_modules/
 backend/node_modules/
