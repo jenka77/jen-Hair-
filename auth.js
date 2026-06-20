@@ -33,7 +33,9 @@ async function obtenirUtilisateur() {
 }
 
 function urlRetourAuthApresEmail() {
-  const url = new URL("compte.html", window.location.href);
+  const origine =
+    typeof urlSiteCanonique === "function" ? urlSiteCanonique() : window.location.origin;
+  const url = new URL("compte.html", `${origine.replace(/\/$/, "")}/`);
   const retour = new URLSearchParams(window.location.search).get("return");
   if (retour) url.searchParams.set("return", retour);
   return url.href;

@@ -7,6 +7,7 @@ const SUPABASE_CONFIG = {
   ANON_KEY: "sb_publishable_Q_dkU48tjqDlb9cbFG_35w_t0HPzmq-",
 };
 const API_BASE_URL_PROD = "https://jen-hair-api.onrender.com";
+const SITE_URL_PROD = "https://www.jens-flora.com";
 // En local, le backend tourne sur le port 4000 (même hôte que la page).
 // Quand le backend sera en ligne, remplacez cette logique par son URL publique.
 function resoudreApiBaseUrl() {
@@ -19,6 +20,24 @@ function resoudreApiBaseUrl() {
 
 const API_BASE_URL = resoudreApiBaseUrl();
 window.API_BASE_URL = API_BASE_URL;
+
+function urlSiteCanonique() {
+  const { protocol, hostname, port } = window.location;
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    const suffix = port ? `:${port}` : "";
+    return `${protocol}//${hostname}${suffix}`;
+  }
+  if (hostname === "jens-flora.com" || hostname === "www.jens-flora.com") {
+    return SITE_URL_PROD;
+  }
+  if (hostname.endsWith(".vercel.app")) {
+    return `${protocol}//${hostname}`;
+  }
+  return SITE_URL_PROD;
+}
+
+window.urlSiteCanonique = urlSiteCanonique;
+window.SITE_URL_PROD = SITE_URL_PROD;
 
 function baseConfiguree() {
   return (

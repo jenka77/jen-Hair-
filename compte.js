@@ -113,38 +113,81 @@ async function basculerVueConnecte() {
   afficherMode(modeDepuisUrl());
 }
 
+function nettoyerParamsAuthUrl() {
+  const url = new URL(window.location.href);
+  url.hash = "";
+  [
+    "code",
+    "error",
+    "error_code",
+    "error_description",
+    "sb",
+  ].forEach((cle) => url.searchParams.delete(cle));
+  window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+}
+
+function lireErreurAuthUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+
+  const error = params.get("error") || hashParams.get("error");
+  if (!error) return null;
+
+  return {
+    error,
+    code: params.get("error_code") || hashParams.get("error_code") || "",
+    description:
+      params.get("error_description") || hashParams.get("error_description") || "",
+  };
+}
+
+function messageErreurAuthUrl(details) {
+  if (!details) return "";
+  const code = String(details.code || "").toLowerCase();
+  if (code === "otp_expired" || code === "flow_state_expired") {
+    return t("auth.linkExpired");
+  }
+  const desc = decodeURIComponent(String(details.description || "").replace(/\+/g, " "));
+  return traduireErreurAuth(desc || details.error, "auth.confirmError");
+}
+
 async function finaliserRetourAuthEmail() {
   const client = typeof clientAuth === "function" ? clientAuth() : null;
   if (!client) return;
 
   const params = new URLSearchParams(window.location.search);
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-  if (params.has("code")) {
-    const { error } = await client.auth.exchangeCodeForSession(params.get("code"));
-    if (error) console.warn("Confirmation e-mail :", error.message);
-  } else if (hashParams.has("access_token") || hashParams.has("type")) {
-    await client.auth.getSession();
-  }
+  const erreurUrl = lireErreurAuthUrl();
 
-  if (
-    !params.has("code") &&
-    !params.has("error") &&
-    !hashParams.has("access_token") &&
-    !hashParams.has("type")
-  ) {
+  if (erreurUrl) {
+    afficherMessage(messageErreurAuthUrl(erreurUrl), "error");
+    nettoyerParamsAuthUrl();
     return;
   }
 
-  const url = new URL(window.location.href);
-  url.hash = "";
-  ["code", "error", "error_description"].forEach((cle) => url.searchParams.delete(cle));
-  window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+  if (params.has("code")) {
+    const { error } = await client.auth.exchangeCodeForSession(params.get("code"));
+    if (error) {
+      afficherMessage(traduireErreurAuth(error.message, "auth.confirmError"), "error");
+    } else if (typeof afficherToast === "function") {
+      afficherToast(t("auth.loginSuccess"));
+    }
+  } else if (hashParams.has("access_token") || hashParams.has("type")) {
+    await client.auth.getSession();
+  } else {
+    return;
+  }
+
+  nettoyerParamsAuthUrl();
 }
 
 function traduireErreurAuth(message, fallbackKey = "auth.registerError") {
   const msg = String(message || "").toLowerCase();
   if (msg.includes("rate limit") || msg.includes("over_email_send")) {
     return t("auth.rateLimit");
+  }
+  if (msg.includes("otp_expired") || msg.includes("flow_state_expired") || msg.includes("invalid or has expired")) {
+    return t("auth.linkExpired");
   }
   return message || t(fallbackKey);
 }
