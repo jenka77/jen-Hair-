@@ -21,8 +21,11 @@
         <span>Mot de passe admin</span>
         <input type="password" id="admin-password" name="password" required autocomplete="current-password" />
       </label>
-      <button type="submit" class="btn-order account-submit">Se connecter</button>
+      <button type="button" id="admin-login-btn" class="btn-order account-submit">Se connecter</button>
       <p id="admin-login-error" class="account-message account-message--error" hidden></p>
+      <noscript>
+        <p class="account-message account-message--error">JavaScript est requis pour cette page.</p>
+      </noscript>
     </form>
   </div>
 
@@ -59,6 +62,6 @@
     </div>
   </div>
 
-  <script src="admin.js?v=20260620"></script>
+  <script src="gestion-commandes.js?v=20260621"></script>
 </body>
 </html>
