@@ -6,7 +6,19 @@ let noteSelectionnee = 0;
 let avisCache = [];
 
 function apiAvis() {
-  return typeof API_BASE_URL !== "undefined" ? API_BASE_URL : "http://127.0.0.1:4000";
+  if (typeof API_BASE_URL !== "undefined") return API_BASE_URL;
+  const { protocol, hostname } = window.location;
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return `${protocol}//${hostname}:4000`;
+  }
+  return "https://jen-hair-api.onrender.com";
+}
+
+function messageErreurAvis(reponse, data, fallback) {
+  if (reponse?.status === 404) {
+    return t("avis.apiUnavailable");
+  }
+  return data?.error || fallback;
 }
 
 function etoilesHtml(note, interactif = false) {
@@ -93,8 +105,8 @@ function listeAvisHtml(reviews) {
 
 async function chargerAvisPublics() {
   const reponse = await fetch(`${apiAvis()}/api/reviews`, { cache: "no-store" });
-  if (!reponse.ok) throw new Error(t("avis.loadError"));
-  const data = await reponse.json();
+  const data = await reponse.json().catch(() => ({}));
+  if (!reponse.ok) throw new Error(messageErreurAvis(reponse, data, t("avis.loadError")));
   return data.reviews || [];
 }
 
@@ -187,7 +199,7 @@ async function soumettreAvis(e) {
     });
 
     const data = await reponse.json().catch(() => ({}));
-    if (!reponse.ok) throw new Error(data.error || t("avis.submitError"));
+    if (!reponse.ok) throw new Error(messageErreurAvis(reponse, data, t("avis.submitError")));
 
     avisCache = [data.review, ...avisCache];
     document.getElementById("avis-form")?.reset();
