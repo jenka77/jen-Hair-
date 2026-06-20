@@ -15,6 +15,8 @@ const STATUTS = [
 ];
 
 let commandesCache = [];
+let avisCache = [];
+let ongletAdminActif = "orders";
 
 function apiBase() {
   if (typeof API_BASE_URL !== "undefined") return API_BASE_URL;
@@ -228,10 +230,124 @@ function afficherApp(connecte) {
   if (app) app.toggleAttribute("hidden", !connecte);
 }
 
+function etoilesAdmin(note) {
+  return "★".repeat(Math.min(5, Math.max(0, Number(note) || 0))) +
+    "☆".repeat(5 - Math.min(5, Math.max(0, Number(note) || 0)));
+}
+
+function afficherAvisAdmin(reviews) {
+  const conteneur = document.getElementById("admin-reviews");
+  if (!conteneur) return;
+
+  if (!reviews.length) {
+    conteneur.innerHTML = `<p class="account-empty">Aucun avis pour le moment.</p>`;
+    return;
+  }
+
+  conteneur.innerHTML = reviews
+    .map(
+      (avis) => `
+    <article class="admin-review-card" data-review-id="${avis.id}">
+      <div class="admin-order-head">
+        <div>
+          <p class="order-card-number">${echapperHtml(avis.authorName)} · ${etoilesAdmin(avis.rating)}</p>
+          <p class="order-card-date">${formaterDate(avis.createdAt)}${avis.authorEmail ? ` · ${echapperHtml(avis.authorEmail)}` : ""}</p>
+        </div>
+        <span class="status-badge admin-status-badge ${avis.isPublished ? "paid" : "cancelled"}">${avis.isPublished ? "Publié" : "Masqué"}</span>
+      </div>
+      <blockquote class="admin-review-quote">${echapperHtml(avis.comment)}</blockquote>
+      <label class="field admin-reply-field">
+        <span>Votre réponse (Jen's &amp; Flora)</span>
+        <textarea class="admin-reply-input" data-review-id="${avis.id}" rows="4" maxlength="2000" placeholder="Merci pour votre retour…">${echapperHtml(avis.adminReply || "")}</textarea>
+      </label>
+      <div class="admin-order-actions">
+        <label class="admin-status-field admin-reply-visible">
+          <input type="checkbox" class="admin-reply-visible-input" data-review-id="${avis.id}"${avis.replyVisible !== false ? " checked" : ""} />
+          <span>Afficher la réponse sur le site</span>
+        </label>
+        <button type="button" class="auth-btn auth-btn--fill admin-save-reply" data-review-id="${avis.id}">Enregistrer la réponse</button>
+      </div>
+      <p class="admin-order-feedback" data-review-feedback="${avis.id}" hidden></p>
+    </article>`
+    )
+    .join("");
+}
+
+async function chargerAvisAdmin() {
+  const conteneur = document.getElementById("admin-reviews");
+  if (conteneur) {
+    conteneur.innerHTML = `<p class="account-loading">Chargement des avis…</p>`;
+  }
+
+  const data = await requeteAdmin("/api/admin/reviews");
+  avisCache = data.reviews || [];
+  afficherAvisAdmin(avisCache);
+}
+
+async function enregistrerReponseAvis(reviewId) {
+  const feedback = document.querySelector(`[data-review-feedback="${reviewId}"]`);
+  const textarea = document.querySelector(`.admin-reply-input[data-review-id="${reviewId}"]`);
+  const visibleInput = document.querySelector(`.admin-reply-visible-input[data-review-id="${reviewId}"]`);
+
+  if (feedback) {
+    feedback.hidden = false;
+    feedback.textContent = "Enregistrement…";
+    feedback.className = "admin-order-feedback";
+  }
+
+  try {
+    const data = await requeteAdmin(`/api/admin/reviews/${reviewId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        adminReply: textarea?.value.trim() || null,
+        replyVisible: visibleInput?.checked !== false,
+      }),
+    });
+
+    avisCache = avisCache.map((a) => (a.id === reviewId ? { ...a, ...data.review } : a));
+    afficherAvisAdmin(avisCache);
+
+    if (feedback) {
+      feedback.textContent = "Réponse enregistrée.";
+      feedback.classList.add("admin-order-feedback--ok");
+    }
+  } catch (err) {
+    if (feedback) {
+      feedback.textContent = err.message;
+      feedback.classList.add("admin-order-feedback--error");
+    }
+  }
+}
+
+function basculerOngletAdmin(onglet) {
+  ongletAdminActif = onglet;
+
+  document.querySelectorAll(".admin-tab").forEach((btn) => {
+    const actif = btn.dataset.adminTab === onglet;
+    btn.classList.toggle("active", actif);
+    btn.setAttribute("aria-selected", actif ? "true" : "false");
+  });
+
+  document.getElementById("admin-panel-orders")?.toggleAttribute("hidden", onglet !== "orders");
+  document.getElementById("admin-panel-reviews")?.toggleAttribute("hidden", onglet !== "reviews");
+
+  const titre = document.getElementById("admin-page-title");
+  if (titre) titre.textContent = onglet === "reviews" ? "Avis clients" : "Commandes";
+}
+
+async function actualiserOngletAdmin() {
+  if (ongletAdminActif === "reviews") {
+    await chargerAvisAdmin();
+  } else {
+    await chargerCommandes();
+  }
+}
+
 async function tenterConnexion(motDePasse) {
   enregistrerMotDePasse(motDePasse);
   try {
     await chargerCommandes();
+    basculerOngletAdmin("orders");
     afficherApp(true);
     return true;
   } catch (err) {
@@ -320,7 +436,18 @@ function initAdmin() {
   });
 
   document.getElementById("admin-refresh")?.addEventListener("click", () => {
-    chargerCommandes().catch((err) => alert(err.message));
+    actualiserOngletAdmin().catch((err) => alert(err.message));
+  });
+
+  document.querySelectorAll(".admin-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const onglet = tab.dataset.adminTab;
+      if (!onglet || onglet === ongletAdminActif) return;
+      basculerOngletAdmin(onglet);
+      if (onglet === "reviews" && !avisCache.length) {
+        chargerAvisAdmin().catch((err) => alert(err.message));
+      }
+    });
   });
 
   document.getElementById("admin-filter-status")?.addEventListener("change", filtrerCommandes);
@@ -332,6 +459,12 @@ function initAdmin() {
     const select = document.querySelector(`.admin-status-select[data-order-id="${orderId}"]`);
     if (!select) return;
     mettreAJourStatut(orderId, select.value);
+  });
+
+  document.getElementById("admin-reviews")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".admin-save-reply");
+    if (!btn) return;
+    enregistrerReponseAvis(btn.dataset.reviewId);
   });
 
   if (motDePasseAdmin()) {

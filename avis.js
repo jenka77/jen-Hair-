@@ -81,6 +81,23 @@ function formulaireAvisHtml() {
     </section>`;
 }
 
+function echapperTexteAvis(texte) {
+  return String(texte ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function blocReponseAvis(avis) {
+  if (!avis.adminReply) return "";
+  return `
+    <div class="avis-reply">
+      <p class="avis-reply-label">${t("avis.replyFrom")}</p>
+      <p class="avis-reply-text">${echapperTexteAvis(avis.adminReply)}</p>
+      ${avis.repliedAt ? `<p class="avis-reply-date">${formaterDateAvis(avis.repliedAt)}</p>` : ""}
+    </div>`;
+}
+
 function listeAvisHtml(reviews) {
   if (!reviews.length) {
     return `<p class="account-empty">${t("avis.empty")}</p>`;
@@ -92,12 +109,13 @@ function listeAvisHtml(reviews) {
     <article class="avis-card">
       <div class="avis-card-head">
         <div>
-          <p class="avis-author">${avis.authorName}</p>
+          <p class="avis-author">${echapperTexteAvis(avis.authorName)}</p>
           <p class="avis-date">${formaterDateAvis(avis.createdAt)}</p>
         </div>
         ${etoilesHtml(avis.rating)}
       </div>
-      <p class="avis-text">${avis.comment.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+      <p class="avis-text">${echapperTexteAvis(avis.comment)}</p>
+      ${blocReponseAvis(avis)}
     </article>`
     )
     .join("");
