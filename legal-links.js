@@ -1,5 +1,5 @@
 /* ============================================================
-   Jen's & Flora — Liens légaux selon la langue du site
+   Jen's & Floran — Liens légaux selon la langue du site
    ============================================================ */
 
 const LEGAL_PAGES = {

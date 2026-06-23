@@ -1,6 +1,6 @@
 async function envoyerEmail({ to, subject, text, replyTo }) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || "Jen's & Flora <onboarding@resend.dev>";
+  const from = process.env.EMAIL_FROM || "Jen's & Floran <onboarding@resend.dev>";
 
   if (!apiKey || apiKey.startsWith("votre_")) {
     console.warn("RESEND_API_KEY manquante : email non envoyé.");
@@ -111,7 +111,7 @@ Sie erhalten außerdem eine E-Mail, sobald Ihre Bestellung geliefert wurde oder 
 You will also receive an email once your order has been delivered or is ready for pickup at Saá Mokolo boutique.
 
 Merci pour votre confiance.
-Jen's & Flora`,
+Jen's & Floran`,
   });
 
   return resultats;
@@ -170,7 +170,7 @@ Ihre Bestellung ${orderNumber} wird gerade vorbereitet.
 Your order ${orderNumber} is being prepared.
 
 Merci pour votre confiance.
-Jen's & Flora`,
+Jen's & Floran`,
 
     ready: `Bonjour ${order.customer_name},
 
@@ -181,7 +181,7 @@ Ihre Bestellung ${orderNumber} ist abholbereit im Geschäft bei Saá Mokolo.
 Your order ${orderNumber} is ready for pickup at Saá Mokolo boutique.
 
 Merci pour votre confiance.
-Jen's & Flora`,
+Jen's & Floran`,
 
     delivered: `Bonjour ${order.customer_name},
 
@@ -192,7 +192,7 @@ Ihre Bestellung ${orderNumber} wurde geliefert.
 Your order ${orderNumber} has been delivered.
 
 Merci pour votre confiance.
-Jen's & Flora`,
+Jen's & Floran`,
   };
 
   const result = await envoyerEmail({

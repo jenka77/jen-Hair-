@@ -34,7 +34,7 @@ app.use(express.json({ limit: "1mb" }));
 app.get("/", (req, res) => {
   res.json({
     ok: true,
-    service: "Jen's & Flora backend",
+    service: "Jen's & Floran backend",
   });
 });
 
@@ -67,7 +67,7 @@ app.use((error, req, res, next) => {
 
 app.listen(PORT, () => {
   const paypalEnv = process.env.PAYPAL_ENV === "live" ? "live" : "sandbox";
-  console.log(`Backend Jen's & Flora lancé sur http://localhost:${PORT}`);
+  console.log(`Backend Jen's & Floran lancé sur http://localhost:${PORT}`);
   console.log(`Frontend autorisé: ${FRONTEND_URL} (+ localhost / 127.0.0.1 en dev)`);
   if (paypalEnv === "live") {
     console.log("⚠️  PayPal LIVE actif — les paiements utilisent de VRAI argent.");

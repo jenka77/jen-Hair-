@@ -1,5 +1,5 @@
 /* ============================================================
-   Jen's & Flora — Interface admin (gestion commandes)
+   Jen's & Floran — Interface admin (gestion commandes)
    ============================================================ */
 
 const ADMIN_SESSION_KEY = "jf_admin_password";
@@ -257,7 +257,7 @@ function afficherAvisAdmin(reviews) {
       </div>
       <blockquote class="admin-review-quote">${echapperHtml(avis.comment)}</blockquote>
       <label class="field admin-reply-field">
-        <span>Votre réponse (Jen's &amp; Flora)</span>
+        <span>Votre réponse (Jen's &amp; Floran)</span>
         <textarea class="admin-reply-input" data-review-id="${avis.id}" rows="4" maxlength="2000" placeholder="Merci pour votre retour…">${echapperHtml(avis.adminReply || "")}</textarea>
       </label>
       <div class="admin-order-actions">

@@ -1,5 +1,5 @@
 /* ============================================================
-   Jen's & Flora — Connexion Supabase + API backend
+   Jen's & Floran — Connexion Supabase + API backend
    ============================================================ */
 
 const SUPABASE_CONFIG = {

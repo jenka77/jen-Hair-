@@ -99,7 +99,7 @@ async function creerOrdrePaypal({
         },
       ],
       application_context: {
-        brand_name: "Jen's & Flora",
+        brand_name: "Jen's & Floran",
         landing_page: "LOGIN",
         user_action: "PAY_NOW",
         return_url: construireUrlRetour(baseUrl, returnPath, {

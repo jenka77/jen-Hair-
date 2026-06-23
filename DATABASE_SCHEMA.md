@@ -1,4 +1,4 @@
-# Schéma base de données — Jen's & Flora
+# Schéma base de données — Jen's & Floran
 
 ## Votre idée vs la bonne pratique
 
@@ -182,7 +182,7 @@ Exemple théorique :
 
 Même là, on préfère souvent **une table `products` + colonnes optionnelles** ou **JSON `extra_fields`**, plutôt que 12 tables.
 
-Pour Jen's & Flora, **une seule table `products` suffit**.
+Pour Jen's & Floran, **une seule table `products` suffit**.
 
 ---
 

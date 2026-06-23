@@ -1,5 +1,5 @@
 /* ============================================================
-   Jen's & Flora — Menu mobile (catalogue + navigation)
+   Jen's & Floran — Menu mobile (catalogue + navigation)
    ============================================================ */
 
 const TYPES_MENU_FALLBACK = [

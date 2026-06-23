@@ -1,5 +1,5 @@
 /* ============================================================
-   Jen's & Flora — Comptes clientes (Supabase Auth)
+   Jen's & Floran — Comptes clientes (Supabase Auth)
    Les mots de passe sont stockés de façon sécurisée par Supabase.
    ============================================================ */
 

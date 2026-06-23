@@ -1,5 +1,5 @@
 /* ============================================================
-   Jen's & Flora — Page d'un type de perruque
+   Jen's & Floran — Page d'un type de perruque
    Charge les produits via backend / Supabase (?type=...)
    Le panier / commande sont gérés par script.js (partagé).
    ============================================================ */

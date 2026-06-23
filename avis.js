@@ -1,5 +1,5 @@
 /* ============================================================
-   Jen's & Flora — Page avis / commentaires (type n°11)
+   Jen's & Floran — Page avis / commentaires (type n°11)
    ============================================================ */
 
 let noteSelectionnee = 0;

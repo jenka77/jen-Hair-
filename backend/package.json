@@ -1,7 +1,7 @@
 {
   "name": "jens-flora-backend",
   "version": "1.0.0",
-  "description": "Backend API for Jen's & Flora",
+  "description": "Backend API for Jen's & Floran",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

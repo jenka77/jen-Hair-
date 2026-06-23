@@ -1,5 +1,5 @@
 /* ============================================================
-   Jen's & Flora — Module e-commerce partagé
+   Jen's & Floran — Module e-commerce partagé
    Panier (persistant) + Commande via backend + Vidéo
    Utilisé par index.html et par les pages de type (type.html)
    ============================================================ */

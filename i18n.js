@@ -1,5 +1,5 @@
 /* ============================================================
-   Jen's & Flora — Internationalisation (FR / DE / EN)
+   Jen's & Floran — Internationalisation (FR / DE / EN)
    ============================================================ */
 
 const I18N = {
@@ -54,9 +54,9 @@ const I18N = {
     "hero.cap3": "Reflets miel et lumière dorée pour un éclat résolument chic.",
     "hero.cap4": "Des ondulations glamour qui révèlent toute votre splendeur.",
 
-    "about.kicker": "La Maison Jen's & Flora",
+    "about.kicker": "La Maison Jen's & Floran",
     "about.title": "La Beauté, Élevée au Rang d'Art",
-    "about.p1": "Chez Jen's & Flora, nous croyons que chaque femme mérite de se sentir resplendissante. Nos perruques de luxe sont créées à partir de cheveux 100% naturels, sélectionnés avec exigence pour offrir une tenue parfaite et un éclat incomparable.",
+    "about.p1": "Chez Jen's & Floran, nous croyons que chaque femme mérite de se sentir resplendissante. Nos perruques de luxe sont créées à partir de cheveux 100% naturels, sélectionnés avec exigence pour offrir une tenue parfaite et un éclat incomparable.",
     "about.p2": "De la coupe lisse à l'ondulé glamour, notre collection célèbre toutes les facettes de votre élégance.",
     "about.stat1": "Cheveux naturels",
     "about.stat2": "Clientes conquises",
@@ -115,15 +115,15 @@ const I18N = {
     "footer.cgv": "Conditions Générales de Vente (CGV)",
     "footer.returns": "Politique de Retour et de Remboursement",
     "footer.privacy": "Politique de Confidentialité",
-    "footer.copy": "© 2026 Jen's & Flora. Tous droits réservés.",
+    "footer.copy": "© 2026 Jen's & Floran. Tous droits réservés.",
 
-    "page.index": "Jen's & Flora — L'Art de la Perruque de Luxe",
-    "page.maison": "La Maison — Jen's & Flora by Sa'a Mokolo",
-    "page.compte": "Mon compte — Jen's & Flora",
-    "page.confirm": "Jen's & Flora — Confirmation de commande",
-    "page.typeTitle": "Jen's & Flora — {name}",
+    "page.index": "Jen's & Floran — L'Art de la Perruque de Luxe",
+    "page.maison": "La Maison — Jen's & Floran by Sa'a Mokolo",
+    "page.compte": "Mon compte — Jen's & Floran",
+    "page.confirm": "Jen's & Floran — Confirmation de commande",
+    "page.typeTitle": "Jen's & Floran — {name}",
 
-    "maison.kicker": "La Maison Jen's & Flora",
+    "maison.kicker": "La Maison Jen's & Floran",
     "maison.title": "Nos Types de Perruques",
     "maison.desc": "Découvrez tous les styles de notre collection — de la coupe lisse aux boucles les plus glamour — ainsi que notre espace apprentissage.",
     "maison.d1": "Lisse absolu, brillance miroir et tombé impeccable.",
@@ -166,7 +166,7 @@ const I18N = {
     "avis.listTitle": "Avis de nos visiteurs",
     "avis.loading": "Chargement des avis…",
     "avis.empty": "Aucun avis pour l'instant. Soyez le premier à partager le vôtre.",
-    "avis.replyFrom": "Réponse de Jen's & Flora",
+    "avis.replyFrom": "Réponse de Jen's & Floran",
 
     "type.crumb": "La Maison",
     "type.loading": "Chargement…",
@@ -285,9 +285,9 @@ const I18N = {
     "hero.cap3": "Honigtöne und goldenes Licht für einen edlen Glanz.",
     "hero.cap4": "Glamouröse Wellen, die Ihre ganze Pracht enthüllen.",
 
-    "about.kicker": "Das Haus Jen's & Flora",
+    "about.kicker": "Das Haus Jen's & Floran",
     "about.title": "Schönheit, erhoben zur Kunst",
-    "about.p1": "Bei Jen's & Flora glauben wir, dass jede Frau es verdient, sich strahlend zu fühlen. Unsere Luxus-Perücken werden aus 100% Naturhaar gefertigt, sorgfältig ausgewählt für perfekten Sitz und unvergleichlichen Glanz.",
+    "about.p1": "Bei Jen's & Floran glauben wir, dass jede Frau es verdient, sich strahlend zu fühlen. Unsere Luxus-Perücken werden aus 100% Naturhaar gefertigt, sorgfältig ausgewählt für perfekten Sitz und unvergleichlichen Glanz.",
     "about.p2": "Vom glatten Schnitt bis zur glamourösen Welle feiert unsere Kollektion alle Facetten Ihrer Eleganz.",
     "about.stat1": "Naturhaar",
     "about.stat2": "Zufriedene Kundinnen",
@@ -346,15 +346,15 @@ const I18N = {
     "footer.cgv": "Allgemeine Geschäftsbedingungen (AGB)",
     "footer.returns": "Widerrufs- & Rückerstattungsrichtlinie",
     "footer.privacy": "Datenschutzerklärung",
-    "footer.copy": "© 2026 Jen's & Flora. Alle Rechte vorbehalten.",
+    "footer.copy": "© 2026 Jen's & Floran. Alle Rechte vorbehalten.",
 
-    "page.index": "Jen's & Flora — Die Kunst der Luxus-Perücke",
-    "page.maison": "Das Haus — Jen's & Flora by Sa'a Mokolo",
-    "page.compte": "Mein Konto — Jen's & Flora",
-    "page.confirm": "Jen's & Flora — Bestellbestätigung",
-    "page.typeTitle": "Jen's & Flora — {name}",
+    "page.index": "Jen's & Floran — Die Kunst der Luxus-Perücke",
+    "page.maison": "Das Haus — Jen's & Floran by Sa'a Mokolo",
+    "page.compte": "Mein Konto — Jen's & Floran",
+    "page.confirm": "Jen's & Floran — Bestellbestätigung",
+    "page.typeTitle": "Jen's & Floran — {name}",
 
-    "maison.kicker": "Das Haus Jen's & Flora",
+    "maison.kicker": "Das Haus Jen's & Floran",
     "maison.title": "Unsere Perücken-Typen",
     "maison.desc": "Entdecken Sie alle Stile unserer Kollektion — vom glatten Schnitt bis zu den glamourösesten Locken — sowie unseren Lernbereich.",
     "maison.d1": "Absolut glatt, spiegelnder Glanz und makelloser Fall.",
@@ -397,7 +397,7 @@ const I18N = {
     "avis.listTitle": "Meinungen unserer Besucher",
     "avis.loading": "Bewertungen werden geladen…",
     "avis.empty": "Noch keine Bewertung. Seien Sie der Erste, der die Website bewertet.",
-    "avis.replyFrom": "Antwort von Jen's & Flora",
+    "avis.replyFrom": "Antwort von Jen's & Floran",
 
     "type.crumb": "Das Haus",
     "type.loading": "Wird geladen…",
@@ -516,9 +516,9 @@ const I18N = {
     "hero.cap3": "Honey highlights and golden light for a resolutely chic glow.",
     "hero.cap4": "Glamorous waves that reveal all your splendor.",
 
-    "about.kicker": "The House of Jen's & Flora",
+    "about.kicker": "The House of Jen's & Floran",
     "about.title": "Beauty, Raised to an Art",
-    "about.p1": "At Jen's & Flora, we believe every woman deserves to feel radiant. Our luxury wigs are crafted from 100% natural hair, carefully selected for a perfect fit and incomparable shine.",
+    "about.p1": "At Jen's & Floran, we believe every woman deserves to feel radiant. Our luxury wigs are crafted from 100% natural hair, carefully selected for a perfect fit and incomparable shine.",
     "about.p2": "From sleek cuts to glamorous waves, our collection celebrates every facet of your elegance.",
     "about.stat1": "Natural hair",
     "about.stat2": "Happy clients",
@@ -577,15 +577,15 @@ const I18N = {
     "footer.cgv": "General Terms and Conditions (GTC)",
     "footer.returns": "Return & Refund Policy",
     "footer.privacy": "Privacy Policy",
-    "footer.copy": "© 2026 Jen's & Flora. All rights reserved.",
+    "footer.copy": "© 2026 Jen's & Floran. All rights reserved.",
 
-    "page.index": "Jen's & Flora — The Art of the Luxury Wig",
-    "page.maison": "The House — Jen's & Flora by Sa'a Mokolo",
-    "page.compte": "My Account — Jen's & Flora",
-    "page.confirm": "Jen's & Flora — Order Confirmation",
-    "page.typeTitle": "Jen's & Flora — {name}",
+    "page.index": "Jen's & Floran — The Art of the Luxury Wig",
+    "page.maison": "The House — Jen's & Floran by Sa'a Mokolo",
+    "page.compte": "My Account — Jen's & Floran",
+    "page.confirm": "Jen's & Floran — Order Confirmation",
+    "page.typeTitle": "Jen's & Floran — {name}",
 
-    "maison.kicker": "The House of Jen's & Flora",
+    "maison.kicker": "The House of Jen's & Floran",
     "maison.title": "Our Wig Types",
     "maison.desc": "Discover all the styles of our collection — from sleek cuts to the most glamorous curls — as well as our learning section.",
     "maison.d1": "Absolute sleekness, mirror shine and impeccable fall.",
@@ -628,7 +628,7 @@ const I18N = {
     "avis.listTitle": "Visitor reviews",
     "avis.loading": "Loading reviews…",
     "avis.empty": "No reviews yet. Be the first to share yours.",
-    "avis.replyFrom": "Reply from Jen's & Flora",
+    "avis.replyFrom": "Reply from Jen's & Floran",
 
     "type.crumb": "The House",
     "type.loading": "Loading…",

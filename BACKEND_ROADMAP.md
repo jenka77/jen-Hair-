@@ -1,4 +1,4 @@
-# Roadmap Backend — Jen's & Flora
+# Roadmap Backend — Jen's & Floran
 
 Ce document décrit les étapes pour transformer le site actuel en un vrai site de réservation/e-commerce fiable, avec backend, base de données, commandes enregistrées, stock sécurisé, paiement et espace admin.
 
@@ -162,7 +162,7 @@ SUPABASE_SERVICE_ROLE_KEY=votre_cle_secrete_supabase
 
 ADMIN_PASSWORD=mot_de_passe_admin_solide
 
-EMAIL_FROM=Jen's & Flora <contact@votre-domaine.com>
+EMAIL_FROM=Jen's & Floran <contact@votre-domaine.com>
 EMAIL_ADMIN=jenka7733@gmail.com
 RESEND_API_KEY=votre_cle_resend
 

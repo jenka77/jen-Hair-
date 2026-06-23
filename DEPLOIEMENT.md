@@ -1,4 +1,4 @@
-# Mise en ligne — Jen's & Flora
+# Mise en ligne — Jen's & Floran
 
 Ce guide explique **pas à pas** comment passer du site en local (`localhost:8000` + `localhost:4000`) à un site **accessible sur Internet** avec paiements PayPal, emails et base Supabase.
 
@@ -89,7 +89,7 @@ GitHub sert de base pour déployer automatiquement sur Vercel et Render.
 cd ~/Dokumente/jenF
 git init
 git add .
-git commit -m "Première version Jen's & Flora"
+git commit -m "Première version Jen's & Floran"
 git branch -M main
 git remote add origin https://github.com/VOTRE-USERNAME/jens-flora.git
 git push -u origin main
@@ -143,7 +143,7 @@ SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
 
 ADMIN_PASSWORD=votre_mot_de_passe_admin_fort
 
-EMAIL_FROM=Jen's & Flora <contact@shop.jens-flora.com>
+EMAIL_FROM=Jen's & Floran <contact@shop.jens-flora.com>
 EMAIL_ADMIN=votre@email.com
 RESEND_API_KEY=re_...
 
@@ -308,7 +308,7 @@ Vous utilisez déjà `contact@shop.jens-flora.com`. Dans Resend :
 Sur Render :
 
 ```text
-EMAIL_FROM=Jen's & Flora <contact@shop.jens-flora.com>
+EMAIL_FROM=Jen's & Floran <contact@shop.jens-flora.com>
 EMAIL_ADMIN=jenka7733@gmail.com
 RESEND_API_KEY=re_...
 ```
