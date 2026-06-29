@@ -69,6 +69,8 @@ const I18N = {
     "contact.map": "Voir sur la carte",
     "contact.whatsapp": "WhatsApp",
     "contact.write": "Écrire sur WhatsApp",
+    "contact.email": "E-mail",
+    "contact.writeEmail": "Nous écrire",
 
     "cart.title": "Votre Panier",
     "cart.total": "Total",
@@ -337,6 +339,8 @@ const I18N = {
     "contact.map": "Auf der Karte ansehen",
     "contact.whatsapp": "WhatsApp",
     "contact.write": "Auf WhatsApp schreiben",
+    "contact.email": "E-Mail",
+    "contact.writeEmail": "E-Mail schreiben",
 
     "cart.title": "Ihr Warenkorb",
     "cart.total": "Gesamt",
@@ -605,6 +609,8 @@ const I18N = {
     "contact.map": "View on map",
     "contact.whatsapp": "WhatsApp",
     "contact.write": "Message on WhatsApp",
+    "contact.email": "Email",
+    "contact.writeEmail": "Email us",
 
     "cart.title": "Your Cart",
     "cart.total": "Total",
