@@ -23,6 +23,7 @@ const LAND_SLUGS = [
 
 let landSelectionne = "";
 let coiffeusesCache = [];
+let fermerDropdownLand = null;
 
 function apiCoiffeuses() {
   if (typeof API_BASE_URL !== "undefined") return API_BASE_URL;
@@ -53,13 +54,149 @@ function masquerRechercheTypeCoiffeuses() {
   if (section) section.hidden = true;
 }
 
-function optionsLandHtml() {
-  const placeholder = `<option value="">${t("coiffeuses.selectState")}</option>`;
-  const options = LAND_SLUGS.map(
-    (slug) =>
-      `<option value="${slug}"${slug === landSelectionne ? " selected" : ""}>${echapperTexteCoiffeuse(libelleLand(slug))}</option>`
-  ).join("");
-  return placeholder + options;
+function libelleLandSelectionne() {
+  return landSelectionne ? libelleLand(landSelectionne) : t("coiffeuses.selectState");
+}
+
+function listeLandHtml() {
+  return LAND_SLUGS.map((slug) => {
+    const actif = slug === landSelectionne;
+    return `<li class="coiffeuses-dropdown-item${actif ? " is-selected" : ""}" role="option" aria-selected="${actif}" data-slug="${slug}">${echapperTexteCoiffeuse(libelleLand(slug))}</li>`;
+  }).join("");
+}
+
+function menuDeroulantLandHtml() {
+  return `
+    <div class="coiffeuses-dropdown" id="coiffeuses-state-dropdown">
+      <button
+        type="button"
+        class="coiffeuses-dropdown-trigger"
+        id="coiffeuses-state-trigger"
+        aria-haspopup="listbox"
+        aria-expanded="false"
+        aria-controls="coiffeuses-state-list"
+      >
+        <span class="coiffeuses-dropdown-label">${echapperTexteCoiffeuse(libelleLandSelectionne())}</span>
+        <svg class="coiffeuses-dropdown-chevron" viewBox="0 0 12 8" width="12" height="8" aria-hidden="true">
+          <path fill="currentColor" d="M1 1l5 5 5-5"></path>
+        </svg>
+      </button>
+      <ul
+        class="coiffeuses-dropdown-list"
+        id="coiffeuses-state-list"
+        role="listbox"
+        aria-label="${echapperTexteCoiffeuse(t("coiffeuses.stateLabel"))}"
+        hidden
+      >
+        ${listeLandHtml()}
+      </ul>
+    </div>`;
+}
+
+function setDropdownOuvert(ouvert) {
+  const dropdown = document.getElementById("coiffeuses-state-dropdown");
+  const trigger = document.getElementById("coiffeuses-state-trigger");
+  const list = document.getElementById("coiffeuses-state-list");
+  if (!dropdown || !trigger || !list) return;
+
+  dropdown.classList.toggle("is-open", ouvert);
+  trigger.setAttribute("aria-expanded", ouvert ? "true" : "false");
+  list.hidden = !ouvert;
+}
+
+function mettreAJourLibelleDropdown() {
+  const label = document.querySelector(".coiffeuses-dropdown-label");
+  if (label) label.textContent = libelleLandSelectionne();
+
+  document.querySelectorAll(".coiffeuses-dropdown-item").forEach((item) => {
+    const actif = item.dataset.slug === landSelectionne;
+    item.classList.toggle("is-selected", actif);
+    item.setAttribute("aria-selected", actif ? "true" : "false");
+  });
+}
+
+function attacherMenuDeroulantLand() {
+  const dropdown = document.getElementById("coiffeuses-state-dropdown");
+  const trigger = document.getElementById("coiffeuses-state-trigger");
+  const list = document.getElementById("coiffeuses-state-list");
+  if (!dropdown || !trigger || !list) return;
+
+  if (fermerDropdownLand) {
+    document.removeEventListener("click", fermerDropdownLand);
+    document.removeEventListener("keydown", fermerDropdownLand);
+  }
+
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setDropdownOuvert(!dropdown.classList.contains("is-open"));
+  });
+
+  list.addEventListener("click", (e) => {
+    const item = e.target.closest(".coiffeuses-dropdown-item");
+    if (!item?.dataset.slug) return;
+    landSelectionne = item.dataset.slug;
+    mettreAJourLibelleDropdown();
+    setDropdownOuvert(false);
+    afficherCoiffeusesLand(landSelectionne);
+  });
+
+  trigger.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setDropdownOuvert(true);
+      list.querySelector(".coiffeuses-dropdown-item")?.focus();
+    }
+  });
+
+  list.addEventListener("keydown", (e) => {
+    const items = [...list.querySelectorAll(".coiffeuses-dropdown-item")];
+    const index = items.indexOf(document.activeElement);
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setDropdownOuvert(false);
+      trigger.focus();
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const suivant = items[Math.min(index + 1, items.length - 1)];
+      suivant?.focus();
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const precedent = items[Math.max(index - 1, 0)];
+      precedent?.focus();
+      return;
+    }
+
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      const item = document.activeElement.closest(".coiffeuses-dropdown-item");
+      if (!item?.dataset.slug) return;
+      landSelectionne = item.dataset.slug;
+      mettreAJourLibelleDropdown();
+      setDropdownOuvert(false);
+      trigger.focus();
+      afficherCoiffeusesLand(landSelectionne);
+    }
+  });
+
+  list.querySelectorAll(".coiffeuses-dropdown-item").forEach((item) => {
+    item.setAttribute("tabindex", "0");
+  });
+
+  fermerDropdownLand = (e) => {
+    if (e.type === "keydown" && e.key !== "Escape") return;
+    if (e.type === "click" && dropdown.contains(e.target)) return;
+    setDropdownOuvert(false);
+  };
+
+  document.addEventListener("click", fermerDropdownLand);
+  document.addEventListener("keydown", fermerDropdownLand);
 }
 
 function carteCoiffeuse(c) {
@@ -151,12 +288,10 @@ function pageCoiffeusesHtml() {
     <section class="coiffeuses-intro account-card">
       <h2 class="coiffeuses-title">${t("coiffeuses.title")}</h2>
       <p class="coiffeuses-lead">${t("coiffeuses.lead")}</p>
-      <label class="field coiffeuses-state-field">
-        <span>${t("coiffeuses.stateLabel")}</span>
-        <select id="coiffeuses-state" class="coiffeuses-select" aria-label="${t("coiffeuses.stateLabel")}">
-          ${optionsLandHtml()}
-        </select>
-      </label>
+      <div class="field coiffeuses-state-field">
+        <span class="coiffeuses-state-label">${t("coiffeuses.stateLabel")}</span>
+        ${menuDeroulantLandHtml()}
+      </div>
     </section>
     <section class="coiffeuses-results">
       <h2 class="coiffeuses-results-title">${t("coiffeuses.resultsTitle")}</h2>
@@ -172,14 +307,15 @@ async function rendrePageCoiffeuses() {
   const grille = document.getElementById("type-grid");
   if (!grille) return;
 
+  if (fermerDropdownLand) {
+    document.removeEventListener("click", fermerDropdownLand);
+    document.removeEventListener("keydown", fermerDropdownLand);
+    fermerDropdownLand = null;
+  }
+
   grille.className = "coiffeuses-page";
   grille.innerHTML = pageCoiffeusesHtml();
-
-  const select = document.getElementById("coiffeuses-state");
-  select?.addEventListener("change", () => {
-    landSelectionne = select.value;
-    afficherCoiffeusesLand(landSelectionne);
-  });
+  attacherMenuDeroulantLand();
 
   if (landSelectionne) {
     await afficherCoiffeusesLand(landSelectionne);

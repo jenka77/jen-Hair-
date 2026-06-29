@@ -8,6 +8,9 @@ supabase/
 SUPABASE_PROTOCOL.md
 SUPABASE_STORAGE_PROTOCOL.md
 
+# Audit sécurité interne (ne pas publier)
+SECURITY_CHECKLIST.md
+
 # Dépendances
 node_modules/
 backend/node_modules/

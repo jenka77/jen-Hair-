@@ -3381,8 +3381,26 @@ img {
   max-width: 420px;
 }
 
-.coiffeuses-select {
+.coiffeuses-state-label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grey);
+  margin-bottom: 10px;
+}
+
+.coiffeuses-dropdown {
+  position: relative;
   width: 100%;
+}
+
+.coiffeuses-dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 12px 14px;
   border: 1px solid rgba(201, 169, 98, 0.28);
   border-radius: 12px;
@@ -3391,30 +3409,70 @@ img {
   font-family: var(--sans);
   font-size: 0.95rem;
   cursor: pointer;
-  color-scheme: dark;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffffff' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  padding-right: 40px;
+  text-align: left;
 }
 
-.coiffeuses-select option {
-  background-color: #000;
-  color: #fff;
-}
-
-.coiffeuses-select option:checked,
-.coiffeuses-select option:hover,
-.coiffeuses-select option:focus {
-  background-color: #1a1a1a;
-  color: #fff;
-}
-
-.coiffeuses-select:focus {
+.coiffeuses-dropdown-trigger:focus-visible {
   outline: 2px solid rgba(201, 162, 75, 0.45);
   outline-offset: 2px;
+}
+
+.coiffeuses-dropdown-label {
+  flex: 1;
+  color: #fff;
+}
+
+.coiffeuses-dropdown-chevron {
+  flex-shrink: 0;
+  color: #fff;
+  transition: transform 0.2s ease;
+}
+
+.coiffeuses-dropdown.is-open .coiffeuses-dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+.coiffeuses-dropdown-list {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: min(320px, 50vh);
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  overflow-y: auto;
+  border: 1px solid rgba(201, 169, 98, 0.35);
+  border-radius: 12px;
+  background-color: #000;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+}
+
+.coiffeuses-dropdown-list[hidden] {
+  display: none !important;
+}
+
+.coiffeuses-dropdown-item {
+  padding: 12px 16px;
+  color: #fff;
+  background-color: #000;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  transition: background-color 0.15s ease;
+}
+
+.coiffeuses-dropdown-item:hover,
+.coiffeuses-dropdown-item:focus {
+  background-color: #1a1a1a;
+  color: #fff;
+  outline: none;
+}
+
+.coiffeuses-dropdown-item.is-selected {
+  background-color: #141414;
+  color: var(--gold-light);
 }
 
 .coiffeuses-list {
