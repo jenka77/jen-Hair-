@@ -3386,11 +3386,30 @@ img {
   padding: 12px 14px;
   border: 1px solid rgba(201, 169, 98, 0.28);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background-color: #000;
   color: #fff;
   font-family: var(--sans);
   font-size: 0.95rem;
   cursor: pointer;
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffffff' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+}
+
+.coiffeuses-select option {
+  background-color: #000;
+  color: #fff;
+}
+
+.coiffeuses-select option:checked,
+.coiffeuses-select option:hover,
+.coiffeuses-select option:focus {
+  background-color: #1a1a1a;
+  color: #fff;
 }
 
 .coiffeuses-select:focus {
