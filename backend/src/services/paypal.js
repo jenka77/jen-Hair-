@@ -131,6 +131,34 @@ async function creerOrdrePaypal({
   };
 }
 
+async function lireOrdrePaypal(paypalOrderId) {
+  const token = await obtenirAccessTokenPaypal();
+
+  const response = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${paypalOrderId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Impossible de lire l'ordre PayPal");
+  }
+
+  return data;
+}
+
+function verifierLiaisonPaypal(paypalOrder, orderId) {
+  const unit = paypalOrder.purchase_units?.[0];
+  const customId = String(unit?.custom_id || unit?.reference_id || "").trim();
+  if (customId !== orderId) {
+    const err = new Error("Le paiement PayPal ne correspond pas à cette commande");
+    err.status = 409;
+    throw err;
+  }
+}
+
 async function capturerOrdrePaypal(paypalOrderId) {
   const token = await obtenirAccessTokenPaypal();
 
@@ -170,6 +198,8 @@ function extraireMontantCapture(captureData) {
 
 module.exports = {
   creerOrdrePaypal,
+  lireOrdrePaypal,
+  verifierLiaisonPaypal,
   capturerOrdrePaypal,
   extraireMontantCapture,
   normaliserReturnPath,

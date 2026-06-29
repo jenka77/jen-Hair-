@@ -6,6 +6,8 @@ const { authObligatoire } = require("../middleware/auth");
 const { envoyerEmailsCommande } = require("../services/email");
 const {
   creerOrdrePaypal,
+  lireOrdrePaypal,
+  verifierLiaisonPaypal,
   capturerOrdrePaypal,
   extraireMontantCapture,
 } = require("../services/paypal");
@@ -146,7 +148,7 @@ async function decrementerStock(lignes) {
 async function chargerCommandeAvecItems(orderId) {
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, customer_name, customer_contact, pickup_mode, delivery_address, total_amount, status, created_at")
+    .select("id, user_id, customer_name, customer_contact, pickup_mode, delivery_address, total_amount, status, created_at")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -249,7 +251,7 @@ router.post("/paypal/create-order", authObligatoire, async (req, res, next) => {
   }
 });
 
-router.post("/paypal/capture-order", async (req, res, next) => {
+router.post("/paypal/capture-order", authObligatoire, async (req, res, next) => {
   try {
     const validation = capturePaypalOrderSchema.safeParse(req.body);
     if (!validation.success) {
@@ -261,6 +263,13 @@ router.post("/paypal/capture-order", async (req, res, next) => {
 
     const { orderId, paypalOrderId } = validation.data;
     const { order, items } = await chargerCommandeAvecItems(orderId);
+
+    if (order.user_id && order.user_id !== req.user.id) {
+      return res.status(403).json({ error: "Cette commande ne vous appartient pas" });
+    }
+
+    const paypalOrder = await lireOrdrePaypal(paypalOrderId);
+    verifierLiaisonPaypal(paypalOrder, orderId);
 
     if (order.status === "paid") {
       return res.json({

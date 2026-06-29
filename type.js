@@ -15,6 +15,7 @@ const TYPES = new Set([
   "extensions",
   "entretien",
   "apprentissage",
+  "accessoires",
   "commentaires",
 ]);
 

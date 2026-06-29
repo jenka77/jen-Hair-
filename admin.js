@@ -10,9 +10,15 @@ const STATUTS = [
   { value: "preparing", label: "En préparation" },
   { value: "ready", label: "Prête (retrait)" },
   { value: "delivered", label: "Livrée" },
-  { value: "accepted", label: "Confirmée" },
   { value: "cancelled", label: "Annulée" },
 ];
+
+const TRANSITIONS_STATUT = {
+  pending_payment: ["cancelled"],
+  paid: ["preparing", "cancelled"],
+  preparing: ["ready", "delivered", "cancelled"],
+  ready: ["delivered", "cancelled"],
+};
 
 let commandesCache = [];
 let avisCache = [];
@@ -106,10 +112,13 @@ function extraireTelephone(contact) {
 }
 
 function optionsStatut(valeurActuelle) {
-  return STATUTS.map(
-    (s) =>
-      `<option value="${s.value}"${s.value === valeurActuelle ? " selected" : ""}>${s.label}</option>`
-  ).join("");
+  const modifiables = new Set([valeurActuelle, ...(TRANSITIONS_STATUT[valeurActuelle] || [])]);
+  return STATUTS.filter((s) => modifiables.has(s.value))
+    .map(
+      (s) =>
+        `<option value="${s.value}"${s.value === valeurActuelle ? " selected" : ""}>${s.label}</option>`
+    )
+    .join("");
 }
 
 function afficherCommandes(orders) {

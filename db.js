@@ -223,9 +223,19 @@ async function enregistrerCommandeBase(params, lignes) {
 }
 
 async function capturerCommandePaypal(orderId, paypalOrderId) {
+  const token = typeof obtenirTokenAuth === "function" ? await obtenirTokenAuth() : null;
+  if (!token) {
+    throw new Error(
+      typeof t === "function" ? t("order.loginRequired") : "Connexion requise pour confirmer le paiement"
+    );
+  }
+
   const reponse = await fetch(`${API_BASE_URL}/api/paypal/capture-order`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     cache: "no-store",
     body: JSON.stringify({ orderId, paypalOrderId }),
   });

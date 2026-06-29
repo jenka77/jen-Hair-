@@ -13,8 +13,11 @@ const TYPES_MENU_FALLBACK = [
   { slug: "extensions", name: "Extensions" },
   { slug: "entretien", name: "Entretien" },
   { slug: "apprentissage", name: "Apprentissage" },
+  { slug: "accessoires", name: "Accessoires" },
   { slug: "commentaires", name: "Vos avis" },
 ];
+
+const PAGES_SPECIALES_MENU = [{ slug: "commentaires", name: "Vos avis" }];
 
 function cheminTypeCatalogue(slug) {
   const sousDossierLangue = /\/(fr|de|en)\//.test(window.location.pathname);
@@ -33,6 +36,10 @@ async function chargerCategoriesMenu() {
     const liste = (data.categories || [])
       .filter((c) => c.slug && c.name)
       .map((c) => ({ slug: c.slug, name: c.name }));
+    const slugs = new Set(liste.map((c) => c.slug));
+    PAGES_SPECIALES_MENU.forEach((page) => {
+      if (!slugs.has(page.slug)) liste.push(page);
+    });
     return liste.length ? liste : TYPES_MENU_FALLBACK;
   } catch {
     return TYPES_MENU_FALLBACK;
