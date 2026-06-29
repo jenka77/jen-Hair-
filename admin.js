@@ -265,6 +265,16 @@ function afficherAvisAdmin(reviews) {
         <span class="status-badge admin-status-badge ${avis.isPublished ? "paid" : "cancelled"}">${avis.isPublished ? "Publié" : "Masqué"}</span>
       </div>
       <blockquote class="admin-review-quote">${echapperHtml(avis.comment)}</blockquote>
+      ${
+        Array.isArray(avis.imageUrls) && avis.imageUrls.length
+          ? `<div class="admin-review-photos">${avis.imageUrls
+              .map(
+                (url) =>
+                  `<a href="${echapperHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${echapperHtml(url)}" alt="" loading="lazy" /></a>`
+              )
+              .join("")}</div>`
+          : ""
+      }
       <label class="field admin-reply-field">
         <span>Votre réponse (Jen's &amp; Floran)</span>
         <textarea class="admin-reply-input" data-review-id="${avis.id}" rows="4" maxlength="2000" placeholder="Merci pour votre retour…">${echapperHtml(avis.adminReply || "")}</textarea>

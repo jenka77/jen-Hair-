@@ -4,6 +4,11 @@
 
 let noteSelectionnee = 0;
 let avisCache = [];
+let fichiersPhotosAvis = [];
+
+const AVIS_PHOTOS_MAX = 2;
+const AVIS_PHOTO_TAILLE_MAX = 5 * 1024 * 1024;
+const AVIS_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 function apiAvis() {
   if (typeof API_BASE_URL !== "undefined") return API_BASE_URL;
@@ -75,6 +80,14 @@ function formulaireAvisHtml() {
           <span>${t("avis.comment")}</span>
           <textarea id="avis-comment" name="comment" rows="5" maxlength="2000" required placeholder="${t("avis.commentPlaceholder")}"></textarea>
         </label>
+        <fieldset class="avis-photos-field">
+          <legend>${t("avis.photos")}</legend>
+          <p class="avis-photos-hint">${t("avis.photosHint")}</p>
+          <p class="avis-photos-login" id="avis-photos-login" hidden>${t("avis.photosLoginRequired")}</p>
+          <input type="file" id="avis-photos" class="avis-photos-input" accept="image/jpeg,image/png,image/webp" multiple disabled />
+          <p class="avis-photos-count" id="avis-photos-count" hidden></p>
+          <div class="avis-photos-preview" id="avis-photos-preview"></div>
+        </fieldset>
         <button type="submit" class="btn-order account-submit" id="avis-submit">${t("avis.submit")}</button>
         <p id="avis-form-message" class="account-message" hidden></p>
       </form>
@@ -86,6 +99,160 @@ function echapperTexteAvis(texte) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+function echapperAttributAvis(texte) {
+  return String(texte ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;");
+}
+
+function blocPhotosAvis(avis) {
+  const urls = Array.isArray(avis.imageUrls) ? avis.imageUrls.filter(Boolean) : [];
+  if (!urls.length) return "";
+
+  const vignettes = urls
+    .map(
+      (url) =>
+        `<a href="${echapperAttributAvis(url)}" class="avis-photo-link" target="_blank" rel="noopener noreferrer">
+          <img src="${echapperAttributAvis(url)}" alt="" loading="lazy" class="avis-photo" />
+        </a>`
+    )
+    .join("");
+
+  return `<div class="avis-photos">${vignettes}</div>`;
+}
+
+function extensionPhotoAvis(fichier) {
+  const ext = String(fichier.name || "").split(".").pop()?.toLowerCase() || "jpg";
+  if (ext === "jpeg" || ext === "jpg") return "jpg";
+  if (ext === "png") return "png";
+  if (ext === "webp") return "webp";
+  return "jpg";
+}
+
+function validerFichiersPhotosAvis(fichiers) {
+  if (!fichiers.length) return [];
+
+  if (fichiers.length > AVIS_PHOTOS_MAX) {
+    throw new Error(t("avis.photosTooMany"));
+  }
+
+  fichiers.forEach((fichier) => {
+    if (!AVIS_PHOTO_TYPES.includes(fichier.type)) {
+      throw new Error(t("avis.photosInvalidType"));
+    }
+    if (fichier.size > AVIS_PHOTO_TAILLE_MAX) {
+      throw new Error(t("avis.photosTooLarge"));
+    }
+  });
+
+  return fichiers.slice(0, AVIS_PHOTOS_MAX);
+}
+
+function rendreApercuPhotosAvis() {
+  const preview = document.getElementById("avis-photos-preview");
+  const countEl = document.getElementById("avis-photos-count");
+  if (!preview) return;
+
+  preview.querySelectorAll("img[src^='blob:']").forEach((img) => {
+    URL.revokeObjectURL(img.src);
+  });
+
+  if (!fichiersPhotosAvis.length) {
+    preview.innerHTML = "";
+    if (countEl) countEl.hidden = true;
+    return;
+  }
+
+  preview.innerHTML = fichiersPhotosAvis
+    .map(
+      (fichier, index) =>
+        `<figure class="avis-photo-preview">
+          <img src="${URL.createObjectURL(fichier)}" alt="" />
+          <button type="button" class="avis-photo-remove" data-photo-index="${index}" aria-label="${t("avis.photosRemove")}">×</button>
+        </figure>`
+    )
+    .join("");
+
+  if (countEl) {
+    countEl.hidden = false;
+    countEl.textContent = t("avis.photosSelected", { n: fichiersPhotosAvis.length, max: AVIS_PHOTOS_MAX });
+  }
+}
+
+function reinitialiserPhotosAvis() {
+  fichiersPhotosAvis = [];
+  const input = document.getElementById("avis-photos");
+  if (input) input.value = "";
+  rendreApercuPhotosAvis();
+}
+
+async function uploaderPhotosAvis(fichiers, userId) {
+  const client = typeof window.clientSupabase !== "undefined" ? window.clientSupabase : null;
+  if (!client) throw new Error(t("avis.photosUnavailable"));
+
+  const urls = [];
+  for (const fichier of fichiers) {
+    const ext = extensionPhotoAvis(fichier);
+    const chemin = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`;
+    const { error } = await client.storage.from("review-images").upload(chemin, fichier, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: fichier.type,
+    });
+    if (error) throw new Error(error.message);
+
+    const { data } = client.storage.from("review-images").getPublicUrl(chemin);
+    if (data?.publicUrl) urls.push(data.publicUrl);
+  }
+
+  return urls;
+}
+
+function mettreAJourSectionPhotosAvis(user) {
+  const loginMsg = document.getElementById("avis-photos-login");
+  const input = document.getElementById("avis-photos");
+  if (!loginMsg || !input) return;
+
+  if (user) {
+    loginMsg.hidden = true;
+    input.disabled = false;
+  } else {
+    loginMsg.hidden = false;
+    input.disabled = true;
+    reinitialiserPhotosAvis();
+  }
+}
+
+function attacherUploadPhotosAvis() {
+  const input = document.getElementById("avis-photos");
+  const preview = document.getElementById("avis-photos-preview");
+  if (!input) return;
+
+  input.addEventListener("change", () => {
+    afficherMessageAvis("");
+    try {
+      const fichiers = validerFichiersPhotosAvis([...input.files]);
+      fichiersPhotosAvis = fichiers;
+      rendreApercuPhotosAvis();
+    } catch (err) {
+      reinitialiserPhotosAvis();
+      afficherMessageAvis(err.message, "error");
+    }
+  });
+
+  preview?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".avis-photo-remove");
+    if (!btn) return;
+    const index = Number(btn.dataset.photoIndex);
+    if (Number.isNaN(index)) return;
+    fichiersPhotosAvis = fichiersPhotosAvis.filter((_, i) => i !== index);
+    input.value = "";
+    rendreApercuPhotosAvis();
+  });
 }
 
 function blocReponseAvis(avis) {
@@ -115,6 +282,7 @@ function listeAvisHtml(reviews) {
         ${etoilesHtml(avis.rating)}
       </div>
       <p class="avis-text">${echapperTexteAvis(avis.comment)}</p>
+      ${blocPhotosAvis(avis)}
       ${blocReponseAvis(avis)}
     </article>`
     )
@@ -130,19 +298,22 @@ async function chargerAvisPublics() {
 
 async function preremplirNomAvis() {
   const input = document.getElementById("avis-name");
-  if (!input) return;
+  let user = null;
 
   if (typeof obtenirUtilisateur === "function") {
-    const user = await obtenirUtilisateur();
-    if (user?.email) {
-      const nom =
-        user.user_metadata?.full_name ||
-        user.user_metadata?.name ||
-        user.email.split("@")[0];
-      input.value = nom;
-      input.placeholder = nom;
-    }
+    user = await obtenirUtilisateur();
   }
+
+  mettreAJourSectionPhotosAvis(user);
+
+  if (!input || !user?.email) return;
+
+  const nom =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    user.email.split("@")[0];
+  input.value = nom;
+  input.placeholder = nom;
 }
 
 function attacherEtoiles() {
@@ -200,20 +371,33 @@ async function soumettreAvis(e) {
   }
 
   try {
+    let imageUrls = [];
+    if (fichiersPhotosAvis.length) {
+      if (!userConnecte) {
+        afficherMessageAvis(t("avis.photosLoginRequired"), "error");
+        return;
+      }
+      if (submitBtn) submitBtn.textContent = t("avis.uploadingPhotos");
+      imageUrls = await uploaderPhotosAvis(fichiersPhotosAvis, userConnecte.id);
+    }
+
     const headers = { "Content-Type": "application/json" };
     if (typeof obtenirTokenAuth === "function") {
       const token = await obtenirTokenAuth();
       if (token) headers.Authorization = `Bearer ${token}`;
     }
 
+    const payload = {
+      authorName: authorName || undefined,
+      rating: noteSelectionnee,
+      comment,
+    };
+    if (imageUrls.length) payload.imageUrls = imageUrls;
+
     const reponse = await fetch(`${apiAvis()}/api/reviews`, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        authorName: authorName || undefined,
-        rating: noteSelectionnee,
-        comment,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await reponse.json().catch(() => ({}));
@@ -221,6 +405,7 @@ async function soumettreAvis(e) {
 
     avisCache = [data.review, ...avisCache];
     document.getElementById("avis-form")?.reset();
+    reinitialiserPhotosAvis();
     noteSelectionnee = 0;
     const stars = document.getElementById("avis-stars-input");
     if (stars) stars.innerHTML = etoilesHtml(0, true);
@@ -259,6 +444,7 @@ async function rendrePageCommentaires() {
     </section>`;
 
   attacherEtoiles();
+  attacherUploadPhotosAvis();
   document.getElementById("avis-form")?.addEventListener("submit", soumettreAvis);
   await preremplirNomAvis();
 

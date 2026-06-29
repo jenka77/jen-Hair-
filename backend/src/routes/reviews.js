@@ -6,15 +6,17 @@ const { authOptionnelle } = require("../middleware/auth");
 const router = express.Router();
 
 const COLS_BASE =
-  "id, author_name, rating, comment, created_at";
+  "id, author_name, rating, comment, image_url_1, image_url_2, created_at";
+const COLS_BASE_LEGACY = "id, author_name, rating, comment, created_at";
 const COLS_REPLY = "admin_reply, replied_at, reply_visible";
 const COLS_PUBLIC = `${COLS_BASE}, ${COLS_REPLY}`;
-const COLS_ADMIN = `id, author_name, author_email, rating, comment, created_at, ${COLS_REPLY}, is_published`;
+const COLS_ADMIN = `id, author_name, author_email, rating, comment, image_url_1, image_url_2, created_at, ${COLS_REPLY}, is_published`;
 
 const avisSchema = z.object({
   authorName: z.string().trim().min(2).max(80).optional(),
   rating: z.coerce.number().int().min(1).max(5),
   comment: z.string().trim().min(10).max(2000),
+  imageUrls: z.array(z.string().trim().url().max(500)).max(2).optional(),
 });
 
 const avisAdminSchema = z.object({
@@ -30,6 +32,53 @@ function colonnesReponseManquantes(error) {
     msg.includes("replied_at") ||
     msg.includes("reply_visible")
   );
+}
+
+function colonnesImagesManquantes(error) {
+  const msg = String(error?.message || error?.details || "").toLowerCase();
+  return msg.includes("image_url_1") || msg.includes("image_url_2");
+}
+
+function prefixeStockageAvisUtilisateur(userId) {
+  const base = String(process.env.SUPABASE_URL || "").replace(/\/$/, "");
+  if (!base || !userId) return null;
+  return `${base}/storage/v1/object/public/review-images/${userId}/`;
+}
+
+function validerUrlsImagesAvis(urls, userId) {
+  if (!urls?.length) return [];
+
+  if (!userId) {
+    const err = new Error("Connexion requise pour joindre des photos à votre avis.");
+    err.status = 401;
+    throw err;
+  }
+
+  const prefixe = prefixeStockageAvisUtilisateur(userId);
+  if (!prefixe) {
+    const err = new Error("Configuration stockage avis indisponible.");
+    err.status = 500;
+    throw err;
+  }
+
+  const uniques = [];
+  urls.forEach((url) => {
+    const nettoyee = String(url || "").trim();
+    if (!nettoyee.startsWith("https://") || !nettoyee.startsWith(prefixe)) {
+      const err = new Error("URL d'image avis invalide ou non autorisée.");
+      err.status = 400;
+      throw err;
+    }
+    if (!uniques.includes(nettoyee)) uniques.push(nettoyee);
+  });
+
+  return uniques.slice(0, 2);
+}
+
+function urlsImagesDepuisRow(row) {
+  return [row.image_url_1, row.image_url_2]
+    .map((url) => String(url || "").trim())
+    .filter(Boolean);
 }
 
 function verifierAdmin(req, res) {
@@ -55,6 +104,7 @@ function normaliserAvis(row, { publicView = false } = {}) {
     authorName: row.author_name,
     rating: Number(row.rating) || 0,
     comment: row.comment,
+    imageUrls: urlsImagesDepuisRow(row),
     createdAt: row.created_at,
     adminReply: showReply ? adminReply : null,
     repliedAt: showReply && row.replied_at ? row.replied_at : null,
@@ -69,19 +119,35 @@ function normaliserAvis(row, { publicView = false } = {}) {
 }
 
 async function selectionnerAvisPublics() {
-  let requete = supabase
+  let { data, error } = await supabase
     .from("site_reviews")
     .select(COLS_PUBLIC)
     .eq("is_published", true)
     .order("created_at", { ascending: false })
     .limit(100);
 
-  let { data, error } = await requete;
+  if (error && colonnesImagesManquantes(error)) {
+    ({ data, error } = await supabase
+      .from("site_reviews")
+      .select(`${COLS_BASE_LEGACY}, ${COLS_REPLY}`)
+      .eq("is_published", true)
+      .order("created_at", { ascending: false })
+      .limit(100));
+  }
 
   if (error && colonnesReponseManquantes(error)) {
     ({ data, error } = await supabase
       .from("site_reviews")
       .select(COLS_BASE)
+      .eq("is_published", true)
+      .order("created_at", { ascending: false })
+      .limit(100));
+  }
+
+  if (error && colonnesImagesManquantes(error)) {
+    ({ data, error } = await supabase
+      .from("site_reviews")
+      .select(COLS_BASE_LEGACY)
       .eq("is_published", true)
       .order("created_at", { ascending: false })
       .limit(100));
@@ -98,7 +164,7 @@ async function selectionnerAvisAdmin() {
     .order("created_at", { ascending: false })
     .limit(200);
 
-  if (error && colonnesReponseManquantes(error)) {
+  if (error && (colonnesImagesManquantes(error) || colonnesReponseManquantes(error))) {
     ({ data, error } = await supabase
       .from("site_reviews")
       .select("id, author_name, author_email, rating, comment, created_at, is_published")
@@ -151,18 +217,34 @@ router.post("/reviews", authOptionnelle, async (req, res, next) => {
       });
     }
 
-    const { data, error } = await supabase
+    const imageUrls = validerUrlsImagesAvis(validation.data.imageUrls, userId);
+
+    const payload = {
+      author_name: authorName.trim(),
+      author_email: authorEmail,
+      user_id: userId,
+      rating,
+      comment: comment.trim(),
+      is_published: true,
+      image_url_1: imageUrls[0] || null,
+      image_url_2: imageUrls[1] || null,
+    };
+
+    let { data, error } = await supabase
       .from("site_reviews")
-      .insert({
-        author_name: authorName.trim(),
-        author_email: authorEmail,
-        user_id: userId,
-        rating,
-        comment: comment.trim(),
-        is_published: true,
-      })
+      .insert(payload)
       .select(COLS_BASE)
       .single();
+
+    if (error && colonnesImagesManquantes(error)) {
+      delete payload.image_url_1;
+      delete payload.image_url_2;
+      ({ data, error } = await supabase
+        .from("site_reviews")
+        .insert(payload)
+        .select(COLS_BASE_LEGACY)
+        .single());
+    }
 
     if (error) throw error;
     res.status(201).json({ review: normaliserAvis(data, { publicView: true }) });
