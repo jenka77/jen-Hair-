@@ -98,6 +98,12 @@ async function mettreAJourMotDePasse(password) {
   const client = clientAuth();
   if (!client) throw new Error("Authentification indisponible");
 
+  const session = sessionCourante || (await obtenirSession());
+  if (!session) {
+    const err = new Error("AUTH_SESSION_MISSING");
+    throw err;
+  }
+
   const { data, error } = await client.auth.updateUser({ password });
   if (error) throw error;
 

@@ -61,7 +61,9 @@ const clientSupabase = baseConfiguree()
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        flowType: "pkce",
+        // implicit : les liens e-mail (confirmation, mot de passe oublié) fonctionnent
+        // même ouverts depuis l'app Mail sur mobile (PKCE exige le même navigateur).
+        flowType: "implicit",
       },
     })
   : null;

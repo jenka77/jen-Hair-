@@ -37,6 +37,11 @@ function afficherMode(mode) {
   if (registerForm) registerForm.hidden = mode !== "register";
   if (forgotForm) forgotForm.hidden = mode !== "forgot";
   if (recoveryForm) recoveryForm.hidden = mode !== "recovery";
+
+  if (mode === "recovery" || mode === "forgot") {
+    masquerRenvoiConfirmation();
+    masquerCompteExistant();
+  }
 }
 
 let emailEnAttenteConfirmation = "";
@@ -218,7 +223,11 @@ async function finaliserRetourAuthEmail() {
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   const erreurUrl = lireErreurAuthUrl();
   const typeHash = hashParams.get("type");
-  const modeRecovery = params.get("mode") === "recovery" || typeHash === "recovery";
+  const typeQuery = params.get("type");
+  const modeRecovery =
+    params.get("mode") === "recovery" ||
+    typeHash === "recovery" ||
+    typeQuery === "recovery";
 
   if (erreurUrl) {
     afficherMessage(messageErreurAuthUrl(erreurUrl), "error");
@@ -226,8 +235,12 @@ async function finaliserRetourAuthEmail() {
     return;
   }
 
-  if (params.has("code")) {
-    const { error } = await client.auth.exchangeCodeForSession(params.get("code"));
+  const tokenHash = params.get("token_hash") || hashParams.get("token_hash");
+  if (tokenHash) {
+    const { error } = await client.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: modeRecovery ? "recovery" : "signup",
+    });
     if (error) {
       afficherMessage(
         traduireErreurAuth(error.message, modeRecovery ? "auth.recoveryError" : "auth.confirmError"),
@@ -242,15 +255,53 @@ async function finaliserRetourAuthEmail() {
     } else if (typeof afficherToast === "function") {
       afficherToast(t("auth.loginSuccess"));
     }
-  } else if (hashParams.has("access_token") || hashParams.has("type")) {
-    await client.auth.getSession();
-    if (typeHash === "recovery" && typeof activerModeReinitialisationMotDePasse === "function") {
-      activerModeReinitialisationMotDePasse();
+    nettoyerParamsAuthUrl();
+    return;
+  }
+
+  const aUnRetourAuth =
+    params.has("code") ||
+    hashParams.has("access_token") ||
+    hashParams.has("type") ||
+    typeQuery;
+
+  if (!aUnRetourAuth) return;
+
+  if (params.has("code")) {
+    const { error } = await client.auth.exchangeCodeForSession(params.get("code"));
+    if (error) {
+      afficherMessage(
+        traduireErreurAuth(error.message, modeRecovery ? "auth.recoveryError" : "auth.confirmError"),
+        "error"
+      );
+      if (modeRecovery) {
+        basculerVersMode("forgot");
+      }
+    } else if (modeRecovery) {
+      if (typeof activerModeReinitialisationMotDePasse === "function") {
+        activerModeReinitialisationMotDePasse();
+      }
       afficherMode("recovery");
       definirModeUrl("recovery");
+    } else if (typeof afficherToast === "function") {
+      afficherToast(t("auth.loginSuccess"));
     }
   } else {
-    return;
+    const { data, error } = await client.auth.getSession();
+    if (error) {
+      afficherMessage(traduireErreurAuth(error.message), "error");
+    } else if (modeRecovery && data.session) {
+      if (typeof activerModeReinitialisationMotDePasse === "function") {
+        activerModeReinitialisationMotDePasse();
+      }
+      afficherMode("recovery");
+      definirModeUrl("recovery");
+    } else if (!modeRecovery && data.session && typeof afficherToast === "function") {
+      afficherToast(t("auth.loginSuccess"));
+    } else if (modeRecovery && !data.session) {
+      afficherMessage(t("auth.recoveryLinkInvalid"), "error");
+      basculerVersMode("forgot");
+    }
   }
 
   nettoyerParamsAuthUrl();
@@ -261,6 +312,12 @@ function traduireErreurAuth(message, fallbackKey = "auth.registerError") {
   const msg = brut.toLowerCase();
   if (brut === "EMAIL_ALREADY_REGISTERED") {
     return t("auth.emailAlreadyRegistered");
+  }
+  if (brut === "AUTH_SESSION_MISSING") {
+    return t("auth.recoveryLinkInvalid");
+  }
+  if (msg.includes("pkce code verifier") || msg.includes("auth session missing")) {
+    return t("auth.recoveryLinkInvalid");
   }
   if (msg.includes("rate limit") || msg.includes("over_email_send")) {
     return t("auth.rateLimit");
