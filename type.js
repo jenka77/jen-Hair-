@@ -222,7 +222,7 @@ function carteProduit(p) {
     <article class="product-card">
       <div class="${classesMedia}" data-media-index="0" data-images="${encodeURIComponent(JSON.stringify(images))}">
         ${badge}
-        <img class="media-photo" src="${urlMedia(images[0])}" alt="${echapperHtml(p.nom)}" />
+        <img class="media-photo" src="${urlMedia(images[0])}" alt="${echapperHtml(p.nom)}"${nombreSlidesMedia(p) > 1 ? ' role="button" tabindex="0" title="Photo suivante"' : ""} />
         ${flechesMedia(p)}
       </div>
       <div class="product-body">
@@ -522,6 +522,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  document.getElementById("type-grid")?.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const photo = e.target.closest(".media-photo");
+    if (!photo) return;
+    const media = photo.closest(".product-media");
+    if (!media?.classList.contains("has-media-cycle")) return;
+    e.preventDefault();
+    cycleMedia(media);
+  });
+
   charger();
 
   // Re-render des cartes au changement de langue
@@ -531,6 +541,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (toggle) {
       cycleMedia(toggle.closest(".product-media"));
       return;
+    }
+
+    const photo = e.target.closest(".media-photo");
+    if (photo) {
+      const media = photo.closest(".product-media");
+      if (media?.classList.contains("has-media-cycle")) {
+        cycleMedia(media);
+        return;
+      }
     }
 
     // Ajout au panier
