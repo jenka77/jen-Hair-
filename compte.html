@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260623" />
+  <link rel="stylesheet" href="style.css?v=20260629" />
 </head>
 <body data-i18n-doc-title="page.compte">
 
@@ -59,6 +59,36 @@
           <input type="password" name="password" required minlength="6" autocomplete="current-password" />
         </label>
         <button type="submit" class="btn-order account-submit" data-i18n="nav.login">Se connecter</button>
+        <p class="account-form-extra">
+          <button type="button" id="btn-show-forgot" class="account-link-btn" data-i18n="auth.forgotPassword">Mot de passe oublié ?</button>
+        </p>
+      </form>
+
+      <form id="form-forgot" class="account-form" hidden autocomplete="on">
+        <h1 class="account-title" data-i18n="auth.forgotTitle">Mot de passe oublié</h1>
+        <p class="account-lead" data-i18n="auth.forgotLead">Indiquez votre adresse e-mail. Nous vous enverrons un lien pour choisir un nouveau mot de passe.</p>
+        <label class="field">
+          <span data-i18n="auth.email">Adresse e-mail</span>
+          <input type="email" name="email" required autocomplete="email" />
+        </label>
+        <button type="submit" class="btn-order account-submit" data-i18n="auth.forgotSubmit">Envoyer le lien</button>
+        <p class="account-form-extra">
+          <button type="button" class="account-link-btn account-back-login" data-i18n="auth.backToLogin">Retour à la connexion</button>
+        </p>
+      </form>
+
+      <form id="form-recovery" class="account-form" hidden autocomplete="on">
+        <h1 class="account-title" data-i18n="auth.recoveryTitle">Nouveau mot de passe</h1>
+        <p class="account-lead" data-i18n="auth.recoveryLead">Choisissez un nouveau mot de passe pour votre compte.</p>
+        <label class="field">
+          <span data-i18n="auth.password">Mot de passe</span>
+          <input type="password" name="password" required minlength="6" autocomplete="new-password" />
+        </label>
+        <label class="field">
+          <span data-i18n="auth.passwordConfirm">Confirmer le mot de passe</span>
+          <input type="password" name="passwordConfirm" required minlength="6" autocomplete="new-password" />
+        </label>
+        <button type="submit" class="btn-order account-submit" data-i18n="auth.recoverySubmit">Enregistrer le mot de passe</button>
       </form>
 
       <form id="form-register" class="account-form" hidden autocomplete="on">
@@ -80,6 +110,14 @@
       </form>
 
       <p id="account-message" class="account-message" role="status" hidden></p>
+      <div id="account-resend-wrap" class="account-resend" hidden>
+        <p class="account-resend-hint" data-i18n="auth.confirmEmailHint">Vérifiez aussi votre dossier spam ou courrier indésirable. L'e-mail peut mettre quelques minutes à arriver.</p>
+        <button type="button" id="btn-resend-confirm" class="auth-btn auth-btn--outline" data-i18n="auth.resendConfirm">Renvoyer l'e-mail de confirmation</button>
+      </div>
+      <div id="account-exists-wrap" class="account-resend" hidden>
+        <button type="button" id="btn-go-forgot" class="auth-btn auth-btn--outline" data-i18n="auth.forgotPassword">Mot de passe oublié ?</button>
+        <button type="button" id="btn-go-login" class="auth-btn auth-btn--outline" data-i18n="auth.backToLogin">Retour à la connexion</button>
+      </div>
     </section>
 
     <section class="account-card" id="account-user" hidden>

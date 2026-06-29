@@ -4,6 +4,7 @@
    ============================================================ */
 
 let sessionCourante = null;
+let enReinitialisationMotDePasse = false;
 
 function clientAuth() {
   return typeof window.clientSupabase !== "undefined" ? window.clientSupabase : null;
@@ -41,6 +42,22 @@ function urlRetourAuthApresEmail() {
   return url.href;
 }
 
+function urlRetourReinitialisationMotDePasse() {
+  const origine =
+    typeof urlSiteCanonique === "function" ? urlSiteCanonique() : window.location.origin;
+  const url = new URL("compte.html", `${origine.replace(/\/$/, "")}/`);
+  url.searchParams.set("mode", "recovery");
+  const retour = new URLSearchParams(window.location.search).get("return");
+  if (retour) url.searchParams.set("return", retour);
+  return url.href;
+}
+
+function emailDejaUtilise(data) {
+  const user = data?.user;
+  if (!user) return false;
+  return !Array.isArray(user.identities) || user.identities.length === 0;
+}
+
 async function inscrireClient(email, password) {
   const client = clientAuth();
   if (!client) throw new Error("Authentification indisponible");
@@ -54,8 +71,70 @@ async function inscrireClient(email, password) {
   });
 
   if (error) throw error;
+  if (emailDejaUtilise(data)) {
+    const err = new Error("EMAIL_ALREADY_REGISTERED");
+    throw err;
+  }
   sessionCourante = data.session;
   return data;
+}
+
+async function demanderReinitialisationMotDePasse(email) {
+  const client = clientAuth();
+  if (!client) throw new Error("Authentification indisponible");
+
+  const adresse = String(email || "").trim().toLowerCase();
+  if (!adresse) throw new Error("Adresse e-mail requise");
+
+  const { error } = await client.auth.resetPasswordForEmail(adresse, {
+    redirectTo: urlRetourReinitialisationMotDePasse(),
+  });
+
+  if (error) throw error;
+  return true;
+}
+
+async function mettreAJourMotDePasse(password) {
+  const client = clientAuth();
+  if (!client) throw new Error("Authentification indisponible");
+
+  const { data, error } = await client.auth.updateUser({ password });
+  if (error) throw error;
+
+  enReinitialisationMotDePasse = false;
+  sessionCourante = data.session;
+  return data;
+}
+
+function estEnReinitialisationMotDePasse() {
+  return enReinitialisationMotDePasse;
+}
+
+function activerModeReinitialisationMotDePasse() {
+  enReinitialisationMotDePasse = true;
+}
+
+function terminerReinitialisationMotDePasse() {
+  enReinitialisationMotDePasse = false;
+}
+
+async function renvoyerEmailConfirmation(email) {
+  const client = clientAuth();
+  if (!client) throw new Error("Authentification indisponible");
+
+  const adresse = String(email || "").trim().toLowerCase();
+  if (!adresse) throw new Error("Adresse e-mail requise");
+
+  const { error } = await client.auth.resend({
+    type: "signup",
+    email: adresse,
+    options: {
+      emailRedirectTo: urlRetourAuthApresEmail(),
+    },
+  });
+
+  if (error) throw error;
+  return true;
 }
 
 async function connecterClient(email, password) {
@@ -149,10 +228,13 @@ async function initialiserAuth() {
   await obtenirSession();
   mettreAJourNavbarAuth();
 
-  client.auth.onAuthStateChange((_event, session) => {
+  client.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") {
+      enReinitialisationMotDePasse = true;
+    }
     sessionCourante = session;
     mettreAJourNavbarAuth();
-    document.dispatchEvent(new CustomEvent("authchange", { detail: { session } }));
+    document.dispatchEvent(new CustomEvent("authchange", { detail: { session, event } }));
   });
 }
 
@@ -165,6 +247,12 @@ window.obtenirSession = obtenirSession;
 window.obtenirTokenAuth = obtenirTokenAuth;
 window.obtenirUtilisateur = obtenirUtilisateur;
 window.inscrireClient = inscrireClient;
+window.renvoyerEmailConfirmation = renvoyerEmailConfirmation;
+window.demanderReinitialisationMotDePasse = demanderReinitialisationMotDePasse;
+window.mettreAJourMotDePasse = mettreAJourMotDePasse;
+window.estEnReinitialisationMotDePasse = estEnReinitialisationMotDePasse;
+window.activerModeReinitialisationMotDePasse = activerModeReinitialisationMotDePasse;
+window.terminerReinitialisationMotDePasse = terminerReinitialisationMotDePasse;
 window.connecterClient = connecterClient;
 window.deconnecterClient = deconnecterClient;
 window.mettreAJourNavbarAuth = mettreAJourNavbarAuth;

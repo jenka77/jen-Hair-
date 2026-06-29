@@ -2763,6 +2763,25 @@ img {
   margin-top: 8px;
 }
 
+.account-form-extra {
+  margin: 14px 0 0;
+  text-align: center;
+}
+
+.account-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--gold-light);
+  font-size: 0.88rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.account-link-btn:hover {
+  color: var(--gold);
+}
+
 .account-message {
   margin-top: 18px;
   padding: 12px 14px;
@@ -2781,6 +2800,21 @@ img {
   background: rgba(40, 120, 60, 0.15);
   border: 1px solid rgba(80, 180, 100, 0.35);
   color: #b8f0c8;
+}
+
+.account-resend {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.account-resend-hint {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.58);
 }
 
 .account-user-header {
