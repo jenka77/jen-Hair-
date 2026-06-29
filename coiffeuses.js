@@ -47,6 +47,51 @@ function libelleLand(slug) {
   return label === cle ? slug : label;
 }
 
+function urlMediaCoiffeuse(url) {
+  const nettoyee = (url || "").trim();
+  if (!nettoyee || !/^https:\/\//i.test(nettoyee)) return "";
+  try {
+    return encodeURI(decodeURI(nettoyee));
+  } catch {
+    return nettoyee.replace(/ /g, "%20");
+  }
+}
+
+function initialesCoiffeuse(nom) {
+  return String(nom || "?")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+}
+
+function avatarCoiffeuseHtml(c) {
+  const url = urlMediaCoiffeuse(c.profileImageUrl);
+  const nom = echapperTexteCoiffeuse(c.name);
+  if (url) {
+    return `<img class="coiffeuse-avatar" src="${echapperTexteCoiffeuse(url)}" alt="${nom}" loading="lazy" />`;
+  }
+  return `<span class="coiffeuse-avatar coiffeuse-avatar--placeholder" aria-hidden="true">${echapperTexteCoiffeuse(initialesCoiffeuse(c.name))}</span>`;
+}
+
+function liensProfessionnelsHtml(links) {
+  const liste = Array.isArray(links) ? links : [];
+  if (!liste.length) {
+    return `<span class="coiffeuse-muted">${t("coiffeuses.noProLinks")}</span>`;
+  }
+
+  return `<ul class="coiffeuse-pro-links">${liste
+    .map((lien) => {
+      const url = urlMediaCoiffeuse(lien.url);
+      if (!url) return "";
+      const label = echapperTexteCoiffeuse(lien.label || t("coiffeuses.proLinkDefault"));
+      return `<li><a class="coiffeuse-pro-link" href="${echapperTexteCoiffeuse(url)}" target="_blank" rel="noopener noreferrer">${label}</a></li>`;
+    })
+    .filter(Boolean)
+    .join("")}</ul>`;
+}
+
 function masquerRechercheTypeCoiffeuses() {
   const wrap = document.getElementById("type-search-wrap");
   const section = document.querySelector(".type-search-section");
@@ -220,10 +265,21 @@ function carteCoiffeuse(c) {
     ? `<p class="coiffeuse-travel-notes">${echapperTexteCoiffeuse(notes)}</p>`
     : "";
 
+  const wigInstall = c.wigInstallCustomisation
+    ? `<span class="coiffeuse-badge coiffeuse-badge--yes">${t("coiffeuses.wigInstallYes")}</span>`
+    : `<span class="coiffeuse-badge coiffeuse-badge--no">${t("coiffeuses.wigInstallNo")}</span>`;
+
   return `
     <article class="coiffeuse-card account-card">
-      <h3 class="coiffeuse-name">${echapperTexteCoiffeuse(c.name)}</h3>
+      <div class="coiffeuse-card-head">
+        ${avatarCoiffeuseHtml(c)}
+        <h3 class="coiffeuse-name">${echapperTexteCoiffeuse(c.name)}</h3>
+      </div>
       <ul class="coiffeuse-meta">
+        <li>
+          <span class="coiffeuse-label">${t("coiffeuses.proLinks")}</span>
+          ${liensProfessionnelsHtml(c.professionalLinks)}
+        </li>
         <li>
           <span class="coiffeuse-label">${t("coiffeuses.phone")}</span>
           ${telHtml}
@@ -236,6 +292,10 @@ function carteCoiffeuse(c) {
           <span class="coiffeuse-label">${t("coiffeuses.travel")}</span>
           ${deplacement}
           ${notesHtml}
+        </li>
+        <li>
+          <span class="coiffeuse-label">${t("coiffeuses.wigInstall")}</span>
+          ${wigInstall}
         </li>
       </ul>
     </article>`;

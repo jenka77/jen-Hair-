@@ -3486,11 +3486,58 @@ img {
   margin: 0;
 }
 
+.coiffeuse-card-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.coiffeuse-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid rgba(201, 162, 75, 0.45);
+  background: #111;
+}
+
+.coiffeuse-avatar--placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  color: var(--gold-light);
+  background: linear-gradient(145deg, #1a1a1a, #2a2418);
+}
+
 .coiffeuse-name {
   font-family: var(--serif);
   font-size: 1.25rem;
   color: var(--gold-light);
-  margin: 0 0 16px;
+  margin: 0;
+}
+
+.coiffeuse-pro-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coiffeuse-pro-link {
+  color: var(--gold-light);
+  text-decoration: none;
+  font-size: 0.92rem;
+  word-break: break-word;
+}
+
+.coiffeuse-pro-link:hover {
+  text-decoration: underline;
 }
 
 .coiffeuse-meta {
