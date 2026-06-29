@@ -15,9 +15,13 @@ const TYPES_MENU_FALLBACK = [
   { slug: "apprentissage", name: "Apprentissage" },
   { slug: "accessoires", name: "Accessoires" },
   { slug: "commentaires", name: "Vos avis" },
+  { slug: "coiffeuses", name: "Coiffeuses" },
 ];
 
-const PAGES_SPECIALES_MENU = [{ slug: "commentaires", name: "Vos avis" }];
+const PAGES_SPECIALES_MENU = [
+  { slug: "commentaires", name: "Vos avis" },
+  { slug: "coiffeuses", name: "Coiffeuses" },
+];
 
 function cheminTypeCatalogue(slug) {
   const sousDossierLangue = /\/(fr|de|en)\//.test(window.location.pathname);

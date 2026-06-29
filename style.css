@@ -3314,3 +3314,147 @@ img {
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.75);
 }
+
+/* ============================================================
+   Coiffeuses (type n°13)
+   ============================================================ */
+
+.type-card--hairdressers {
+  background: linear-gradient(145deg, rgba(186, 104, 200, 0.12), var(--black-soft) 70%);
+  border-color: rgba(206, 147, 216, 0.45);
+}
+
+.coiffeuses-page {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  max-width: 820px;
+  margin: 0 auto;
+  width: 100%;
+  grid-template-columns: none;
+}
+
+.coiffeuses-title,
+.coiffeuses-results-title {
+  font-family: var(--serif);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  color: var(--gold-light);
+  margin: 0 0 10px;
+}
+
+.coiffeuses-lead {
+  margin: 0 0 22px;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.55;
+}
+
+.coiffeuses-state-field {
+  max-width: 420px;
+}
+
+.coiffeuses-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(201, 169, 98, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.coiffeuses-select:focus {
+  outline: 2px solid rgba(201, 162, 75, 0.45);
+  outline-offset: 2px;
+}
+
+.coiffeuses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.coiffeuse-card {
+  max-width: none;
+  margin: 0;
+}
+
+.coiffeuse-name {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  color: var(--gold-light);
+  margin: 0 0 16px;
+}
+
+.coiffeuse-meta {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.coiffeuse-meta li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.coiffeuse-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.coiffeuse-link {
+  color: var(--gold-light);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.coiffeuse-link:hover {
+  text-decoration: underline;
+}
+
+.coiffeuse-address {
+  margin: 0;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.coiffeuse-muted {
+  color: rgba(255, 255, 255, 0.45);
+  font-style: italic;
+}
+
+.coiffeuse-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  width: fit-content;
+}
+
+.coiffeuse-badge--yes {
+  background: rgba(129, 199, 132, 0.18);
+  color: #a5d6a7;
+  border: 1px solid rgba(129, 199, 132, 0.35);
+}
+
+.coiffeuse-badge--no {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.coiffeuse-travel-notes {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.45;
+}
+

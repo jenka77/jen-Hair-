@@ -17,6 +17,7 @@ const TYPES = new Set([
   "apprentissage",
   "accessoires",
   "commentaires",
+  "coiffeuses",
 ]);
 
 // Map uid -> produit (pour retrouver un produit au clic "Commander")
@@ -36,7 +37,7 @@ function specLigne(label, valeur) {
 }
 
 // État courant (pour re-render au changement de langue)
-let etatType = { produits: [], apprentissage: false, commentaires: false, slug: "", nom: "", description: "" };
+let etatType = { produits: [], apprentissage: false, commentaires: false, coiffeuses: false, slug: "", nom: "", description: "" };
 let filtreRecherche = "";
 
 function normaliserRecherche(texte) {
@@ -294,7 +295,7 @@ async function charger() {
   const titre = document.getElementById("type-title");
 
   if (!slug || !TYPES.has(slug)) {
-    etatType = { produits: [], apprentissage: false, commentaires: false, slug: "", nom: "", description: "" };
+    etatType = { produits: [], apprentissage: false, commentaires: false, coiffeuses: false, slug: "", nom: "", description: "" };
     titre.textContent = t("type.notFound");
     grille.innerHTML = `<p class="cart-empty">${t("type.notExist")} <a href="maison.html" style="color:var(--gold-light)">${t("type.back")}</a></p>`;
     mettreAJourBarreRecherche(0, 0);
@@ -309,6 +310,7 @@ async function charger() {
       produits: [],
       apprentissage: false,
       commentaires: true,
+      coiffeuses: false,
       slug,
       nom: typeof libelleTypeCatalogue === "function" ? libelleTypeCatalogue(slug, "Vos avis") : "Vos avis",
       description:
@@ -319,6 +321,28 @@ async function charger() {
     mettreAJourEnteteType();
     if (typeof rendrePageCommentaires === "function") {
       await rendrePageCommentaires();
+    } else {
+      grille.innerHTML = `<p class="cart-empty">${t("type.loadError")}</p>`;
+    }
+    return;
+  }
+
+  if (slug === "coiffeuses") {
+    etatType = {
+      produits: [],
+      apprentissage: false,
+      commentaires: false,
+      coiffeuses: true,
+      slug,
+      nom: typeof libelleTypeCatalogue === "function" ? libelleTypeCatalogue(slug, "Coiffeuses") : "Coiffeuses",
+      description:
+        typeof descriptionTypeCatalogue === "function"
+          ? descriptionTypeCatalogue(slug, "")
+          : "",
+    };
+    mettreAJourEnteteType();
+    if (typeof rendrePageCoiffeuses === "function") {
+      await rendrePageCoiffeuses();
     } else {
       grille.innerHTML = `<p class="cart-empty">${t("type.loadError")}</p>`;
     }
@@ -352,6 +376,7 @@ async function charger() {
       produits,
       apprentissage: !!data.apprentissage,
       commentaires: false,
+      coiffeuses: false,
       slug,
       nom: data.type,
       description: data.description || "",
@@ -374,7 +399,7 @@ function rendreGrille() {
   const grille = document.getElementById("type-grid");
   if (!grille) return;
 
-  if (etatType.commentaires) return;
+  if (etatType.commentaires || etatType.coiffeuses) return;
 
   grille.className = "product-grid";
 
