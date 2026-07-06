@@ -143,6 +143,38 @@ function afficherCommandes(orders) {
     .join("");
 }
 
+function definirChampProfil(id, valeur) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = valeur || "—";
+}
+
+function afficherProfilUtilisateur(user) {
+  const profil =
+    typeof profilDepuisUtilisateur === "function"
+      ? profilDepuisUtilisateur(user)
+      : { firstName: "", lastName: "", phone: "" };
+
+  const greetingEl = document.getElementById("account-greeting");
+  const subleadEl = document.getElementById("account-sublead");
+
+  if (greetingEl) {
+    greetingEl.textContent = profil.firstName
+      ? t("auth.welcomeHi", { name: profil.firstName })
+      : t("auth.welcomeGeneric");
+  }
+  if (subleadEl) {
+    subleadEl.textContent = t("auth.welcomeSublead");
+  }
+
+  definirChampProfil("account-profile-first", profil.firstName);
+  definirChampProfil("account-profile-last", profil.lastName);
+  definirChampProfil("account-profile-email", user?.email || "");
+  definirChampProfil(
+    "account-profile-phone",
+    profil.phone || t("auth.phoneNotSet")
+  );
+}
+
 async function basculerVueConnecte() {
   const guest = document.getElementById("account-guest");
   const user = document.getElementById("account-user");
@@ -161,8 +193,7 @@ async function basculerVueConnecte() {
   if (session?.user) {
     if (guest) guest.hidden = true;
     if (user) user.hidden = false;
-    const emailEl = document.getElementById("account-email");
-    if (emailEl) emailEl.textContent = session.user.email || "";
+    afficherProfilUtilisateur(session.user);
 
     try {
       const data = await chargerMesCommandes();
@@ -455,12 +486,29 @@ document.addEventListener("DOMContentLoaded", () => {
       const fd = new FormData(e.target);
       const password = fd.get("password");
       const confirm = fd.get("passwordConfirm");
+      const firstName = String(fd.get("firstName") || "").trim();
+      const lastName = String(fd.get("lastName") || "").trim();
+      if (firstName.length < 2 || lastName.length < 2) {
+        afficherMessage(t("auth.nameRequired"), "error");
+        return;
+      }
+      if (fd.get("acceptCgv") !== "on" || fd.get("acceptPrivacy") !== "on") {
+        afficherMessage(t("auth.legalRequired"), "error");
+        return;
+      }
       if (password !== confirm) {
         afficherMessage(t("auth.passwordMismatch"), "error");
         return;
       }
+      const profil = {
+        firstName,
+        lastName,
+        phone: String(fd.get("phone") || "").trim(),
+        acceptedCgv: fd.get("acceptCgv") === "on",
+        acceptedPrivacy: fd.get("acceptPrivacy") === "on",
+      };
       try {
-        const data = await inscrireClient(fd.get("email"), password);
+        const data = await inscrireClient(fd.get("email"), password, profil);
         if (data.session) {
           if (typeof afficherToast === "function") afficherToast(t("auth.registerSuccess"));
           if (redirigerApresConnexion()) return;

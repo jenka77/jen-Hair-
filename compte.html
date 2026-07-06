@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260629b" />
+  <link rel="stylesheet" href="style.css?v=20260706" />
 </head>
 <body data-i18n-doc-title="page.compte">
 
@@ -91,12 +91,26 @@
         <button type="submit" class="btn-order account-submit" data-i18n="auth.recoverySubmit">Enregistrer le mot de passe</button>
       </form>
 
-      <form id="form-register" class="account-form" hidden autocomplete="on">
+      <form id="form-register" class="account-form account-form--register" hidden autocomplete="on">
         <h1 class="account-title" data-i18n="auth.registerTitle">Créer un compte</h1>
         <p class="account-lead" data-i18n="auth.registerLead">Vos commandes seront enregistrées dans votre espace personnel.</p>
+        <div class="account-form-row">
+          <label class="field">
+            <span data-i18n="auth.firstName">Prénom</span>
+            <input type="text" name="firstName" required minlength="2" autocomplete="given-name" />
+          </label>
+          <label class="field">
+            <span data-i18n="auth.lastName">Nom</span>
+            <input type="text" name="lastName" required minlength="2" autocomplete="family-name" />
+          </label>
+        </div>
         <label class="field">
           <span data-i18n="auth.email">Adresse e-mail</span>
           <input type="email" name="email" required autocomplete="email" />
+        </label>
+        <label class="field">
+          <span data-i18n="auth.phone">Téléphone <span class="account-optional" data-i18n="auth.optional">(facultatif)</span></span>
+          <input type="tel" name="phone" autocomplete="tel" inputmode="tel" />
         </label>
         <label class="field">
           <span data-i18n="auth.password">Mot de passe</span>
@@ -106,6 +120,23 @@
           <span data-i18n="auth.passwordConfirm">Confirmer le mot de passe</span>
           <input type="password" name="passwordConfirm" required minlength="6" autocomplete="new-password" />
         </label>
+        <fieldset class="account-legal-fields">
+          <legend class="account-legal-legend" data-i18n="auth.legalLegend">Acceptation des conditions</legend>
+          <label class="account-legal-field">
+            <input type="checkbox" name="acceptCgv" required />
+            <span class="account-legal-text">
+              <span data-i18n="auth.acceptCgvBefore">J'accepte les</span>
+              <a href="fr/cgv.html" data-legal="cgv" data-i18n="footer.cgv">CGV</a>
+            </span>
+          </label>
+          <label class="account-legal-field">
+            <input type="checkbox" name="acceptPrivacy" required />
+            <span class="account-legal-text">
+              <span data-i18n="auth.acceptPrivacyBefore">J'accepte la</span>
+              <a href="fr/confidentialite.html" data-legal="privacy" data-i18n="footer.privacy">Confidentialité</a>
+            </span>
+          </label>
+        </fieldset>
         <button type="submit" class="btn-order account-submit" data-i18n="nav.register">S'inscrire</button>
       </form>
 
@@ -120,14 +151,37 @@
       </div>
     </section>
 
-    <section class="account-card" id="account-user" hidden>
+    <section class="account-card account-card--dashboard" id="account-user" hidden>
       <div class="account-user-header">
         <div>
-          <h1 class="account-title" data-i18n="auth.welcome">Mon espace</h1>
-          <p class="account-email" id="account-email"></p>
+          <p class="account-kicker" data-i18n="auth.welcomeKicker">Espace client</p>
+          <h1 id="account-greeting" class="account-title"></h1>
+          <p id="account-sublead" class="account-lead account-lead--compact"></p>
         </div>
         <button type="button" id="btn-logout" class="auth-btn auth-btn--outline" data-i18n="auth.logout">Se déconnecter</button>
       </div>
+
+      <section class="account-profile-card" aria-labelledby="account-profile-heading">
+        <h2 id="account-profile-heading" class="account-subtitle account-subtitle--profile" data-i18n="auth.profileTitle">Informations du compte</h2>
+        <dl class="account-profile-list">
+          <div class="account-profile-row">
+            <dt data-i18n="auth.profileFirstName">Prénom</dt>
+            <dd id="account-profile-first">—</dd>
+          </div>
+          <div class="account-profile-row">
+            <dt data-i18n="auth.profileLastName">Nom</dt>
+            <dd id="account-profile-last">—</dd>
+          </div>
+          <div class="account-profile-row">
+            <dt data-i18n="auth.email">Adresse e-mail</dt>
+            <dd id="account-profile-email">—</dd>
+          </div>
+          <div class="account-profile-row">
+            <dt data-i18n="auth.profilePhone">Téléphone</dt>
+            <dd id="account-profile-phone">—</dd>
+          </div>
+        </dl>
+      </section>
 
       <h2 class="account-subtitle" data-i18n="auth.ordersTitle">Historique de mes commandes</h2>
       <div id="orders-list" class="orders-list">

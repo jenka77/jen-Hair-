@@ -308,9 +308,11 @@ async function preremplirNomAvis() {
 
   if (!input || !user?.email) return;
 
+  const meta = user.user_metadata || {};
   const nom =
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
+    meta.full_name ||
+    [meta.first_name, meta.last_name].filter(Boolean).join(" ").trim() ||
+    meta.name ||
     user.email.split("@")[0];
   input.value = nom;
   input.placeholder = nom;

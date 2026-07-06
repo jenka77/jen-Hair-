@@ -58,15 +58,40 @@ function emailDejaUtilise(data) {
   return !Array.isArray(user.identities) || user.identities.length === 0;
 }
 
-async function inscrireClient(email, password) {
+function profilDepuisUtilisateur(user) {
+  const meta = user?.user_metadata || {};
+  const firstName = String(meta.first_name || "").trim();
+  const lastName = String(meta.last_name || "").trim();
+  const fullName =
+    String(meta.full_name || "").trim() ||
+    [firstName, lastName].filter(Boolean).join(" ");
+  const phone = String(meta.phone || "").trim();
+  return { firstName, lastName, fullName, phone };
+}
+
+async function inscrireClient(email, password, profil = {}) {
   const client = clientAuth();
   if (!client) throw new Error("Authentification indisponible");
+
+  const firstName = String(profil.firstName || "").trim();
+  const lastName = String(profil.lastName || "").trim();
+  const phone = String(profil.phone || "").trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
+  const now = new Date().toISOString();
 
   const { data, error } = await client.auth.signUp({
     email: email.trim().toLowerCase(),
     password,
     options: {
       emailRedirectTo: urlRetourAuthApresEmail(),
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        full_name: fullName,
+        phone: phone || null,
+        accepted_cgv_at: profil.acceptedCgv ? now : null,
+        accepted_privacy_at: profil.acceptedPrivacy ? now : null,
+      },
     },
   });
 
@@ -252,8 +277,8 @@ document.addEventListener("DOMContentLoaded", () => {
 window.obtenirSession = obtenirSession;
 window.obtenirTokenAuth = obtenirTokenAuth;
 window.obtenirUtilisateur = obtenirUtilisateur;
-  window.inscrireClient = inscrireClient;
-  window.profilDepuisUtilisateur = profilDepuisUtilisateur;
+window.inscrireClient = inscrireClient;
+window.profilDepuisUtilisateur = profilDepuisUtilisateur;
 window.renvoyerEmailConfirmation = renvoyerEmailConfirmation;
 window.demanderReinitialisationMotDePasse = demanderReinitialisationMotDePasse;
 window.mettreAJourMotDePasse = mettreAJourMotDePasse;
