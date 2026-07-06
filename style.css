@@ -1648,6 +1648,55 @@ img {
   resize: vertical;
 }
 
+.order-legal-fields {
+  margin: 8px 0 20px;
+  padding: 0;
+  border: none;
+}
+
+.order-legal-legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.order-legal-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+}
+
+.order-legal-field input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  accent-color: var(--gold);
+}
+
+.order-legal-text a {
+  color: var(--gold-light);
+  text-decoration: underline;
+}
+
+.order-legal-text a:hover {
+  color: var(--gold);
+}
+
+.order-legal-sep {
+  margin-right: 0.15em;
+}
+
 .field-hint {
   display: block;
   margin-top: 6px;

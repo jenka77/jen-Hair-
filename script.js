@@ -426,6 +426,12 @@ async function traiterCommande(event) {
   }
 
   const data = new FormData(form);
+  if (data.get("acceptLegal") !== "on") {
+    afficherToast(t("order.legalRequired"));
+    document.getElementById("accept-legal")?.focus();
+    return;
+  }
+
   const nomComplet = (data.get("nomComplet") || "").trim();
   const telephone = (data.get("telephone") || "").trim();
   const email = (user.email || data.get("email") || "").trim();

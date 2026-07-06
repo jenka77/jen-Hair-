@@ -172,6 +172,10 @@ const I18N = {
     "order.lineSubtotal": "Sous-total",
     "order.deliveryFeeLabel": "Frais de livraison",
     "order.deliveryFeeNote": "Des frais de livraison de {montant} s'appliquent à la livraison à domicile et sont inclus dans le total.",
+    "order.legalLegend": "Acceptation des informations légales",
+    "order.acceptLegalIntro": "J'ai lu et j'approuvé les informations légales :",
+    "order.acceptLegalAnd": " et ",
+    "order.legalRequired": "Vous devez accepter les informations légales pour confirmer votre commande.",
 
     "footer.tag": "L'élégance dans chaque détail.",
     "footer.navTitle": "Navigation",
@@ -520,6 +524,10 @@ const I18N = {
     "order.lineSubtotal": "Zwischensumme",
     "order.deliveryFeeLabel": "Liefergebühr",
     "order.deliveryFeeNote": "Für die Lieferung nach Hause fällt eine Liefergebühr von {montant} an, die im Gesamtbetrag enthalten ist.",
+    "order.legalLegend": "Zustimmung zu den rechtlichen Informationen",
+    "order.acceptLegalIntro": "Ich habe die rechtlichen Informationen gelesen und akzeptiert:",
+    "order.acceptLegalAnd": " und ",
+    "order.legalRequired": "Sie müssen die rechtlichen Informationen akzeptieren, um die Bestellung zu bestätigen.",
 
     "footer.tag": "Eleganz in jedem Detail.",
     "footer.navTitle": "Navigation",
@@ -868,6 +876,10 @@ const I18N = {
     "order.lineSubtotal": "Subtotal",
     "order.deliveryFeeLabel": "Delivery fee",
     "order.deliveryFeeNote": "A delivery fee of {montant} applies to home delivery and is included in the total.",
+    "order.legalLegend": "Legal information acceptance",
+    "order.acceptLegalIntro": "I have read and approved the legal information:",
+    "order.acceptLegalAnd": " and ",
+    "order.legalRequired": "You must accept the legal information to confirm your order.",
 
     "footer.tag": "Elegance in every detail.",
     "footer.navTitle": "Navigation",

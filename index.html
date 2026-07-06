@@ -298,6 +298,20 @@
           </div>
         </div>
 
+        <fieldset class="order-legal-fields">
+          <legend class="order-legal-legend" data-i18n="order.legalLegend">Acceptation des informations légales</legend>
+          <label class="order-legal-field">
+            <input type="checkbox" id="accept-legal" name="acceptLegal" required />
+            <span class="order-legal-text">
+              <span data-i18n="order.acceptLegalIntro">J'ai lu et j'approuvé les informations légales :</span>
+              <a href="fr/cgv.html" data-legal="cgv" data-i18n="footer.cgv">CGV</a><span class="order-legal-sep">,</span>
+              <a href="fr/retours.html" data-legal="retours" data-i18n="footer.returns">Retours</a>
+              <span data-i18n="order.acceptLegalAnd"> et </span>
+              <a href="fr/confidentialite.html" data-legal="privacy" data-i18n="footer.privacy">Confidentialité</a>.
+            </span>
+          </label>
+        </fieldset>
+
         <button type="submit" class="btn-order order-submit" data-i18n="order.confirm">Confirmer la commande</button>
       </form>
     </div>
