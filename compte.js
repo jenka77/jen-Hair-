@@ -202,7 +202,11 @@ async function basculerVueConnecte() {
     } catch (err) {
       const conteneur = document.getElementById("orders-list");
       if (conteneur) {
-        conteneur.innerHTML = `<p class="account-empty">${err.message}</p>`;
+        const msg =
+          typeof traduireErreurApi === "function"
+            ? traduireErreurApi(err.message, "errors.generic")
+            : err.message;
+        conteneur.innerHTML = `<p class="account-empty">${msg}</p>`;
       }
     }
     return;

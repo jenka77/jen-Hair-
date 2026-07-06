@@ -40,6 +40,7 @@ const createPaypalOrderSchema = z.object({
   }),
   items: z.array(orderItemSchema).min(1),
   returnPath: z.string().max(500).optional(),
+  locale: z.enum(["fr", "de", "en"]).optional().default("fr"),
 });
 
 const capturePaypalOrderSchema = z.object({
@@ -80,7 +81,7 @@ function adresseCompleteAllemande(customer) {
 }
 
 function formaterAdresse(customer) {
-  if (customer.pickupMode !== "delivery") return "Retrait en boutique chez Saá Mokolo";
+  if (customer.pickupMode !== "delivery") return "—";
   const d = customer.addressDetails;
   return `${d.rue.trim()} ${d.numero.trim()}, ${d.cp.trim()} ${d.ville.trim()}, ${d.pays.trim()}`;
 }
@@ -148,7 +149,7 @@ async function decrementerStock(lignes) {
 async function chargerCommandeAvecItems(orderId) {
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, user_id, customer_name, customer_contact, pickup_mode, delivery_address, total_amount, status, created_at")
+    .select("id, user_id, customer_name, customer_contact, customer_email, customer_locale, pickup_mode, delivery_address, total_amount, status, created_at")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -179,6 +180,7 @@ router.post("/paypal/create-order", authObligatoire, async (req, res, next) => {
     }
 
     const { customer } = validation.data;
+    const locale = validation.data.locale || "fr";
     const items = regrouperItems(validation.data.items);
 
     if (!adresseCompleteAllemande(customer)) {
@@ -202,11 +204,9 @@ router.post("/paypal/create-order", authObligatoire, async (req, res, next) => {
         customer_name: customer.name.trim(),
         customer_contact: `${customer.phone.trim()} / ${customer.email.trim()}`,
         customer_email: customer.email.trim().toLowerCase(),
+        customer_locale: locale,
         user_id: req.user?.id || null,
-        pickup_mode:
-          customer.pickupMode === "delivery"
-            ? "Livraison à domicile"
-            : "Retrait en boutique chez Saá Mokolo",
+        pickup_mode: customer.pickupMode === "delivery" ? "delivery" : "pickup",
         delivery_address: formaterAdresse(customer),
         total_amount: total,
         status: "pending_payment",
@@ -317,7 +317,7 @@ router.post("/paypal/capture-order", authObligatoire, async (req, res, next) => 
       .from("orders")
       .update({ status: "paid" })
       .eq("id", orderId)
-      .select("id, customer_name, customer_contact, pickup_mode, delivery_address, total_amount, status, created_at")
+      .select("id, customer_name, customer_contact, customer_email, customer_locale, pickup_mode, delivery_address, total_amount, status, created_at")
       .single();
 
     if (updateError) throw updateError;
@@ -346,6 +346,7 @@ router.post("/paypal/capture-order", authObligatoire, async (req, res, next) => 
         subtotal,
         deliveryFee,
         total: expectedTotal,
+        locale: paidOrder.customer_locale || order.customer_locale || "fr",
       });
       emailStatus = { sent: true, result: emailResult };
     } catch (emailError) {

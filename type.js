@@ -153,7 +153,7 @@ function flecheCycleMedia(p) {
   if (slides <= 1) return "";
 
   return `
-    <button type="button" class="media-toggle" data-action="cycle-media" aria-label="Photo suivante" title="Photo suivante">
+    <button type="button" class="media-toggle" data-action="cycle-media" aria-label="${t("product.nextPhoto")}" title="${t("product.nextPhoto")}">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M5 12h14M13 6l6 6-6 6"/>
       </svg>
@@ -171,7 +171,7 @@ function flechesMedia(p) {
     const lienVideo =
       images.length <= 1
         ? `
-      <a class="media-toggle" href="${p.video}" target="_blank" rel="noopener" aria-label="Voir la vidéo" title="Voir la vidéo">
+      <a class="media-toggle" href="${p.video}" target="_blank" rel="noopener" aria-label="${t("product.watch")}" title="${t("product.watch")}">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
           <path d="M8 5v14l11-7z"/>
         </svg>

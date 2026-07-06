@@ -202,11 +202,19 @@ async function enregistrerCommandeBase(params, lignes) {
           quantity: ligne.quantite,
         })),
         returnPath: construireReturnPath(),
+        locale:
+          params.langue_commande ||
+          (typeof langueActuelle !== "undefined" ? langueActuelle : "fr"),
       }),
     });
   } catch (err) {
     throw new Error(
-      `Connexion au backend impossible (${API_BASE_URL}). Vérifiez que "npm run dev" tourne dans le dossier backend.`
+      typeof traduireErreurApi === "function"
+        ? traduireErreurApi(
+            `Connexion au backend impossible (${API_BASE_URL}).`,
+            "errors.backendConnection"
+          )
+        : `Connexion au backend impossible (${API_BASE_URL}).`
     );
   }
 
@@ -218,7 +226,9 @@ async function enregistrerCommandeBase(params, lignes) {
     } catch (e) {
       message = await reponse.text();
     }
-    throw new Error(message);
+    throw new Error(
+      typeof traduireErreurApi === "function" ? traduireErreurApi(message, "errors.orderSave") : message
+    );
   }
 
   return reponse.json();
@@ -250,7 +260,11 @@ async function capturerCommandePaypal(orderId, paypalOrderId) {
     } catch (e) {
       message = await reponse.text();
     }
-    throw new Error(message);
+    throw new Error(
+      typeof traduireErreurApi === "function"
+        ? traduireErreurApi(message, "errors.paymentConfirm")
+        : message
+    );
   }
 
   return reponse.json();
@@ -269,7 +283,11 @@ async function chargerResumeCommande(orderId) {
     } catch (e) {
       /* ignore */
     }
-    throw new Error(message);
+    throw new Error(
+      typeof traduireErreurApi === "function"
+        ? traduireErreurApi(message, "errors.orderNotFound")
+        : message
+    );
   }
 
   return reponse.json();
@@ -277,7 +295,9 @@ async function chargerResumeCommande(orderId) {
 
 async function chargerMesCommandes() {
   const token = typeof obtenirTokenAuth === "function" ? await obtenirTokenAuth() : null;
-  if (!token) throw new Error("Connexion requise");
+  if (!token) {
+    throw new Error(typeof t === "function" ? t("errors.loginRequired") : "Connexion requise");
+  }
 
   const reponse = await fetch(`${API_BASE_URL}/api/me/orders`, {
     cache: "no-store",
@@ -292,7 +312,9 @@ async function chargerMesCommandes() {
     } catch (e) {
       /* ignore */
     }
-    throw new Error(message);
+    throw new Error(
+      typeof traduireErreurApi === "function" ? traduireErreurApi(message, "errors.generic") : message
+    );
   }
 
   return reponse.json();

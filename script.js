@@ -28,7 +28,9 @@ function telephoneValide(valeur) {
    UTILITAIRES
    ============================================================ */
 function formaterPrix(montant) {
-  return new Intl.NumberFormat("fr-FR", {
+  const locale =
+    typeof localeMonnaie === "function" ? localeMonnaie() : "fr-FR";
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "EUR",
   }).format(montant || 0);
@@ -215,9 +217,9 @@ function majPanier() {
               <p class="cart-item-details">${detailsPerruque(l)}</p>
               <div class="cart-item-price">${formaterPrix(l.prix)}</div>
               <div class="qty-control">
-                <button data-action="moins" data-uid="${l.uid}" aria-label="Diminuer">−</button>
+                <button data-action="moins" data-uid="${l.uid}" aria-label="${t("cart.decrease")}">−</button>
                 <span>${l.quantite}</span>
-                <button data-action="plus" data-uid="${l.uid}" aria-label="Augmenter">+</button>
+                <button data-action="plus" data-uid="${l.uid}" aria-label="${t("cart.increase")}">+</button>
               </div>
               <button class="cart-item-remove" data-action="retirer" data-uid="${l.uid}">${t("cart.remove")}</button>
             </div>
@@ -498,12 +500,16 @@ ${t("order.deliveryFeeNote", { montant: formaterPrix(fraisLivraison) })}`;
         return;
       }
       if (resultatBase?.skipped) {
-        throw new Error("Aucun produit Supabase à payer via PayPal.");
+        throw new Error(t("errors.noPaypalProducts"));
       }
     }
   } catch (err) {
     console.error("Erreur commande backend :", err);
-    afficherToast(err.message || t("toast.emailErr"));
+    afficherToast(
+      typeof traduireErreurApi === "function"
+        ? traduireErreurApi(err.message, "toast.emailErr")
+        : err.message || t("toast.emailErr")
+    );
     submitBtn.disabled = false;
     submitBtn.textContent = t("order.confirm");
     return;

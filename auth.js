@@ -230,8 +230,8 @@ function injecterAuthMenuMobile() {
   const bloc = document.createElement("div");
   bloc.className = "nav-auth-mobile";
   bloc.innerHTML = `
-    <a href="${cheminPageCompte("mode=login")}" class="auth-btn auth-btn--outline" data-i18n="nav.login" data-auth-guest>Anmelden</a>
-    <a href="${cheminPageCompte("mode=register")}" class="auth-btn auth-btn--fill" data-i18n="nav.register" data-auth-guest>Registrieren</a>
+    <a href="${cheminPageCompte("mode=login")}" class="auth-btn auth-btn--outline" data-i18n="nav.login" data-auth-guest>Se connecter</a>
+    <a href="${cheminPageCompte("mode=register")}" class="auth-btn auth-btn--fill" data-i18n="nav.register" data-auth-guest>S'inscrire</a>
     <a href="${cheminPageCompte()}" class="auth-btn auth-btn--fill" data-i18n="nav.account" data-auth-user hidden>Mon compte</a>
   `;
   nav.appendChild(bloc);

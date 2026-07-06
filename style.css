@@ -2400,49 +2400,11 @@ img {
   margin-bottom: 12px;
 }
 
-.confirmation-trilingual {
-  margin-bottom: 20px;
-}
-
-.confirmation-trilingual-title .confirmation-trilingual-line.lang-fr {
-  font-family: var(--serif);
-  font-size: clamp(1.7rem, 4vw, 2.3rem);
-  color: #fff;
-  margin-bottom: 10px;
-}
-
-.confirmation-trilingual-title .confirmation-trilingual-line.lang-de,
-.confirmation-trilingual-title .confirmation-trilingual-line.lang-en {
-  font-family: var(--serif);
-  font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+.confirmation-mode {
   color: #ddd6c8;
-  margin-bottom: 6px;
-}
-
-.confirmation-trilingual-lead .confirmation-trilingual-line,
-.confirmation-trilingual-note .confirmation-trilingual-line,
-.confirmation-trilingual-compact .confirmation-trilingual-line {
-  color: #cfc9bd;
   line-height: 1.65;
-  margin: 6px 0;
+  margin: 0 0 8px;
   font-size: 0.95rem;
-}
-
-.confirmation-trilingual-line span {
-  display: inline-block;
-  min-width: 2rem;
-  margin-right: 8px;
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--gold);
-  font-weight: 600;
-}
-
-.confirmation-trilingual-note {
-  margin: 24px 0;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
 }
 
 .confirmation-title {

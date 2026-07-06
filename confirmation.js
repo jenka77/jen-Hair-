@@ -1,41 +1,33 @@
 const STATUTS_SUIVI = ["paid", "preparing", "delivered"];
 
-function htmlTrilingue(cle, variant = "default") {
-  const all = tAll(cle);
-  const lines = `
-      <p class="confirmation-trilingual-line lang-fr"><span>FR</span> ${all.fr}</p>
-      <p class="confirmation-trilingual-line lang-de"><span>DE</span> ${all.de}</p>
-      <p class="confirmation-trilingual-line lang-en"><span>EN</span> ${all.en}</p>`;
+let etatConfirmationCourant = { type: null, message: null };
 
-  const classes = {
-    title: "confirmation-trilingual confirmation-trilingual-title",
-    lead: "confirmation-trilingual confirmation-trilingual-lead",
-    note: "confirmation-trilingual confirmation-trilingual-note",
-    default: "confirmation-trilingual",
-  };
-
-  return `<div class="${classes[variant] || classes.default}">${lines}</div>`;
+function htmlTitre(cle) {
+  return `<h1 class="confirmation-title">${t(cle)}</h1>`;
 }
 
-function traduireModeRecuperation(mode) {
-  const valeur = String(mode || "").trim();
-  if (/retrait|boutique/i.test(valeur)) {
-    return tAll("confirm.pickupModeValue");
-  }
-  if (/livraison|domicile/i.test(valeur)) {
-    return tAll("confirm.deliveryModeValue");
-  }
-  return { fr: valeur, de: valeur, en: valeur };
+function htmlLead(cle) {
+  return `<p class="confirmation-lead">${t(cle)}</p>`;
 }
 
-function htmlModeRecuperation(mode) {
-  const all = traduireModeRecuperation(mode);
-  return `
-    <div class="confirmation-trilingual confirmation-trilingual-compact">
-      <p class="confirmation-trilingual-line lang-fr"><span>FR</span> ${all.fr}</p>
-      <p class="confirmation-trilingual-line lang-de"><span>DE</span> ${all.de}</p>
-      <p class="confirmation-trilingual-line lang-en"><span>EN</span> ${all.en}</p>
-    </div>`;
+function htmlNote(cle) {
+  return `<p class="confirmation-note">${t(cle)}</p>`;
+}
+
+function libelleModeRecuperation(mode) {
+  const valeur = String(mode || "").trim().toLowerCase();
+  if (valeur === "pickup" || /retrait|boutique/i.test(valeur)) {
+    return t("confirm.pickupModeValue");
+  }
+  if (valeur === "delivery" || /livraison|domicile/i.test(valeur)) {
+    return t("confirm.deliveryModeValue");
+  }
+  return mode || "—";
+}
+
+function adresseAffichable(adresse) {
+  const val = String(adresse || "").trim();
+  return val && val !== "—" ? val : "";
 }
 
 function statutLibelle(status) {
@@ -93,10 +85,12 @@ function afficherResumeCommande(data) {
     )
     .join("");
 
+  const adresse = adresseAffichable(order.deliveryAddress);
+
   return `
     <div class="confirmation-success">
-      ${htmlTrilingue("confirm.successTitle", "title")}
-      ${htmlTrilingue("confirm.successLead", "lead")}
+      ${htmlTitre("confirm.successTitle")}
+      ${htmlLead("confirm.successLead")}
 
       <div class="confirmation-meta">
         <p><span>${t("confirm.orderNumber")}</span> <strong>${order.orderNumber}</strong></p>
@@ -113,12 +107,12 @@ function afficherResumeCommande(data) {
 
       <div class="confirmation-block">
         <h2>${t("confirm.deliveryTitle")}</h2>
-        ${htmlModeRecuperation(order.pickupMode)}
-        <p class="confirmation-address">${order.deliveryAddress || ""}</p>
+        <p class="confirmation-mode">${libelleModeRecuperation(order.pickupMode)}</p>
+        ${adresse ? `<p class="confirmation-address">${adresse}</p>` : ""}
       </div>
 
-      ${htmlTrilingue("confirm.emailNote", "note")}
-      ${htmlTrilingue("confirm.readyEmailNote", "note")}
+      ${htmlNote("confirm.emailNote")}
+      ${htmlNote("confirm.readyEmailNote")}
 
       <div class="confirmation-actions">
         <a class="btn-order" href="maison.html">${t("confirm.backShop")}</a>
@@ -131,13 +125,15 @@ function afficherEtat(type, messageKeyOrText) {
   const contenu = document.getElementById("confirmation-content");
   if (!contenu) return;
 
+  etatConfirmationCourant = { type, message: messageKeyOrText };
+
   if (type === "loading") {
     if (messageKeyOrText && I18N.fr[messageKeyOrText]) {
-      contenu.innerHTML = htmlTrilingue(messageKeyOrText, "lead");
+      contenu.innerHTML = htmlLead(messageKeyOrText);
     } else if (messageKeyOrText) {
-      contenu.innerHTML = `<div class="confirmation-trilingual confirmation-trilingual-lead"><p class="confirmation-trilingual-line">${messageKeyOrText}</p></div>`;
+      contenu.innerHTML = `<p class="confirmation-lead">${messageKeyOrText}</p>`;
     } else {
-      contenu.innerHTML = htmlTrilingue("confirm.loading", "lead");
+      contenu.innerHTML = htmlLead("confirm.loading");
     }
     return;
   }
@@ -145,8 +141,8 @@ function afficherEtat(type, messageKeyOrText) {
   if (type === "cancel") {
     contenu.innerHTML = `
       <div class="confirmation-state cancel">
-        ${htmlTrilingue("confirm.cancelTitle", "title")}
-        ${htmlTrilingue("confirm.cancelLead", "lead")}
+        ${htmlTitre("confirm.cancelTitle")}
+        ${htmlLead("confirm.cancelLead")}
         <div class="confirmation-actions">
           <a class="btn-order" href="maison.html">${t("confirm.backShop")}</a>
         </div>
@@ -157,12 +153,12 @@ function afficherEtat(type, messageKeyOrText) {
   if (type === "error") {
     const messageHtml =
       messageKeyOrText && !I18N.fr[messageKeyOrText]
-        ? `<div class="confirmation-trilingual confirmation-trilingual-lead"><p class="confirmation-trilingual-line">${messageKeyOrText}</p></div>`
-        : htmlTrilingue("confirm.errorLead", "lead");
+        ? `<p class="confirmation-lead">${messageKeyOrText}</p>`
+        : htmlLead("confirm.errorLead");
 
     contenu.innerHTML = `
       <div class="confirmation-state error">
-        ${htmlTrilingue("confirm.errorTitle", "title")}
+        ${htmlTitre("confirm.errorTitle")}
         ${messageHtml}
         <div class="confirmation-actions">
           <a class="btn-order" href="maison.html">${t("confirm.backShop")}</a>
@@ -185,6 +181,7 @@ async function chargerEtAfficherCommande(orderId) {
   const data = await chargerResumeCommande(orderId);
   const contenu = document.getElementById("confirmation-content");
   if (contenu) contenu.innerHTML = afficherResumeCommande(data);
+  etatConfirmationCourant = { type: "success", message: null };
   nettoyerUrl(orderId);
 }
 
@@ -204,7 +201,10 @@ async function traiterRetourPaypal() {
     try {
       await chargerEtAfficherCommande(orderId);
     } catch (err) {
-      afficherEtat("error", err.message);
+      afficherEtat(
+        "error",
+        typeof traduireErreurApi === "function" ? traduireErreurApi(err.message) : err.message
+      );
     }
     return;
   }
@@ -234,12 +234,16 @@ async function traiterRetourPaypal() {
     }
   } catch (err) {
     console.error("Erreur confirmation :", err);
-    // Si la capture a déjà eu lieu, afficher quand même la commande.
     try {
       await chargerEtAfficherCommande(orderId);
       return;
     } catch (resumeErr) {
-      afficherEtat("error", err.message || t("confirm.errorLead"));
+      afficherEtat(
+        "error",
+        typeof traduireErreurApi === "function"
+          ? traduireErreurApi(err.message, "confirm.errorLead")
+          : err.message || t("confirm.errorLead")
+      );
     }
   }
 }
@@ -252,5 +256,11 @@ document.addEventListener("langchange", () => {
   const orderId = new URLSearchParams(window.location.search).get("order_id");
   if (orderId) {
     chargerEtAfficherCommande(orderId).catch(() => {});
+    return;
+  }
+
+  const { type, message } = etatConfirmationCourant;
+  if (type && type !== "success") {
+    afficherEtat(type, message);
   }
 });

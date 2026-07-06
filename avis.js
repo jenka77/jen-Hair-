@@ -455,7 +455,13 @@ async function rendrePageCommentaires() {
     avisCache = await chargerAvisPublics();
     if (liste) liste.innerHTML = listeAvisHtml(avisCache);
   } catch (err) {
-    if (liste) liste.innerHTML = `<p class="account-empty">${err.message}</p>`;
+    if (liste) {
+      const msg =
+        typeof traduireErreurApi === "function"
+          ? traduireErreurApi(err.message, "errors.generic")
+          : err.message;
+      liste.innerHTML = `<p class="account-empty">${msg}</p>`;
+    }
   }
 }
 

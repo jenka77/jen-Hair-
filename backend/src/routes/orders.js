@@ -168,7 +168,7 @@ router.patch("/orders/:id/status", async (req, res, next) => {
       .update({ status: validation.data.status })
       .eq("id", req.params.id)
       .select(
-        "id, customer_name, customer_contact, customer_email, pickup_mode, delivery_address, total_amount, status, created_at"
+        "id, customer_name, customer_contact, customer_email, customer_locale, pickup_mode, delivery_address, total_amount, status, created_at"
       )
       .maybeSingle();
 

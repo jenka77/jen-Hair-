@@ -3,6 +3,10 @@ const {
   genererHtmlChangementStatut,
   formaterPrix,
   nettoyerNomProduit,
+  sujetEmail,
+  texteConfirmationCommande,
+  texteChangementStatut,
+  normaliserLocale,
 } = require("./emailTemplates");
 const { supabase } = require("../supabase");
 
@@ -107,13 +111,15 @@ async function envoyerEmailsCommande({
   subtotal,
   deliveryFee,
   total,
+  locale = "fr",
 }) {
+  const lang = normaliserLocale(locale || order.customer_locale);
   const adminEmail = process.env.EMAIL_ADMIN;
   const articles = formatLignesCommandeTexte(lignes);
   const fraisLivraisonTexte =
     deliveryFee > 0
-      ? `\nFrais de livraison : ${formaterPrix(deliveryFee)}
-Les frais de livraison de ${formaterPrix(deliveryFee)} sont inclus dans le total.`
+      ? `\nFrais de livraison : ${formaterPrix(deliveryFee, lang)}
+Les frais de livraison de ${formaterPrix(deliveryFee, lang)} sont inclus dans le total.`
       : "\nFrais de livraison : 0,00 €";
 
   const commun = `Commande : ${orderNumber}
@@ -128,19 +134,16 @@ Articles :
 ${articles}
 ${fraisLivraisonTexte}
 
-Sous-total : ${formaterPrix(subtotal)}
-Total : ${formaterPrix(total)}`;
+Sous-total : ${formaterPrix(subtotal, lang)}
+Total : ${formaterPrix(total, lang)}`;
 
-  const texteClient = `Bonjour ${customer.name},
-
-Votre commande a bien été acceptée.
-
-${commun}
-
-Vous recevrez un e-mail lorsque votre commande sera prête ou expédiée.
-
-Merci pour votre confiance.
-Jen's & Floran`;
+  const texteClient = texteConfirmationCommande({
+    customerName: customer.name,
+    orderNumber,
+    articles,
+    commun,
+    locale: lang,
+  });
 
   const htmlClient = genererHtmlConfirmationCommande({
     orderNumber,
@@ -151,6 +154,7 @@ Jen's & Floran`;
     total,
     pickupMode: order.pickup_mode,
     deliveryAddress: order.delivery_address,
+    locale: lang,
   });
 
   const resultats = {};
@@ -166,7 +170,7 @@ Jen's & Floran`;
 
   resultats.client = await envoyerEmail({
     to: customer.email,
-    subject: `Commande confirmée — ${orderNumber}`,
+    subject: sujetEmail("confirmed", orderNumber, lang),
     replyTo: adminEmail,
     text: texteClient,
     html: htmlClient,
@@ -212,33 +216,11 @@ async function envoyerEmailChangementStatut({
   }
 
   const adminEmail = process.env.EMAIL_ADMIN;
+  const lang = normaliserLocale(order.customer_locale);
   const sujets = {
-    preparing: `Commande en préparation — ${orderNumber}`,
-    ready: `Commande prête — ${orderNumber}`,
-    delivered: `Commande livrée — ${orderNumber}`,
-  };
-
-  const corps = {
-    preparing: `Bonjour ${order.customer_name},
-
-Votre commande ${orderNumber} est en cours de préparation.
-
-Merci pour votre confiance.
-Jen's & Floran`,
-
-    ready: `Bonjour ${order.customer_name},
-
-Votre commande ${orderNumber} est prête. Vous pouvez venir la retirer chez Saá Mokolo.
-
-Merci pour votre confiance.
-Jen's & Floran`,
-
-    delivered: `Bonjour ${order.customer_name},
-
-Votre commande ${orderNumber} a été livrée.
-
-Merci pour votre confiance.
-Jen's & Floran`,
+    preparing: sujetEmail("preparing", orderNumber, lang),
+    ready: sujetEmail("ready", orderNumber, lang),
+    delivered: sujetEmail("delivered", orderNumber, lang),
   };
 
   const lignes = await chargerLignesCommandePourEmail(order.id);
@@ -248,7 +230,14 @@ Jen's & Floran`,
     status,
     lignes,
     pickupMode: order.pickup_mode,
+    locale: lang,
   });
+
+  const corps = {
+    preparing: texteChangementStatut({ customerName: order.customer_name, orderNumber, status: "preparing", locale: lang }),
+    ready: texteChangementStatut({ customerName: order.customer_name, orderNumber, status: "ready", locale: lang }),
+    delivered: texteChangementStatut({ customerName: order.customer_name, orderNumber, status: "delivered", locale: lang }),
+  };
 
   const result = await envoyerEmail({
     to: emailClient,

@@ -86,6 +86,27 @@ const I18N = {
     "auth.status.accepted": "Confirmée",
     "auth.status.cancelled": "Annulée",
 
+    "a11y.lang": "Langue",
+    "a11y.openCart": "Ouvrir le panier",
+    "a11y.closeCart": "Fermer le panier",
+    "a11y.close": "Fermer",
+    "a11y.closeVideo": "Fermer la vidéo",
+    "a11y.back": "Retour à la page précédente",
+    "cart.decrease": "Diminuer la quantité",
+    "cart.increase": "Augmenter la quantité",
+    "product.nextPhoto": "Photo suivante",
+    "errors.generic": "Une erreur est survenue. Veuillez réessayer.",
+    "errors.loginRequired": "Connexion requise pour continuer.",
+    "errors.orderNotFound": "Commande introuvable.",
+    "errors.orderSave": "Impossible d'enregistrer la commande.",
+    "errors.paymentConfirm": "Impossible de confirmer le paiement.",
+    "errors.backendUnavailable": "Service temporairement indisponible.",
+    "errors.backendConnection": "Connexion au serveur impossible. Réessayez dans quelques instants.",
+    "errors.stockInsufficient": "Stock insuffisant pour un ou plusieurs articles.",
+    "errors.deliveryAddress": "Adresse de livraison incomplète.",
+    "errors.noPaypalProducts": "Aucun article éligible au paiement en ligne.",
+    "errors.authUnavailable": "Authentification indisponible.",
+
     "hero.kicker": "SUBLIMEZ VOTRE BEAUTÉ",
     "hero.title": "L'Art de la Perruque<br />de Luxe",
     "hero.sub": "Des cheveux d'exception, sélectionnés à la main pour les femmes qui osent briller.",
@@ -413,6 +434,27 @@ const I18N = {
     "auth.status.accepted": "Bestätigt",
     "auth.status.cancelled": "Storniert",
 
+    "a11y.lang": "Sprache",
+    "a11y.openCart": "Warenkorb öffnen",
+    "a11y.closeCart": "Warenkorb schließen",
+    "a11y.close": "Schließen",
+    "a11y.closeVideo": "Video schließen",
+    "a11y.back": "Zurück zur vorherigen Seite",
+    "cart.decrease": "Menge verringern",
+    "cart.increase": "Menge erhöhen",
+    "product.nextPhoto": "Nächstes Foto",
+    "errors.generic": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+    "errors.loginRequired": "Anmeldung erforderlich.",
+    "errors.orderNotFound": "Bestellung nicht gefunden.",
+    "errors.orderSave": "Bestellung konnte nicht gespeichert werden.",
+    "errors.paymentConfirm": "PayPal-Zahlung konnte nicht bestätigt werden.",
+    "errors.backendUnavailable": "Dienst vorübergehend nicht verfügbar.",
+    "errors.backendConnection": "Verbindung zum Server fehlgeschlagen. Bitte später erneut versuchen.",
+    "errors.stockInsufficient": "Nicht genügend Lagerbestand für einen oder mehrere Artikel.",
+    "errors.deliveryAddress": "Unvollständige Lieferadresse.",
+    "errors.noPaypalProducts": "Kein Artikel für Online-Zahlung verfügbar.",
+    "errors.authUnavailable": "Authentifizierung nicht verfügbar.",
+
     "hero.kicker": "VEREDELN SIE IHRE SCHÖNHEIT",
     "hero.title": "Die Kunst der<br />Luxus-Perücke",
     "hero.sub": "Außergewöhnliches Haar, von Hand ausgewählt für Frauen, die strahlen wollen.",
@@ -739,6 +781,27 @@ const I18N = {
     "auth.status.ready": "Ready",
     "auth.status.accepted": "Confirmed",
     "auth.status.cancelled": "Cancelled",
+
+    "a11y.lang": "Language",
+    "a11y.openCart": "Open cart",
+    "a11y.closeCart": "Close cart",
+    "a11y.close": "Close",
+    "a11y.closeVideo": "Close video",
+    "a11y.back": "Back to previous page",
+    "cart.decrease": "Decrease quantity",
+    "cart.increase": "Increase quantity",
+    "product.nextPhoto": "Next photo",
+    "errors.generic": "An error occurred. Please try again.",
+    "errors.loginRequired": "Log in required to continue.",
+    "errors.orderNotFound": "Order not found.",
+    "errors.orderSave": "Unable to save the order.",
+    "errors.paymentConfirm": "Unable to confirm PayPal payment.",
+    "errors.backendUnavailable": "Service temporarily unavailable.",
+    "errors.backendConnection": "Unable to connect to the server. Please try again shortly.",
+    "errors.stockInsufficient": "Insufficient stock for one or more items.",
+    "errors.deliveryAddress": "Incomplete delivery address.",
+    "errors.noPaypalProducts": "No items eligible for online payment.",
+    "errors.authUnavailable": "Authentication unavailable.",
 
     "hero.kicker": "ELEVATE YOUR BEAUTY",
     "hero.title": "The Art of the<br />Luxury Wig",
@@ -1084,14 +1147,52 @@ function appliquerTraductions() {
 
 function changerLangue(lang) {
   if (!I18N[lang]) return;
+  langueActuelle = lang;
+  localStorage.setItem(LANG_CLE, lang);
   if (typeof redirigerPageLegaleSiBesoin === "function" && redirigerPageLegaleSiBesoin(lang)) {
     return;
   }
-  langueActuelle = lang;
-  localStorage.setItem(LANG_CLE, lang);
   appliquerTraductions();
   document.dispatchEvent(new CustomEvent("langchange", { detail: { lang } }));
 }
+
+const API_ERROR_MAP = [
+  [/connexion requise/i, "errors.loginRequired"],
+  [/commande introuvable/i, "errors.orderNotFound"],
+  [/stock insuffisant/i, "errors.stockInsufficient"],
+  [/adresse de livraison/i, "errors.deliveryAddress"],
+  [/impossible d'enregistrer la commande/i, "errors.orderSave"],
+  [/impossible de confirmer le paiement/i, "errors.paymentConfirm"],
+  [/backend indisponible/i, "errors.backendUnavailable"],
+  [/connexion au backend impossible/i, "errors.backendConnection"],
+  [/authentification indisponible/i, "errors.authUnavailable"],
+  [/aucun produit supabase/i, "errors.noPaypalProducts"],
+  [/capture paypal invalide/i, "errors.paymentConfirm"],
+  [/commande paypal invalide/i, "errors.orderSave"],
+];
+
+function traduireErreurApi(message, fallbackKey = "errors.generic") {
+  const brut = String(message || "");
+  for (const [regex, key] of API_ERROR_MAP) {
+    if (regex.test(brut)) return t(key);
+  }
+  return brut || t(fallbackKey);
+}
+
+function localeMonnaie() {
+  return langueActuelle === "de" ? "de-DE" : langueActuelle === "en" ? "en-GB" : "fr-FR";
+}
+
+function formaterPrixSite(montant) {
+  return new Intl.NumberFormat(localeMonnaie(), {
+    style: "currency",
+    currency: "EUR",
+  }).format(Number(montant) || 0);
+}
+
+window.traduireErreurApi = traduireErreurApi;
+window.localeMonnaie = localeMonnaie;
+window.formaterPrixSite = formaterPrixSite;
 
 function mettreAJourAriaMenuMobile() {
   const navbar = document.querySelector(".navbar");
