@@ -1,4 +1,12 @@
-async function envoyerEmail({ to, subject, text, replyTo }) {
+const {
+  genererHtmlConfirmationCommande,
+  genererHtmlChangementStatut,
+  formaterPrix,
+  nettoyerNomProduit,
+} = require("./emailTemplates");
+const { supabase } = require("../supabase");
+
+async function envoyerEmail({ to, subject, text, html, replyTo }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM || "Jen's & Floran <onboarding@resend.dev>";
 
@@ -7,19 +15,27 @@ async function envoyerEmail({ to, subject, text, replyTo }) {
     return { skipped: true };
   }
 
+  const payload = {
+    from,
+    to,
+    subject,
+    reply_to: replyTo,
+  };
+
+  if (html) {
+    payload.html = html;
+    if (text) payload.text = text;
+  } else {
+    payload.text = text;
+  }
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      from,
-      to,
-      subject,
-      text,
-      reply_to: replyTo,
-    }),
+    body: JSON.stringify(payload),
   });
 
   const body = await response.text();
@@ -30,18 +46,12 @@ async function envoyerEmail({ to, subject, text, replyTo }) {
   return body ? JSON.parse(body) : { ok: true };
 }
 
-function formaterPrix(montant) {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-  }).format(Number(montant) || 0);
-}
-
-function formatLignesCommande(lignes) {
+function formatLignesCommandeTexte(lignes) {
   return lignes
     .map(({ item, produit }) => {
       const sousTotal = Number(produit.price) * item.quantity;
-      return `• ${produit.name} × ${item.quantity}
+      const nom = nettoyerNomProduit(produit.name);
+      return `• ${nom} × ${item.quantity}
   - Type : ${produit.wig_type || "-"}
   - Taille : ${produit.wig_size || "-"}
   - Couleur : ${produit.color || "-"}
@@ -49,6 +59,44 @@ function formatLignesCommande(lignes) {
   - Sous-total : ${formaterPrix(sousTotal)}`;
     })
     .join("\n\n");
+}
+
+async function chargerLignesCommandePourEmail(orderId) {
+  const { data: items, error } = await supabase
+    .from("order_items")
+    .select("product_id, product_name, quantity, unit_price")
+    .eq("order_id", orderId);
+
+  if (error || !items?.length) return [];
+
+  const ids = [...new Set(items.map((i) => i.product_id).filter(Boolean))];
+  let produitsParId = {};
+
+  if (ids.length) {
+    const { data: produits } = await supabase
+      .from("products")
+      .select("id, name, wig_type, wig_size, color, lace_size, price, image_url")
+      .in("id", ids);
+
+    produitsParId = Object.fromEntries((produits || []).map((p) => [p.id, p]));
+  }
+
+  return items.map((row) => {
+    const produit = produitsParId[row.product_id] || {
+      name: row.product_name,
+      price: row.unit_price,
+      wig_type: null,
+      wig_size: null,
+      color: null,
+      lace_size: null,
+      image_url: null,
+    };
+
+    return {
+      item: { product_id: row.product_id, quantity: row.quantity },
+      produit,
+    };
+  });
 }
 
 async function envoyerEmailsCommande({
@@ -61,7 +109,7 @@ async function envoyerEmailsCommande({
   total,
 }) {
   const adminEmail = process.env.EMAIL_ADMIN;
-  const articles = formatLignesCommande(lignes);
+  const articles = formatLignesCommandeTexte(lignes);
   const fraisLivraisonTexte =
     deliveryFee > 0
       ? `\nFrais de livraison : ${formaterPrix(deliveryFee)}
@@ -83,6 +131,28 @@ ${fraisLivraisonTexte}
 Sous-total : ${formaterPrix(subtotal)}
 Total : ${formaterPrix(total)}`;
 
+  const texteClient = `Bonjour ${customer.name},
+
+Votre commande a bien été acceptée.
+
+${commun}
+
+Vous recevrez un e-mail lorsque votre commande sera prête ou expédiée.
+
+Merci pour votre confiance.
+Jen's & Floran`;
+
+  const htmlClient = genererHtmlConfirmationCommande({
+    orderNumber,
+    customerName: customer.name,
+    lignes,
+    subtotal,
+    deliveryFee,
+    total,
+    pickupMode: order.pickup_mode,
+    deliveryAddress: order.delivery_address,
+  });
+
   const resultats = {};
 
   if (adminEmail) {
@@ -96,22 +166,10 @@ Total : ${formaterPrix(total)}`;
 
   resultats.client = await envoyerEmail({
     to: customer.email,
-    subject: `Commande acceptée — ${orderNumber}`,
+    subject: `Commande confirmée — ${orderNumber}`,
     replyTo: adminEmail,
-    text: `Bonjour ${customer.name},
-
-Votre commande a bien été acceptée.
-
-${commun}
-
-Vous recevrez un email supplémentaire dès que votre commande sera livrée ou disponible en boutique chez Saá Mokolo.
-
-Sie erhalten außerdem eine E-Mail, sobald Ihre Bestellung geliefert wurde oder zur Abholung im Geschäft bei Saá Mokolo bereit ist.
-
-You will also receive an email once your order has been delivered or is ready for pickup at Saá Mokolo boutique.
-
-Merci pour votre confiance.
-Jen's & Floran`,
+    text: texteClient,
+    html: htmlClient,
   });
 
   return resultats;
@@ -165,20 +223,12 @@ async function envoyerEmailChangementStatut({
 
 Votre commande ${orderNumber} est en cours de préparation.
 
-Ihre Bestellung ${orderNumber} wird gerade vorbereitet.
-
-Your order ${orderNumber} is being prepared.
-
 Merci pour votre confiance.
 Jen's & Floran`,
 
     ready: `Bonjour ${order.customer_name},
 
 Votre commande ${orderNumber} est prête. Vous pouvez venir la retirer chez Saá Mokolo.
-
-Ihre Bestellung ${orderNumber} ist abholbereit im Geschäft bei Saá Mokolo.
-
-Your order ${orderNumber} is ready for pickup at Saá Mokolo boutique.
 
 Merci pour votre confiance.
 Jen's & Floran`,
@@ -187,19 +237,25 @@ Jen's & Floran`,
 
 Votre commande ${orderNumber} a été livrée.
 
-Ihre Bestellung ${orderNumber} wurde geliefert.
-
-Your order ${orderNumber} has been delivered.
-
 Merci pour votre confiance.
 Jen's & Floran`,
   };
+
+  const lignes = await chargerLignesCommandePourEmail(order.id);
+  const html = genererHtmlChangementStatut({
+    orderNumber,
+    customerName: order.customer_name,
+    status,
+    lignes,
+    pickupMode: order.pickup_mode,
+  });
 
   const result = await envoyerEmail({
     to: emailClient,
     subject: sujets[status],
     replyTo: adminEmail,
     text: corps[status],
+    html,
   });
 
   if (result?.skipped) {

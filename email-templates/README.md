@@ -1,15 +1,30 @@
-# E-mails d'authentification — Jen's & Floran
+# E-mails — Jen's & Floran
 
-Modèles HTML premium pour les e-mails **Supabase Auth** (confirmation de compte et mot de passe oublié).
+Modèles HTML pour les e-mails **Supabase Auth** et référence visuelle pour les **e-mails de commande** (Resend / backend).
 
 ## Fichiers
 
-| Fichier | Usage Supabase |
-|---------|----------------|
-| `confirm-signup.html` | **Confirm signup** |
-| `reset-password.html` | **Reset password** |
+| Fichier | Usage |
+|---------|--------|
+| `confirm-signup.html` | Supabase → **Confirm signup** |
+| `reset-password.html` | Supabase → **Reset password** |
+| `order-confirmation.html` | Référence visuelle (envoi réel via `backend/src/services/emailTemplates.js`) |
 
-## Installation dans Supabase
+## E-mails de commande (automatiques)
+
+Envoyés par le **backend Render** via **Resend** après paiement PayPal ou changement de statut admin :
+
+- **Confirmation** : logo, numéro de commande, bouton « Afficher votre commande », liste des articles (photo + nom + quantité, sans étoiles ni notes)
+- **Préparation / Prête / Livrée** : même charte visuelle
+
+Variables d'environnement Render :
+
+- `RESEND_API_KEY`
+- `EMAIL_FROM` (ex. `Jen's & Floran <commandes@jens-flora.com>`)
+- `EMAIL_ADMIN`
+- `SITE_URL` (optionnel, défaut `https://www.jens-flora.com`)
+
+## Installation Supabase Auth
 
 1. Ouvrez [Supabase Dashboard](https://supabase.com/dashboard) → projet **jens-flora**
 2. **Authentication** → **Emails** → **Templates**

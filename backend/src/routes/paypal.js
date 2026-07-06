@@ -89,7 +89,7 @@ async function recupererProduits(items) {
   const ids = items.map((item) => item.productId);
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, wig_type, wig_size, color, lace_size, price, stock, is_active")
+    .select("id, name, wig_type, wig_size, color, lace_size, price, stock, image_url, is_active")
     .in("id", ids);
 
   if (error) throw error;
