@@ -41,15 +41,17 @@ router.post("/orders", (_req, res) => {
 const STATUTS_ADMIN = ["preparing", "ready", "delivered", "cancelled"];
 
 function transitionStatutAutorisee(ancien, nouveau) {
+  const source = ancien === "accepted" ? "paid" : ancien;
   if (nouveau === "cancelled") {
-    return ["pending_payment", "paid", "preparing", "ready"].includes(ancien);
+    return ["pending_payment", "paid", "accepted", "preparing", "ready"].includes(ancien);
   }
   const workflow = {
     paid: ["preparing"],
+    accepted: ["preparing"],
     preparing: ["ready", "delivered"],
     ready: ["delivered"],
   };
-  return workflow[ancien]?.includes(nouveau) ?? false;
+  return workflow[source]?.includes(nouveau) ?? false;
 }
 
 router.get("/orders", async (req, res, next) => {

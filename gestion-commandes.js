@@ -16,9 +16,26 @@ const STATUTS = [
 const TRANSITIONS_STATUT = {
   pending_payment: ["cancelled"],
   paid: ["preparing", "cancelled"],
+  accepted: ["preparing", "cancelled"],
   preparing: ["ready", "delivered", "cancelled"],
   ready: ["delivered", "cancelled"],
 };
+
+function statutEffectif(status) {
+  return status === "accepted" ? "paid" : status;
+}
+
+function estRetraitBoutique(pickupMode) {
+  const m = String(pickupMode || "").toLowerCase();
+  return m === "pickup" || /retrait|boutique/.test(m);
+}
+
+function libelleModeRecuperationAdmin(mode) {
+  const m = String(mode || "").toLowerCase();
+  if (m === "pickup" || /retrait|boutique/.test(m)) return "Retrait en boutique";
+  if (m === "delivery" || /livraison|domicile/.test(m)) return "Livraison à domicile";
+  return mode || "—";
+}
 
 let commandesCache = [];
 let avisCache = [];
@@ -78,7 +95,70 @@ async function requeteAdmin(chemin, options = {}) {
 }
 
 function libelleStatut(status) {
-  return STATUTS.find((s) => s.value === status)?.label || status;
+  const cle = statutEffectif(status);
+  return STATUTS.find((s) => s.value === cle)?.label || status;
+}
+
+function optionsStatut(valeurActuelle) {
+  const effectif = statutEffectif(valeurActuelle);
+  const modifiables = new Set([
+    valeurActuelle,
+    ...(TRANSITIONS_STATUT[effectif] || TRANSITIONS_STATUT[valeurActuelle] || []),
+  ]);
+  return STATUTS.filter((s) => modifiables.has(s.value))
+    .map(
+      (s) =>
+        `<option value="${s.value}"${s.value === valeurActuelle ? " selected" : ""}>${s.label}</option>`
+    )
+    .join("");
+}
+
+function boutonsActionsRapides(order) {
+  const s = statutEffectif(order.status);
+  const boutons = [];
+
+  if (s === "paid") {
+    boutons.push({
+      status: "preparing",
+      label: "Mettre en préparation",
+      primary: true,
+    });
+  }
+
+  if (s === "preparing") {
+    if (estRetraitBoutique(order.pickupMode)) {
+      boutons.push({
+        status: "ready",
+        label: "Prête (retrait boutique)",
+        primary: false,
+      });
+    }
+    boutons.push({
+      status: "delivered",
+      label: "Marquer livrée",
+      primary: true,
+    });
+  }
+
+  if (s === "ready") {
+    boutons.push({
+      status: "delivered",
+      label: "Marquer livrée",
+      primary: true,
+    });
+  }
+
+  if (!boutons.length) return "";
+
+  return `
+    <div class="admin-quick-actions">
+      ${boutons
+        .map(
+          (b) =>
+            `<button type="button" class="auth-btn ${b.primary ? "auth-btn--fill" : "auth-btn--outline"} admin-quick-status" data-order-id="${order.id}" data-status="${b.status}">${b.label}</button>`
+        )
+        .join("")}
+    </div>`;
 }
 
 function formaterDate(iso) {
@@ -111,16 +191,6 @@ function extraireTelephone(contact) {
   return (parts[0] || "").trim();
 }
 
-function optionsStatut(valeurActuelle) {
-  const modifiables = new Set([valeurActuelle, ...(TRANSITIONS_STATUT[valeurActuelle] || [])]);
-  return STATUTS.filter((s) => modifiables.has(s.value))
-    .map(
-      (s) =>
-        `<option value="${s.value}"${s.value === valeurActuelle ? " selected" : ""}>${s.label}</option>`
-    )
-    .join("");
-}
-
 function afficherCommandes(orders) {
   const conteneur = document.getElementById("admin-orders");
   if (!conteneur) return;
@@ -145,10 +215,11 @@ function afficherCommandes(orders) {
         <li><span>Cliente</span><strong>${echapperHtml(order.customerName)}</strong></li>
         <li><span>Téléphone</span><strong>${echapperHtml(extraireTelephone(order.customerContact))}</strong></li>
         <li><span>Email</span><strong>${echapperHtml(extraireEmail(order.customerContact))}</strong></li>
-        <li><span>Mode</span><strong>${echapperHtml(order.pickupMode || "—")}</strong></li>
-        <li><span>Adresse</span><strong>${echapperHtml(order.deliveryAddress || "—")}</strong></li>
+        <li><span>Mode</span><strong>${echapperHtml(libelleModeRecuperationAdmin(order.pickupMode))}</strong></li>
+        <li><span>Adresse</span><strong>${echapperHtml(order.deliveryAddress && order.deliveryAddress !== "—" ? order.deliveryAddress : "—")}</strong></li>
         <li><span>Total</span><strong>${formaterPrixAdmin(order.totalAmount)}</strong></li>
       </ul>
+      ${boutonsActionsRapides(order)}
       <div class="admin-order-actions">
         <label class="admin-status-field">
           <span>Modifier le statut</span>
@@ -462,6 +533,12 @@ function initAdmin() {
   document.getElementById("admin-filter-status")?.addEventListener("change", filtrerCommandes);
 
   document.getElementById("admin-orders")?.addEventListener("click", (e) => {
+    const quickBtn = e.target.closest(".admin-quick-status");
+    if (quickBtn) {
+      mettreAJourStatut(quickBtn.dataset.orderId, quickBtn.dataset.status);
+      return;
+    }
+
     const btn = e.target.closest(".admin-save-status");
     if (!btn) return;
     const orderId = btn.dataset.orderId;
