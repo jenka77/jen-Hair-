@@ -1,24 +1,12 @@
 const express = require("express");
 const { z } = require("zod");
 const { supabase } = require("../supabase");
+const { verifierAdmin } = require("../middleware/admin");
 const {
   envoyerEmailChangementStatut,
 } = require("../services/email");
 
 const router = express.Router();
-
-function verifierAdmin(req, res) {
-  const motDePasse = req.headers["x-admin-password"];
-  if (!process.env.ADMIN_PASSWORD) {
-    res.status(500).json({ error: "ADMIN_PASSWORD n'est pas configuré côté serveur" });
-    return false;
-  }
-  if (motDePasse !== process.env.ADMIN_PASSWORD) {
-    res.status(401).json({ error: "Accès admin refusé" });
-    return false;
-  }
-  return true;
-}
 
 function normaliserCommande(order) {
   return {

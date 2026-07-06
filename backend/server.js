@@ -7,6 +7,7 @@ require("dotenv").config({
 const express = require("express");
 const cors = require("cors");
 const { FRONTEND_URL, origineAutorisee } = require("./src/config/origins");
+const { limiterGlobal, appliquerLimitesParRoute } = require("./src/middleware/rateLimit");
 const productsRouter = require("./src/routes/products");
 const ordersRouter = require("./src/routes/orders");
 const paypalRouter = require("./src/routes/paypal");
@@ -16,6 +17,9 @@ const hairdressersRouter = require("./src/routes/hairdressers");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
+const PRODUCTION = process.env.NODE_ENV === "production";
+
+app.set("trust proxy", 1);
 
 app.use(
   cors({
@@ -31,6 +35,8 @@ app.use(
 );
 
 app.use(express.json({ limit: "1mb" }));
+app.use("/api", limiterGlobal);
+app.use("/api", appliquerLimitesParRoute);
 
 app.get("/", (req, res) => {
   res.json({
@@ -43,7 +49,6 @@ app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
     timestamp: new Date().toISOString(),
-    paypalEnv: process.env.PAYPAL_ENV === "live" ? "live" : "sandbox",
   });
 });
 
@@ -62,8 +67,15 @@ app.use((req, res) => {
 
 app.use((error, req, res, next) => {
   console.error(error);
+
+  if (error?.status === 429) {
+    return res.status(429).json({
+      error: error.message || "Trop de requêtes. Réessayez plus tard.",
+    });
+  }
+
   res.status(error.status || 500).json({
-    error: error.message || "Erreur serveur",
+    error: PRODUCTION ? "Erreur serveur" : error.message || "Erreur serveur",
   });
 });
 

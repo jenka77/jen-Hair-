@@ -2,6 +2,7 @@ const express = require("express");
 const { z } = require("zod");
 const { supabase } = require("../supabase");
 const { authOptionnelle } = require("../middleware/auth");
+const { verifierAdmin } = require("../middleware/admin");
 
 const router = express.Router();
 
@@ -79,19 +80,6 @@ function urlsImagesDepuisRow(row) {
   return [row.image_url_1, row.image_url_2]
     .map((url) => String(url || "").trim())
     .filter(Boolean);
-}
-
-function verifierAdmin(req, res) {
-  const motDePasse = req.headers["x-admin-password"];
-  if (!process.env.ADMIN_PASSWORD) {
-    res.status(500).json({ error: "ADMIN_PASSWORD n'est pas configuré côté serveur" });
-    return false;
-  }
-  if (motDePasse !== process.env.ADMIN_PASSWORD) {
-    res.status(401).json({ error: "Accès admin refusé" });
-    return false;
-  }
-  return true;
 }
 
 function normaliserAvis(row, { publicView = false } = {}) {
