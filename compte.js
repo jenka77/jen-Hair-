@@ -194,6 +194,7 @@ async function basculerVueConnecte() {
     if (guest) guest.hidden = true;
     if (user) user.hidden = false;
     afficherProfilUtilisateur(session.user);
+    if (typeof mettreAJourNavbarAuth === "function") mettreAJourNavbarAuth();
 
     try {
       const data = await chargerMesCommandes();
@@ -210,6 +211,7 @@ async function basculerVueConnecte() {
   if (guest) guest.hidden = false;
   if (user) user.hidden = true;
   afficherMode(mode);
+  if (typeof mettreAJourNavbarAuth === "function") mettreAJourNavbarAuth();
 }
 
 function nettoyerParamsAuthUrl() {

@@ -2640,6 +2640,23 @@ img {
   gap: 6px;
 }
 
+.auth-nav.is-connected [data-auth-guest],
+.nav-auth-mobile.is-connected [data-auth-guest] {
+  display: none !important;
+}
+
+.auth-nav:not(.is-connected) [data-auth-user],
+.nav-auth-mobile:not(.is-connected) [data-auth-user] {
+  display: none !important;
+}
+
+.auth-nav [data-auth-guest][hidden],
+.auth-nav [data-auth-user][hidden],
+.nav-auth-mobile [data-auth-guest][hidden],
+.nav-auth-mobile [data-auth-user][hidden] {
+  display: none !important;
+}
+
 .auth-btn {
   display: inline-flex;
   align-items: center;

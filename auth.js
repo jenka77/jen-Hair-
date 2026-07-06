@@ -101,6 +101,7 @@ async function inscrireClient(email, password, profil = {}) {
     throw err;
   }
   sessionCourante = data.session;
+  mettreAJourNavbarAuth();
   return data;
 }
 
@@ -134,6 +135,7 @@ async function mettreAJourMotDePasse(password) {
 
   enReinitialisationMotDePasse = false;
   sessionCourante = data.session;
+  mettreAJourNavbarAuth();
   return data;
 }
 
@@ -179,6 +181,7 @@ async function connecterClient(email, password) {
 
   if (error) throw error;
   sessionCourante = data.session;
+  mettreAJourNavbarAuth();
   return data;
 }
 
@@ -187,6 +190,7 @@ async function deconnecterClient() {
   if (!client) return;
   await client.auth.signOut();
   sessionCourante = null;
+  mettreAJourNavbarAuth();
 }
 
 async function exigerConnexionPourCommande() {
@@ -234,6 +238,8 @@ function injecterAuthMenuMobile() {
 
   if (typeof appliquerTraductions === "function") {
     appliquerTraductions();
+  } else {
+    mettreAJourNavbarAuth();
   }
 }
 
@@ -241,11 +247,17 @@ function mettreAJourNavbarAuth() {
   const connecte = !!sessionCourante?.user;
   const email = sessionCourante?.user?.email || "";
 
+  document.querySelectorAll(".auth-nav, .nav-auth-mobile").forEach((nav) => {
+    nav.classList.toggle("is-connected", connecte);
+  });
+
   document.querySelectorAll("[data-auth-guest]").forEach((el) => {
     el.hidden = connecte;
+    el.setAttribute("aria-hidden", connecte ? "true" : "false");
   });
   document.querySelectorAll("[data-auth-user]").forEach((el) => {
     el.hidden = !connecte;
+    el.setAttribute("aria-hidden", connecte ? "false" : "true");
     if (el.dataset.authEmail && email) {
       el.title = email;
     }
