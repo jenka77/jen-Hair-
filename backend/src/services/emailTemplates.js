@@ -298,7 +298,7 @@ function enveloppeEmail({ titrePage, contenu, locale }) {
             <td style="padding:24px 32px 32px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:#888888;text-align:center;">
               <strong style="color:#1a1a1a;">Sa'a Mokolo</strong><br />
               Jen's &amp; Floran — Steinstra&#223;e 70, 35390 Gie&#223;en<br />
-              <a href="mailto:jensFloaran@gmail.com" style="color:${GOLD};text-decoration:none;">jensFloaran@gmail.com</a>
+              <a href="mailto:jensfloran@gmail.com" style="color:${GOLD};text-decoration:none;">jensfloran@gmail.com</a>
               &nbsp;·&nbsp;
               <a href="https://wa.me/4915217868134" style="color:${GOLD};text-decoration:none;">+49 152 17868134</a>
             </td>
