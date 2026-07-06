@@ -137,7 +137,7 @@ const I18N = {
     "cart.title": "Votre Panier",
     "cart.total": "Total",
     "cart.checkout": "Passer commande",
-    "cart.empty": "Votre panier est vide.<br />Découvrez notre collection ✦",
+    "cart.empty": "Votre panier est vide.<br />Découvrez notre collection",
     "cart.remove": "Retirer",
 
     "order.step": "Finaliser",
@@ -315,7 +315,7 @@ const I18N = {
     "product.specColor": "Couleur",
     "product.specLace": "Lace",
 
-    "toast.added": "« {nom} » ajouté au panier ✦",
+    "toast.added": "« {nom} » ajouté au panier",
     "toast.maxStock": "Stock maximum atteint pour cet article",
     "toast.deliveryNeeded": "Merci d'indiquer une adresse complète : rue, numéro, code postal allemand à 5 chiffres, ville et pays.",
     "toast.invalidPhone": "Merci d'indiquer un numéro de téléphone valide.",
@@ -489,7 +489,7 @@ const I18N = {
     "cart.title": "Ihr Warenkorb",
     "cart.total": "Gesamt",
     "cart.checkout": "Zur Bestellung",
-    "cart.empty": "Ihr Warenkorb ist leer.<br />Entdecken Sie unsere Kollektion ✦",
+    "cart.empty": "Ihr Warenkorb ist leer.<br />Entdecken Sie unsere Kollektion",
     "cart.remove": "Entfernen",
 
     "order.step": "Abschließen",
@@ -667,7 +667,7 @@ const I18N = {
     "product.specColor": "Farbe",
     "product.specLace": "Lace",
 
-    "toast.added": "„{nom}“ zum Warenkorb hinzugefügt ✦",
+    "toast.added": "„{nom}“ zum Warenkorb hinzugefügt",
     "toast.maxStock": "Maximaler Bestand für diesen Artikel erreicht",
     "toast.deliveryNeeded": "Bitte geben Sie eine vollständige Adresse an: Straße, Hausnummer, 5-stellige deutsche Postleitzahl, Stadt und Land.",
     "toast.invalidPhone": "Bitte geben Sie eine gültige Telefonnummer ein.",
@@ -841,7 +841,7 @@ const I18N = {
     "cart.title": "Your Cart",
     "cart.total": "Total",
     "cart.checkout": "Checkout",
-    "cart.empty": "Your cart is empty.<br />Discover our collection ✦",
+    "cart.empty": "Your cart is empty.<br />Discover our collection",
     "cart.remove": "Remove",
 
     "order.step": "Finalize",
@@ -1019,7 +1019,7 @@ const I18N = {
     "product.specColor": "Color",
     "product.specLace": "Lace",
 
-    "toast.added": "“{nom}” added to cart ✦",
+    "toast.added": "“{nom}” added to cart",
     "toast.maxStock": "Maximum stock reached for this item",
     "toast.deliveryNeeded": "Please enter a complete address: street, house number, 5-digit German postal code, city and country.",
     "toast.invalidPhone": "Please enter a valid phone number.",
