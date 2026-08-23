@@ -488,6 +488,61 @@ function lireLiensProDepuisFormulaire(form) {
   return links;
 }
 
+function messageErreurReponseInscription(data) {
+  if (!data) return t("coiffeuses.registerError");
+
+  const erreurServeur = String(data.error || "").trim();
+  if (erreurServeur && erreurServeur !== "Données invalides") {
+    return erreurServeur;
+  }
+
+  const fieldErrors = data.details?.fieldErrors || {};
+  const ordreChamps = [
+    "stateSlug",
+    "name",
+    "email",
+    "phone",
+    "address",
+    "travelAvailable",
+    "travelNotes",
+    "wigInstallCustomisation",
+    "profileImageUrl",
+    "professionalLinks",
+  ];
+
+  for (const champ of ordreChamps) {
+    const messages = fieldErrors[champ];
+    if (messages?.length) {
+      const cle = `coiffeuses.validation.${champ}`;
+      const traduit = t(cle);
+      if (traduit !== cle) return traduit;
+      return messages[0];
+    }
+  }
+
+  for (const [cle, messages] of Object.entries(fieldErrors)) {
+    if (!messages?.length) continue;
+    if (cle.startsWith("professionalLinks")) {
+      return t("coiffeuses.validation.professionalLinks");
+    }
+    const base = cle.split(".")[0];
+    const cleI18n = `coiffeuses.validation.${base}`;
+    const traduit = t(cleI18n);
+    if (traduit !== cleI18n) return traduit;
+    return messages[0];
+  }
+
+  return t("coiffeuses.registerErrorGeneric");
+}
+
+function validerRadiosObligatoires(form) {
+  const travel = form.querySelector('input[name="travelAvailable"]:checked');
+  const wig = form.querySelector('input[name="wigInstallCustomisation"]:checked');
+  if (!travel) return t("coiffeuses.validation.travelAvailable");
+  if (!wig) return t("coiffeuses.validation.wigInstallCustomisation");
+  return "";
+}
+
 async function soumettreInscriptionCoiffeuse(e) {
   e.preventDefault();
   const form = e.currentTarget;
@@ -495,6 +550,16 @@ async function soumettreInscriptionCoiffeuse(e) {
   const submitBtn = document.getElementById("coiffeuses-register-submit");
 
   if (!form.reportValidity()) return;
+
+  const erreurRadios = validerRadiosObligatoires(form);
+  if (erreurRadios) {
+    if (messageEl) {
+      messageEl.hidden = false;
+      messageEl.className = "account-message account-message--error";
+      messageEl.textContent = erreurRadios;
+    }
+    return;
+  }
 
   const fd = new FormData(form);
   const stateSlug = fd.get("stateSlug");
@@ -569,7 +634,7 @@ async function soumettreInscriptionCoiffeuse(e) {
     const data = await reponse.json().catch(() => ({}));
 
     if (!reponse.ok) {
-      throw new Error(data?.error || t("coiffeuses.registerError"));
+      throw new Error(messageErreurReponseInscription(data));
     }
 
     form.reset();

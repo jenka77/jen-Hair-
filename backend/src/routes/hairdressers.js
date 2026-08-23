@@ -108,6 +108,52 @@ const coiffeuseSubmitSchema = z.object({
   locale: z.enum(["fr", "de", "en"]).optional(),
 });
 
+function messageErreurValidationCoiffeuse(zodError) {
+  const LABELS = {
+    stateSlug: "Land (État)",
+    name: "Nom / prénom",
+    email: "Adresse e-mail",
+    phone: "Téléphone",
+    address: "Adresse",
+    travelAvailable: "Déplacement",
+    travelNotes: "Précisions déplacement",
+    wigInstallCustomisation: "Pose & customisation perruque",
+    profileImageUrl: "Photo de profil",
+    professionalLinks: "Liens professionnels",
+  };
+
+  for (const issue of zodError.issues) {
+    const field = issue.path[0];
+    const label = LABELS[field] || String(field || "Champ");
+    const sousChamp = issue.path[2];
+
+    if (field === "email") {
+      return "Adresse e-mail invalide. Utilisez un format du type vous@exemple.com.";
+    }
+    if (field === "profileImageUrl") {
+      return "Photo de profil manquante ou invalide. Choisissez une photo (JPEG, PNG ou WebP) depuis votre galerie.";
+    }
+    if (field === "professionalLinks") {
+      if (sousChamp === "url") {
+        return "Lien professionnel invalide : l'URL doit commencer par https:// (ex. https://www.instagram.com/votre-compte).";
+      }
+      return "Au moins un lien professionnel valide est requis.";
+    }
+    if (field === "travelAvailable" || field === "wigInstallCustomisation") {
+      return `${label} : veuillez sélectionner une option (Oui ou Non).`;
+    }
+    if (issue.code === "too_small") {
+      return `${label} : texte trop court. Complétez ce champ.`;
+    }
+    if (issue.code === "invalid_type") {
+      return `${label} : valeur manquante ou incorrecte.`;
+    }
+    return `${label} : ${issue.message}`;
+  }
+
+  return "Certaines informations sont invalides. Vérifiez tous les champs obligatoires (*).";
+}
+
 function colonnesProfilManquantes(error) {
   const msg = String(error?.message || error?.details || "").toLowerCase();
   return msg.includes("profile_image_url") || msg.includes("professional_links");
@@ -236,7 +282,7 @@ router.post("/hairdressers/submit", async (req, res, next) => {
     const validation = coiffeuseSubmitSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
-        error: "Données invalides",
+        error: messageErreurValidationCoiffeuse(validation.error),
         details: validation.error.flatten(),
       });
     }

@@ -43,11 +43,10 @@ const EMAIL_I18N = {
     coiffeuseAdminTitle: "Nouvelle inscription coiffeuse",
     coiffeuseAdminLead: "Une coiffeuse vient de soumettre son profil. Connectez-vous à l'administration pour l'approuver.",
     coiffeuseAdminOpen: "Ouvrir l'administration",
-    coiffeuseApprovedSubject: "Votre profil coiffeuse est en ligne — Jen's & Floran",
+    coiffeuseApprovedSubject: "Votre profil est en ligne — Jen's & Floran",
     coiffeuseApprovedTitle: "Profil confirmé",
-    coiffeuseApprovedLead:
-      "votre profil a été validé par l'équipe Jen's & Floran. Vous êtes désormais visible dans l'annuaire des coiffeuses.",
-    coiffeuseApprovedDirectory: "Voir l'annuaire",
+    coiffeuseApprovedLead: "votre profil coiffeuse a été validé. Vous pouvez le consulter dans l'annuaire via le lien ci-dessous.",
+    coiffeuseApprovedDirectory: "Ouvrir la page coiffeuses",
     coiffeuseFieldName: "Nom",
     coiffeuseFieldEmail: "E-mail",
     coiffeuseFieldPhone: "Téléphone",
@@ -93,11 +92,10 @@ const EMAIL_I18N = {
     coiffeuseAdminTitle: "Neue Friseurinnen-Anmeldung",
     coiffeuseAdminLead: "Eine Friseurin hat ihr Profil eingereicht. Bitte im Admin-Bereich freigeben.",
     coiffeuseAdminOpen: "Administration öffnen",
-    coiffeuseApprovedSubject: "Ihr Friseurinnen-Profil ist online — Jen's & Floran",
+    coiffeuseApprovedSubject: "Ihr Profil ist online — Jen's & Floran",
     coiffeuseApprovedTitle: "Profil bestätigt",
-    coiffeuseApprovedLead:
-      "Ihr Profil wurde von Jen's & Floran freigegeben. Sie sind jetzt im Friseurinnen-Verzeichnis sichtbar.",
-    coiffeuseApprovedDirectory: "Verzeichnis ansehen",
+    coiffeuseApprovedLead: "Ihr Friseurinnen-Profil wurde freigegeben. Über den Link unten gelangen Sie zum Verzeichnis.",
+    coiffeuseApprovedDirectory: "Zur Friseurinnen-Seite",
     coiffeuseFieldName: "Name",
     coiffeuseFieldEmail: "E-Mail",
     coiffeuseFieldPhone: "Telefon",
@@ -142,11 +140,10 @@ const EMAIL_I18N = {
     coiffeuseAdminTitle: "New stylist registration",
     coiffeuseAdminLead: "A stylist has submitted their profile. Please sign in to the admin panel to approve it.",
     coiffeuseAdminOpen: "Open admin panel",
-    coiffeuseApprovedSubject: "Your stylist profile is live — Jen's & Floran",
+    coiffeuseApprovedSubject: "Your profile is live — Jen's & Floran",
     coiffeuseApprovedTitle: "Profile confirmed",
-    coiffeuseApprovedLead:
-      "your profile has been approved by Jen's & Floran. You are now visible in the stylist directory.",
-    coiffeuseApprovedDirectory: "View directory",
+    coiffeuseApprovedLead: "your stylist profile has been approved. Use the link below to open the directory page.",
+    coiffeuseApprovedDirectory: "Open stylists page",
     coiffeuseFieldName: "Name",
     coiffeuseFieldEmail: "Email",
     coiffeuseFieldPhone: "Phone",
@@ -609,18 +606,13 @@ function genererHtmlCoiffeuseApprouvee({ coiffeuse, directoryUrl, locale = "fr" 
   const prenom = String(coiffeuse.name || "").trim().split(/\s+/)[0] || tr(lang, "hello");
   const contenu = `
     <tr>
-      <td style="padding:8px 32px 12px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#1a1a1a;">
-        ${echapperHtml(tr(lang, "coiffeuseApprovedTitle"))}
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:0 32px 20px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#555555;">
+      <td style="padding:24px 32px 12px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#444444;">
         ${echapperHtml(tr(lang, "hello"))} ${echapperHtml(prenom)},<br /><br />
         ${echapperHtml(tr(lang, "coiffeuseApprovedLead"))}
       </td>
     </tr>
     <tr>
-      <td align="center" style="padding:0 32px 32px;">
+      <td align="center" style="padding:8px 32px 36px;">
         <a href="${echapperHtml(directoryUrl)}" style="display:inline-block;padding:14px 28px;background-color:${GOLD};color:#1a1a1a;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:999px;">
           ${echapperHtml(tr(lang, "coiffeuseApprovedDirectory"))}
         </a>
@@ -632,6 +624,18 @@ function genererHtmlCoiffeuseApprouvee({ coiffeuse, directoryUrl, locale = "fr" 
     contenu,
     locale: lang,
   });
+}
+
+function texteCoiffeuseApprouvee({ coiffeuse, directoryUrl, locale = "fr" }) {
+  const lang = normaliserLocale(locale);
+  const prenom = String(coiffeuse.name || "").trim().split(/\s+/)[0] || tr(lang, "hello");
+  return `${tr(lang, "hello")} ${prenom},
+
+${tr(lang, "coiffeuseApprovedLead")}
+
+${directoryUrl}
+
+Jen's & Floran`;
 }
 
 function texteNouvelleCoiffeuseAdmin({ coiffeuse, adminUrl, locale = "fr" }) {
@@ -647,18 +651,6 @@ ${tr(lang, "coiffeuseFieldState")} : ${libelleLandCoiffeuse(coiffeuse.stateSlug)
 ${tr(lang, "coiffeuseFieldAddress")} : ${coiffeuse.address}
 
 ${tr(lang, "coiffeuseAdminOpen")} : ${adminUrl}
-
-Jen's & Floran`;
-}
-
-function texteCoiffeuseApprouvee({ coiffeuse, directoryUrl, locale = "fr" }) {
-  const lang = normaliserLocale(locale);
-  const prenom = String(coiffeuse.name || "").trim().split(/\s+/)[0] || tr(lang, "hello");
-  return `${tr(lang, "hello")} ${prenom},
-
-${tr(lang, "coiffeuseApprovedLead")}
-
-${tr(lang, "coiffeuseApprovedDirectory")} : ${directoryUrl}
 
 Jen's & Floran`;
 }
