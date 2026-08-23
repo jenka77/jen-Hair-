@@ -39,6 +39,20 @@ const EMAIL_I18N = {
       "Votre commande a bien été livrée. Nous espérons qu'elle vous apportera entière satisfaction.",
     statusDeliveredItems: "Articles livrés",
     footerCopy: "© 2026 Jen's & Floran. Tous droits réservés.",
+    coiffeuseAdminSubject: "Nouvelle coiffeuse à valider — {name}",
+    coiffeuseAdminTitle: "Nouvelle inscription coiffeuse",
+    coiffeuseAdminLead: "Une coiffeuse vient de soumettre son profil. Connectez-vous à l'administration pour l'approuver.",
+    coiffeuseAdminOpen: "Ouvrir l'administration",
+    coiffeuseApprovedSubject: "Votre profil coiffeuse est en ligne — Jen's & Floran",
+    coiffeuseApprovedTitle: "Profil confirmé",
+    coiffeuseApprovedLead:
+      "votre profil a été validé par l'équipe Jen's & Floran. Vous êtes désormais visible dans l'annuaire des coiffeuses.",
+    coiffeuseApprovedDirectory: "Voir l'annuaire",
+    coiffeuseFieldName: "Nom",
+    coiffeuseFieldEmail: "E-mail",
+    coiffeuseFieldPhone: "Téléphone",
+    coiffeuseFieldState: "Land",
+    coiffeuseFieldAddress: "Adresse",
   },
   de: {
     orderLabel: "Bestellung",
@@ -75,6 +89,20 @@ const EMAIL_I18N = {
       "Ihre Bestellung wurde erfolgreich geliefert. Wir hoffen, sie bereitet Ihnen Freude.",
     statusDeliveredItems: "Gelieferte Artikel",
     footerCopy: "© 2026 Jen's & Floran. Alle Rechte vorbehalten.",
+    coiffeuseAdminSubject: "Neue Friseurin zur Freigabe — {name}",
+    coiffeuseAdminTitle: "Neue Friseurinnen-Anmeldung",
+    coiffeuseAdminLead: "Eine Friseurin hat ihr Profil eingereicht. Bitte im Admin-Bereich freigeben.",
+    coiffeuseAdminOpen: "Administration öffnen",
+    coiffeuseApprovedSubject: "Ihr Friseurinnen-Profil ist online — Jen's & Floran",
+    coiffeuseApprovedTitle: "Profil bestätigt",
+    coiffeuseApprovedLead:
+      "Ihr Profil wurde von Jen's & Floran freigegeben. Sie sind jetzt im Friseurinnen-Verzeichnis sichtbar.",
+    coiffeuseApprovedDirectory: "Verzeichnis ansehen",
+    coiffeuseFieldName: "Name",
+    coiffeuseFieldEmail: "E-Mail",
+    coiffeuseFieldPhone: "Telefon",
+    coiffeuseFieldState: "Bundesland",
+    coiffeuseFieldAddress: "Adresse",
   },
   en: {
     orderLabel: "Order",
@@ -110,6 +138,20 @@ const EMAIL_I18N = {
       "Your order has been delivered. We hope it brings you complete satisfaction.",
     statusDeliveredItems: "Delivered items",
     footerCopy: "© 2026 Jen's & Floran. All rights reserved.",
+    coiffeuseAdminSubject: "New stylist profile to review — {name}",
+    coiffeuseAdminTitle: "New stylist registration",
+    coiffeuseAdminLead: "A stylist has submitted their profile. Please sign in to the admin panel to approve it.",
+    coiffeuseAdminOpen: "Open admin panel",
+    coiffeuseApprovedSubject: "Your stylist profile is live — Jen's & Floran",
+    coiffeuseApprovedTitle: "Profile confirmed",
+    coiffeuseApprovedLead:
+      "your profile has been approved by Jen's & Floran. You are now visible in the stylist directory.",
+    coiffeuseApprovedDirectory: "View directory",
+    coiffeuseFieldName: "Name",
+    coiffeuseFieldEmail: "Email",
+    coiffeuseFieldPhone: "Phone",
+    coiffeuseFieldState: "State",
+    coiffeuseFieldAddress: "Address",
   },
 };
 
@@ -491,9 +533,143 @@ ${tr(locale, "orderLabel")} ${orderNumber}
 Jen's & Floran`;
 }
 
+const LIBELLES_LAND_FR = {
+  "baden-wuerttemberg": "Baden-Württemberg",
+  bayern: "Bavière",
+  berlin: "Berlin",
+  brandenburg: "Brandebourg",
+  bremen: "Brême",
+  hamburg: "Hambourg",
+  hessen: "Hesse",
+  "mecklenburg-vorpommern": "Mecklembourg-P.-An.",
+  niedersachsen: "Basse-Saxe",
+  "nordrhein-westfalen": "Rhénanie-du-Nord-Westphalie",
+  "rheinland-pfalz": "Rhénanie-Palatinat",
+  saarland: "Sarre",
+  sachsen: "Saxe",
+  "sachsen-anhalt": "Saxe-Anhalt",
+  "schleswig-holstein": "Schleswig-Holstein",
+  thueringen: "Thuringe",
+};
+
+function libelleLandCoiffeuse(slug) {
+  return LIBELLES_LAND_FR[slug] || slug || "—";
+}
+
+function ligneInfoCoiffeuse(label, valeur) {
+  if (!valeur) return "";
+  return `<tr>
+    <td style="padding:6px 0;color:#888888;font-size:13px;vertical-align:top;width:38%;">${echapperHtml(label)}</td>
+    <td style="padding:6px 0;color:#1a1a1a;font-size:14px;vertical-align:top;">${echapperHtml(valeur)}</td>
+  </tr>`;
+}
+
+function genererHtmlNouvelleCoiffeuseAdmin({ coiffeuse, adminUrl, locale = "fr" }) {
+  const lang = normaliserLocale(locale);
+  const prenom = String(coiffeuse.name || "").trim().split(/\s+/)[0] || coiffeuse.name;
+  const contenu = `
+    <tr>
+      <td style="padding:8px 32px 12px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#1a1a1a;">
+        ${echapperHtml(tr(lang, "coiffeuseAdminTitle"))}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0 32px 20px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#555555;">
+        ${echapperHtml(tr(lang, "coiffeuseAdminLead"))}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0 32px 24px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#fafafa;border:1px solid #eeeeee;border-radius:8px;padding:16px 18px;">
+          ${ligneInfoCoiffeuse(tr(lang, "coiffeuseFieldName"), coiffeuse.name)}
+          ${ligneInfoCoiffeuse(tr(lang, "coiffeuseFieldEmail"), coiffeuse.contactEmail)}
+          ${ligneInfoCoiffeuse(tr(lang, "coiffeuseFieldPhone"), coiffeuse.phone)}
+          ${ligneInfoCoiffeuse(tr(lang, "coiffeuseFieldState"), libelleLandCoiffeuse(coiffeuse.stateSlug))}
+          ${ligneInfoCoiffeuse(tr(lang, "coiffeuseFieldAddress"), coiffeuse.address)}
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" style="padding:0 32px 32px;">
+        <a href="${echapperHtml(adminUrl)}" style="display:inline-block;padding:14px 28px;background-color:${GOLD};color:#1a1a1a;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:999px;">
+          ${echapperHtml(tr(lang, "coiffeuseAdminOpen"))}
+        </a>
+      </td>
+    </tr>`;
+
+  return enveloppeEmail({
+    titrePage: tr(lang, "coiffeuseAdminTitle"),
+    contenu,
+    locale: lang,
+  });
+}
+
+function genererHtmlCoiffeuseApprouvee({ coiffeuse, directoryUrl, locale = "fr" }) {
+  const lang = normaliserLocale(locale);
+  const prenom = String(coiffeuse.name || "").trim().split(/\s+/)[0] || tr(lang, "hello");
+  const contenu = `
+    <tr>
+      <td style="padding:8px 32px 12px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#1a1a1a;">
+        ${echapperHtml(tr(lang, "coiffeuseApprovedTitle"))}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0 32px 20px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#555555;">
+        ${echapperHtml(tr(lang, "hello"))} ${echapperHtml(prenom)},<br /><br />
+        ${echapperHtml(tr(lang, "coiffeuseApprovedLead"))}
+      </td>
+    </tr>
+    <tr>
+      <td align="center" style="padding:0 32px 32px;">
+        <a href="${echapperHtml(directoryUrl)}" style="display:inline-block;padding:14px 28px;background-color:${GOLD};color:#1a1a1a;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;text-decoration:none;border-radius:999px;">
+          ${echapperHtml(tr(lang, "coiffeuseApprovedDirectory"))}
+        </a>
+      </td>
+    </tr>`;
+
+  return enveloppeEmail({
+    titrePage: tr(lang, "coiffeuseApprovedTitle"),
+    contenu,
+    locale: lang,
+  });
+}
+
+function texteNouvelleCoiffeuseAdmin({ coiffeuse, adminUrl, locale = "fr" }) {
+  const lang = normaliserLocale(locale);
+  return `${tr(lang, "coiffeuseAdminTitle")}
+
+${tr(lang, "coiffeuseAdminLead")}
+
+${tr(lang, "coiffeuseFieldName")} : ${coiffeuse.name}
+${tr(lang, "coiffeuseFieldEmail")} : ${coiffeuse.contactEmail}
+${tr(lang, "coiffeuseFieldPhone")} : ${coiffeuse.phone}
+${tr(lang, "coiffeuseFieldState")} : ${libelleLandCoiffeuse(coiffeuse.stateSlug)}
+${tr(lang, "coiffeuseFieldAddress")} : ${coiffeuse.address}
+
+${tr(lang, "coiffeuseAdminOpen")} : ${adminUrl}
+
+Jen's & Floran`;
+}
+
+function texteCoiffeuseApprouvee({ coiffeuse, directoryUrl, locale = "fr" }) {
+  const lang = normaliserLocale(locale);
+  const prenom = String(coiffeuse.name || "").trim().split(/\s+/)[0] || tr(lang, "hello");
+  return `${tr(lang, "hello")} ${prenom},
+
+${tr(lang, "coiffeuseApprovedLead")}
+
+${tr(lang, "coiffeuseApprovedDirectory")} : ${directoryUrl}
+
+Jen's & Floran`;
+}
+
 module.exports = {
   genererHtmlConfirmationCommande,
   genererHtmlChangementStatut,
+  genererHtmlNouvelleCoiffeuseAdmin,
+  genererHtmlCoiffeuseApprouvee,
+  texteNouvelleCoiffeuseAdmin,
+  texteCoiffeuseApprouvee,
   nettoyerNomProduit,
   formaterPrix,
   sujetEmail,

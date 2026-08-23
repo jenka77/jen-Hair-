@@ -4,6 +4,10 @@ const { z } = require("zod");
 const { supabase } = require("../supabase");
 const { verifierAdmin } = require("../middleware/admin");
 const { GERMAN_STATE_SLUGS, estLandAllemandValide } = require("../constants/germanStates");
+const {
+  envoyerEmailNouvelleInscriptionCoiffeuse,
+  envoyerEmailCoiffeuseApprouvee,
+} = require("../services/email");
 
 const router = express.Router();
 
@@ -45,6 +49,7 @@ function extensionDepuisMimeCoiffeuse(mimetype) {
 const COLS_BASE =
   "id, state_slug, name, phone, address, travel_available, travel_notes, wig_install_customisation, sort_order";
 const COLS_PUBLIC = `${COLS_BASE}, profile_image_url, professional_links`;
+const COLS_ADMIN = `${COLS_PUBLIC}, contact_email, is_published`;
 
 const lienProSchema = z.object({
   label: z.string().trim().max(80).nullable().optional(),
@@ -61,6 +66,7 @@ const lienProSchema = z.object({
 const coiffeuseAdminSchema = z.object({
   stateSlug: z.string().min(1),
   name: z.string().trim().min(2).max(120),
+  email: z.string().trim().email().max(200).optional(),
   phone: z.string().trim().max(40).nullable().optional(),
   address: z.string().trim().max(500).nullable().optional(),
   travelAvailable: z.boolean().optional(),
@@ -84,6 +90,7 @@ const coiffeuseAdminSchema = z.object({
 const coiffeuseSubmitSchema = z.object({
   stateSlug: z.string().min(1),
   name: z.string().trim().min(2).max(120),
+  email: z.string().trim().email().max(200),
   phone: z.string().trim().min(3).max(40),
   address: z.string().trim().min(5).max(500),
   travelAvailable: z.boolean(),
@@ -98,11 +105,21 @@ const coiffeuseSubmitSchema = z.object({
       message: "L'URL de la photo doit commencer par https://",
     }),
   professionalLinks: z.array(lienProSchema).min(1).max(12),
+  locale: z.enum(["fr", "de", "en"]).optional(),
 });
 
 function colonnesProfilManquantes(error) {
   const msg = String(error?.message || error?.details || "").toLowerCase();
   return msg.includes("profile_image_url") || msg.includes("professional_links");
+}
+
+function colonneContactEmailManquante(error) {
+  const msg = String(error?.message || error?.details || "").toLowerCase();
+  return msg.includes("contact_email");
+}
+
+function colonnesAdminManquantes(error) {
+  return colonnesProfilManquantes(error) || colonneContactEmailManquante(error);
 }
 
 function normaliserLiensProfessionnels(raw) {
@@ -121,7 +138,7 @@ function normaliserLiensProfessionnels(raw) {
     .filter(Boolean);
 }
 
-function normaliserCoiffeuse(row) {
+function normaliserCoiffeuse(row, { inclureEmail = false } = {}) {
   return {
     id: row.id,
     stateSlug: row.state_slug,
@@ -134,6 +151,9 @@ function normaliserCoiffeuse(row) {
     profileImageUrl: (row.profile_image_url || "").trim() || null,
     professionalLinks: normaliserLiensProfessionnels(row.professional_links),
     sortOrder: Number(row.sort_order) || 0,
+    ...(inclureEmail && row.contact_email !== undefined
+      ? { contactEmail: (row.contact_email || "").trim().toLowerCase() || null }
+      : {}),
     ...(row.is_published !== undefined ? { isPublished: row.is_published !== false } : {}),
   };
 }
@@ -224,6 +244,7 @@ router.post("/hairdressers/submit", async (req, res, next) => {
     const {
       stateSlug,
       name,
+      email,
       phone,
       address,
       travelAvailable,
@@ -231,6 +252,7 @@ router.post("/hairdressers/submit", async (req, res, next) => {
       wigInstallCustomisation,
       profileImageUrl,
       professionalLinks,
+      locale,
     } = validation.data;
 
     if (!estLandAllemandValide(stateSlug)) {
@@ -244,6 +266,7 @@ router.post("/hairdressers/submit", async (req, res, next) => {
     const payload = {
       state_slug: stateSlug,
       name: name.trim(),
+      contact_email: email.trim().toLowerCase(),
       phone: phone.trim(),
       address: address.trim(),
       travel_available: travelAvailable,
@@ -258,24 +281,43 @@ router.post("/hairdressers/submit", async (req, res, next) => {
     let { data, error } = await supabase
       .from("hairdressers")
       .insert(payload)
-      .select(`${COLS_PUBLIC}, is_published`)
+      .select(COLS_ADMIN)
       .single();
 
-    if (error && colonnesProfilManquantes(error)) {
+    if (error && colonnesAdminManquantes(error)) {
+      if (colonneContactEmailManquante(error)) {
+        return res.status(503).json({
+          error:
+            "La base de données doit être mise à jour (colonne contact_email). Exécutez backend/sql/add_hairdresser_contact_email.sql dans Supabase.",
+        });
+      }
       delete payload.profile_image_url;
       delete payload.professional_links;
       ({ data, error } = await supabase
         .from("hairdressers")
         .insert(payload)
-        .select(`${COLS_BASE}, is_published`)
+        .select(`${COLS_BASE}, contact_email, is_published`)
         .single());
     }
 
     if (error) throw error;
+
+    const coiffeuse = normaliserCoiffeuse(data, { inclureEmail: true });
+    let emailStatus = { sent: false };
+
+    try {
+      const result = await envoyerEmailNouvelleInscriptionCoiffeuse(coiffeuse, locale || "fr");
+      emailStatus = result?.skipped ? { sent: false, ...result } : { sent: true, result };
+    } catch (emailError) {
+      console.error("Erreur email nouvelle coiffeuse :", emailError);
+      emailStatus = { sent: false, error: emailError.message };
+    }
+
     res.status(201).json({
       ok: true,
       message: "Profil envoyé. Il sera visible après validation.",
-      hairdresser: normaliserCoiffeuse(data),
+      hairdresser: coiffeuse,
+      email: emailStatus,
     });
   } catch (error) {
     next(error);
@@ -330,7 +372,7 @@ router.get("/admin/hairdressers", async (req, res, next) => {
     const state = String(req.query.state || "").trim();
     let query = supabase
       .from("hairdressers")
-      .select(`${COLS_PUBLIC}, is_published`)
+      .select(COLS_ADMIN)
       .order("state_slug", { ascending: true })
       .order("sort_order", { ascending: true })
       .limit(500);
@@ -344,7 +386,7 @@ router.get("/admin/hairdressers", async (req, res, next) => {
 
     let { data, error } = await query;
 
-    if (error && colonnesProfilManquantes(error)) {
+    if (error && colonnesAdminManquantes(error)) {
       query = supabase
         .from("hairdressers")
         .select(`${COLS_BASE}, is_published`)
@@ -356,7 +398,7 @@ router.get("/admin/hairdressers", async (req, res, next) => {
     }
 
     if (error) throw error;
-    res.json({ hairdressers: (data || []).map(normaliserCoiffeuse) });
+    res.json({ hairdressers: (data || []).map((row) => normaliserCoiffeuse(row, { inclureEmail: true })) });
   } catch (error) {
     next(error);
   }
@@ -441,10 +483,32 @@ router.patch("/admin/hairdressers/:id", async (req, res, next) => {
       });
     }
 
+    let ficheAvantRow = null;
+    let { data: avant, error: erreurAvant } = await supabase
+      .from("hairdressers")
+      .select(COLS_ADMIN)
+      .eq("id", req.params.id)
+      .maybeSingle();
+
+    if (erreurAvant && colonnesAdminManquantes(erreurAvant)) {
+      ({ data: avant, error: erreurAvant } = await supabase
+        .from("hairdressers")
+        .select(`${COLS_BASE}, is_published`)
+        .eq("id", req.params.id)
+        .maybeSingle());
+    }
+
+    if (erreurAvant) throw erreurAvant;
+    if (!avant) return res.status(404).json({ error: "Coiffeuse introuvable" });
+
+    ficheAvantRow = avant;
+    const ficheAvant = normaliserCoiffeuse(ficheAvantRow, { inclureEmail: true });
+
     const payload = {};
     const {
       stateSlug,
       name,
+      email,
       phone,
       address,
       travelAvailable,
@@ -463,6 +527,7 @@ router.patch("/admin/hairdressers/:id", async (req, res, next) => {
       payload.state_slug = stateSlug;
     }
     if (name !== undefined) payload.name = name.trim();
+    if (email !== undefined) payload.contact_email = email.trim().toLowerCase();
     if (phone !== undefined) payload.phone = phone?.trim() || null;
     if (address !== undefined) payload.address = address?.trim() || null;
     if (travelAvailable !== undefined) payload.travel_available = travelAvailable;
@@ -483,12 +548,13 @@ router.patch("/admin/hairdressers/:id", async (req, res, next) => {
       .from("hairdressers")
       .update(payload)
       .eq("id", req.params.id)
-      .select(`${COLS_PUBLIC}, is_published`)
+      .select(COLS_ADMIN)
       .single();
 
-    if (error && colonnesProfilManquantes(error)) {
+    if (error && colonnesAdminManquantes(error)) {
       delete payload.profile_image_url;
       delete payload.professional_links;
+      if (payload.contact_email !== undefined) delete payload.contact_email;
       ({ data, error } = await supabase
         .from("hairdressers")
         .update(payload)
@@ -500,7 +566,23 @@ router.patch("/admin/hairdressers/:id", async (req, res, next) => {
     if (error) throw error;
     if (!data) return res.status(404).json({ error: "Coiffeuse introuvable" });
 
-    res.json({ hairdresser: normaliserCoiffeuse(data) });
+    const coiffeuse = normaliserCoiffeuse(data, { inclureEmail: true });
+    let emailStatus = { sent: false };
+
+    const vientDetrePubliee =
+      isPublished === true && ficheAvant && ficheAvant.isPublished === false;
+
+    if (vientDetrePubliee) {
+      try {
+        const result = await envoyerEmailCoiffeuseApprouvee(coiffeuse, req.body?.locale || "fr");
+        emailStatus = result?.skipped ? { sent: false, ...result } : { sent: true, result };
+      } catch (emailError) {
+        console.error("Erreur email approbation coiffeuse :", emailError);
+        emailStatus = { sent: false, error: emailError.message };
+      }
+    }
+
+    res.json({ hairdresser: coiffeuse, email: emailStatus });
   } catch (error) {
     next(error);
   }

@@ -549,6 +549,7 @@ async function soumettreInscriptionCoiffeuse(e) {
     const payload = {
       stateSlug: String(stateSlug),
       name: String(fd.get("name") || "").trim(),
+      email: String(fd.get("email") || "").trim().toLowerCase(),
       phone: String(fd.get("phone") || "").trim(),
       address: String(fd.get("address") || "").trim(),
       travelAvailable: fd.get("travelAvailable") === "yes",
@@ -557,6 +558,7 @@ async function soumettreInscriptionCoiffeuse(e) {
       profileImageUrl,
       professionalLinks,
       companyWebsite: String(fd.get("companyWebsite") || "").trim(),
+      locale: typeof langueActuelle !== "undefined" ? langueActuelle : "fr",
     };
 
     const reponse = await fetch(`${apiCoiffeuses()}/api/hairdressers/submit`, {
@@ -670,6 +672,10 @@ function pageCoiffeusesHtml() {
         <label class="field">
           <span>${t("coiffeuses.name")} *</span>
           <input class="coiffeuses-input" type="text" name="name" required minlength="2" maxlength="120" autocomplete="name" />
+        </label>
+        <label class="field">
+          <span>${t("coiffeuses.email")} *</span>
+          <input class="coiffeuses-input" type="email" name="email" required maxlength="200" autocomplete="email" inputmode="email" placeholder="${echapperTexteCoiffeuse(t("coiffeuses.emailHint"))}" />
         </label>
         <label class="field">
           <span>${t("coiffeuses.phone")} *</span>

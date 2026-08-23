@@ -460,11 +460,12 @@ function afficherCoiffeusesAdmin(coiffeuses) {
       <div class="admin-order-head">
         <div>
           <p class="order-card-number">${echapperHtml(c.name)} · ${echapperHtml(libelleLandAdmin(c.stateSlug))}</p>
-          <p class="order-card-date">${echapperHtml(c.phone || "—")}${c.address ? ` · ${echapperHtml(c.address)}` : ""}</p>
+          <p class="order-card-date">${echapperHtml(c.phone || "—")}${c.contactEmail ? ` · ${echapperHtml(c.contactEmail)}` : ""}</p>
         </div>
         <span class="status-badge admin-status-badge ${publie ? "paid" : "cancelled"}">${publie ? "Publiée" : "En attente"}</span>
       </div>
       <ul class="admin-hairdresser-meta">
+        ${c.address ? `<li><strong>Adresse :</strong> ${echapperHtml(c.address)}</li>` : ""}
         <li><strong>Déplacement :</strong> ${c.travelAvailable ? "Oui" : "Non"}${c.travelNotes ? ` — ${echapperHtml(c.travelNotes)}` : ""}</li>
         <li><strong>Pose perruque :</strong> ${c.wigInstallCustomisation ? "Oui" : "Non"}</li>
         ${liens ? `<li><strong>Liens pro :</strong><ul>${liens}</ul></li>` : ""}
@@ -514,8 +515,23 @@ async function approuverCoiffeuse(id) {
     filtrerCoiffeusesAdmin();
 
     if (feedback) {
-      feedback.textContent = "Fiche approuvée et visible dans l'annuaire.";
-      feedback.classList.add("admin-order-feedback--ok");
+      let message = "Fiche approuvée et visible dans l'annuaire.";
+      if (data.email?.sent) {
+        message += " E-mail de confirmation envoyé à la coiffeuse.";
+      } else if (data.email?.reason === "email_introuvable") {
+        message += " E-mail non envoyé : adresse introuvable.";
+        feedback.classList.add("admin-order-feedback--error");
+      } else if (data.email?.error) {
+        message += ` E-mail non envoyé : ${data.email.error}`;
+        feedback.classList.add("admin-order-feedback--error");
+      } else if (data.email?.reason === "resend_non_configure") {
+        message += " E-mail non envoyé (Resend non configuré).";
+        feedback.classList.add("admin-order-feedback--error");
+      }
+      feedback.textContent = message;
+      if (!feedback.classList.contains("admin-order-feedback--error")) {
+        feedback.classList.add("admin-order-feedback--ok");
+      }
     }
   } catch (err) {
     if (feedback) {
