@@ -26,6 +26,7 @@ let coiffeusesCache = [];
 let fermerDropdownLand = null;
 let fichierPhotoCoiffeuse = null;
 let urlPhotoCoiffeuse = "";
+let formulaireInscriptionOuvert = false;
 
 const COIFFEUSE_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const COIFFEUSE_PHOTO_TAILLE_MAX = 5 * 1024 * 1024;
@@ -185,6 +186,7 @@ function attacherMenuDeroulantLand() {
     const item = e.target.closest(".coiffeuses-dropdown-item");
     if (!item?.dataset.slug) return;
     landSelectionne = item.dataset.slug;
+    formulaireInscriptionOuvert = false;
     mettreAJourLibelleDropdown();
     setDropdownOuvert(false);
     afficherCoiffeusesLand(landSelectionne);
@@ -228,6 +230,7 @@ function attacherMenuDeroulantLand() {
       const item = document.activeElement.closest(".coiffeuses-dropdown-item");
       if (!item?.dataset.slug) return;
       landSelectionne = item.dataset.slug;
+      formulaireInscriptionOuvert = false;
       mettreAJourLibelleDropdown();
       setDropdownOuvert(false);
       trigger.focus();
@@ -350,6 +353,27 @@ async function afficherCoiffeusesLand(land) {
   }
 }
 
+function lireLandDepuisUrl() {
+  try {
+    const land = new URLSearchParams(window.location.search).get("land") || "";
+    return LAND_SLUGS.includes(land) ? land : "";
+  } catch {
+    return "";
+  }
+}
+
+function ouvrirFormulaireInscription() {
+  if (!landSelectionne) return;
+  formulaireInscriptionOuvert = true;
+  mettreAJourSectionInscription(landSelectionne);
+  document.getElementById("coiffeuses-register-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function fermerFormulaireInscription() {
+  formulaireInscriptionOuvert = false;
+  mettreAJourSectionInscription(landSelectionne);
+}
+
 function reinitialiserPhotoProfilCoiffeuse() {
   fichierPhotoCoiffeuse = null;
   urlPhotoCoiffeuse = "";
@@ -454,22 +478,34 @@ function retirerLienProInscription(index) {
 
 function mettreAJourSectionInscription(land) {
   const section = document.getElementById("coiffeuses-register-section");
+  const cta = document.getElementById("coiffeuses-register-cta");
   const prompt = document.getElementById("coiffeuses-register-prompt");
   const stateName = document.getElementById("coiffeuses-register-state-name");
+  const stateNameCta = document.getElementById("coiffeuses-register-state-name-cta");
   const stateSlugInput = document.getElementById("coiffeuses-register-state-slug");
 
-  if (!section || !prompt) return;
+  if (!section || !prompt || !cta) return;
 
-  if (land) {
+  if (stateName) stateName.textContent = land ? libelleLand(land) : "";
+  if (stateNameCta) stateNameCta.textContent = land ? libelleLand(land) : "";
+  if (stateSlugInput) stateSlugInput.value = land || "";
+
+  if (!land) {
+    formulaireInscriptionOuvert = false;
+    section.hidden = true;
+    cta.hidden = true;
+    prompt.hidden = false;
+    return;
+  }
+
+  prompt.hidden = true;
+
+  if (formulaireInscriptionOuvert) {
     section.hidden = false;
-    prompt.hidden = true;
-    if (stateName) stateName.textContent = libelleLand(land);
-    if (stateSlugInput) stateSlugInput.value = land;
+    cta.hidden = true;
   } else {
     section.hidden = true;
-    prompt.hidden = false;
-    if (stateName) stateName.textContent = "";
-    if (stateSlugInput) stateSlugInput.value = "";
+    cta.hidden = false;
   }
 }
 
@@ -640,8 +676,10 @@ async function soumettreInscriptionCoiffeuse(e) {
     form.reset();
     initialiserLiensProInscription();
     reinitialiserPhotoProfilCoiffeuse();
+    formulaireInscriptionOuvert = false;
     const slugInput = document.getElementById("coiffeuses-register-state-slug");
     if (slugInput) slugInput.value = landSelectionne;
+    mettreAJourSectionInscription(landSelectionne);
 
     if (messageEl) {
       messageEl.hidden = false;
@@ -674,6 +712,14 @@ function attacherFormulaireInscription() {
     const btn = e.target.closest("[data-remove-pro]");
     if (!btn) return;
     retirerLienProInscription(btn.dataset.removePro);
+  });
+
+  document.getElementById("coiffeuses-open-register")?.addEventListener("click", () => {
+    ouvrirFormulaireInscription();
+  });
+
+  document.getElementById("coiffeuses-close-register")?.addEventListener("click", () => {
+    fermerFormulaireInscription();
   });
 
   document.getElementById("coiffeuses-profile-photo")?.addEventListener("change", (e) => {
@@ -719,7 +765,22 @@ function pageCoiffeusesHtml() {
         ${menuDeroulantLandHtml()}
       </div>
     </section>
-    <section id="coiffeuses-register-section" class="coiffeuses-register account-card" hidden>
+    <section id="coiffeuses-register-area" class="coiffeuses-register-area">
+      <section id="coiffeuses-register-prompt" class="coiffeuses-register-prompt account-card">
+        <p class="account-empty">${t("coiffeuses.registerPickState")}</p>
+      </section>
+      <section id="coiffeuses-register-cta" class="coiffeuses-register-cta account-card" hidden>
+        <h2 class="coiffeuses-results-title">${t("coiffeuses.registerTitle")}</h2>
+        <p class="coiffeuses-lead">${t("coiffeuses.registerCtaLead")}</p>
+        <p class="coiffeuses-register-state">
+          <span class="coiffeuses-label">${t("coiffeuses.stateLabel")}</span>
+          <strong id="coiffeuses-register-state-name-cta"></strong>
+        </p>
+        <button type="button" id="coiffeuses-open-register" class="btn-order account-submit coiffeuses-open-register">
+          ${t("coiffeuses.registerOpenBtn")}
+        </button>
+      </section>
+      <section id="coiffeuses-register-section" class="coiffeuses-register account-card" hidden>
       <h2 class="coiffeuses-results-title">${t("coiffeuses.registerTitle")}</h2>
       <p class="coiffeuses-lead">${t("coiffeuses.registerLead")}</p>
       <p class="coiffeuses-register-state">
@@ -796,11 +857,10 @@ function pageCoiffeusesHtml() {
           <button type="button" id="coiffeuses-add-pro-link" class="auth-btn auth-btn--outline coiffeuses-add-link">${t("coiffeuses.addProLink")}</button>
         </div>
         <button type="submit" class="btn-order account-submit" id="coiffeuses-register-submit">${t("coiffeuses.registerSubmit")}</button>
+        <button type="button" id="coiffeuses-close-register" class="auth-btn auth-btn--outline coiffeuses-close-register">${t("coiffeuses.registerClose")}</button>
         <p id="coiffeuses-register-message" class="account-message" hidden></p>
       </form>
     </section>
-    <section id="coiffeuses-register-prompt" class="coiffeuses-register-prompt account-card">
-      <p class="account-empty">${t("coiffeuses.registerPickState")}</p>
     </section>
     <section class="coiffeuses-results">
       <h2 class="coiffeuses-results-title">${t("coiffeuses.resultsTitle")}</h2>
@@ -824,11 +884,18 @@ async function rendrePageCoiffeuses() {
 
   grille.className = "coiffeuses-page";
   grille.innerHTML = pageCoiffeusesHtml();
+
+  const landUrl = lireLandDepuisUrl();
+  if (landUrl) landSelectionne = landUrl;
+
   attacherMenuDeroulantLand();
   attacherFormulaireInscription();
 
   if (landSelectionne) {
+    mettreAJourLibelleDropdown();
     await afficherCoiffeusesLand(landSelectionne);
+  } else {
+    mettreAJourSectionInscription("");
   }
 }
 

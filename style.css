@@ -3937,6 +3937,26 @@ img {
   line-height: 1.45;
 }
 
+.coiffeuses-register-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.coiffeuses-register-cta {
+  text-align: center;
+}
+
+.coiffeuses-open-register {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.coiffeuses-close-register {
+  width: 100%;
+  margin-top: 10px;
+}
+
 .coiffeuses-register-prompt {
   text-align: center;
 }

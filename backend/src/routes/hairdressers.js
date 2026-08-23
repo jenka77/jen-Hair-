@@ -6,6 +6,7 @@ const { verifierAdmin } = require("../middleware/admin");
 const { GERMAN_STATE_SLUGS, estLandAllemandValide } = require("../constants/germanStates");
 const {
   envoyerEmailNouvelleInscriptionCoiffeuse,
+  envoyerEmailReceptionCoiffeuse,
   envoyerEmailCoiffeuseApprouvee,
 } = require("../services/email");
 
@@ -349,14 +350,26 @@ router.post("/hairdressers/submit", async (req, res, next) => {
     if (error) throw error;
 
     const coiffeuse = normaliserCoiffeuse(data, { inclureEmail: true });
-    let emailStatus = { sent: false };
+    let emailStatus = { admin: { sent: false }, coiffeuse: { sent: false } };
 
     try {
-      const result = await envoyerEmailNouvelleInscriptionCoiffeuse(coiffeuse, locale || "fr");
-      emailStatus = result?.skipped ? { sent: false, ...result } : { sent: true, result };
+      const resultAdmin = await envoyerEmailNouvelleInscriptionCoiffeuse(coiffeuse, locale || "fr");
+      emailStatus.admin = resultAdmin?.skipped
+        ? { sent: false, ...resultAdmin }
+        : { sent: true, result: resultAdmin };
     } catch (emailError) {
-      console.error("Erreur email nouvelle coiffeuse :", emailError);
-      emailStatus = { sent: false, error: emailError.message };
+      console.error("Erreur email admin nouvelle coiffeuse :", emailError);
+      emailStatus.admin = { sent: false, error: emailError.message };
+    }
+
+    try {
+      const resultCoiffeuse = await envoyerEmailReceptionCoiffeuse(coiffeuse, locale || "fr");
+      emailStatus.coiffeuse = resultCoiffeuse?.skipped
+        ? { sent: false, ...resultCoiffeuse }
+        : { sent: true, result: resultCoiffeuse };
+    } catch (emailError) {
+      console.error("Erreur email accusé coiffeuse :", emailError);
+      emailStatus.coiffeuse = { sent: false, error: emailError.message };
     }
 
     res.status(201).json({
