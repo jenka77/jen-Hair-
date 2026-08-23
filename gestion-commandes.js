@@ -39,6 +39,7 @@ function libelleModeRecuperationAdmin(mode) {
 
 let commandesCache = [];
 let avisCache = [];
+let coiffeusesAdminCache = [];
 let ongletAdminActif = "orders";
 
 function apiBase() {
@@ -399,6 +400,186 @@ async function enregistrerReponseAvis(reviewId) {
   }
 }
 
+const LIBELLES_LAND = {
+  "baden-wuerttemberg": "Baden-Württemberg",
+  bayern: "Bavière",
+  berlin: "Berlin",
+  brandenburg: "Brandebourg",
+  bremen: "Brême",
+  hamburg: "Hambourg",
+  hessen: "Hesse",
+  "mecklenburg-vorpommern": "Mecklembourg-P.-An.",
+  niedersachsen: "Basse-Saxe",
+  "nordrhein-westfalen": "Rhénanie-du-Nord-Westphalie",
+  "rheinland-pfalz": "Rhénanie-Palatinat",
+  saarland: "Sarre",
+  sachsen: "Saxe",
+  "sachsen-anhalt": "Saxe-Anhalt",
+  "schleswig-holstein": "Schleswig-Holstein",
+  thueringen: "Thuringe",
+};
+
+function libelleLandAdmin(slug) {
+  return LIBELLES_LAND[slug] || slug || "—";
+}
+
+function filtrerCoiffeusesAdmin() {
+  const filtre = document.getElementById("admin-filter-hairdressers")?.value || "";
+  let liste = coiffeusesAdminCache;
+
+  if (filtre === "pending") {
+    liste = liste.filter((c) => c.isPublished === false);
+  } else if (filtre === "published") {
+    liste = liste.filter((c) => c.isPublished !== false);
+  }
+
+  afficherCoiffeusesAdmin(liste);
+}
+
+function afficherCoiffeusesAdmin(coiffeuses) {
+  const conteneur = document.getElementById("admin-hairdressers");
+  if (!conteneur) return;
+
+  if (!coiffeuses.length) {
+    conteneur.innerHTML = `<p class="account-empty">Aucune fiche coiffeuse.</p>`;
+    return;
+  }
+
+  conteneur.innerHTML = coiffeuses
+    .map((c) => {
+      const publie = c.isPublished !== false;
+      const liens = (c.professionalLinks || [])
+        .map(
+          (l) =>
+            `<li><a href="${echapperHtml(l.url)}" target="_blank" rel="noopener noreferrer">${echapperHtml(l.label || l.url)}</a></li>`
+        )
+        .join("");
+
+      return `
+    <article class="admin-hairdresser-card" data-hairdresser-id="${c.id}">
+      <div class="admin-order-head">
+        <div>
+          <p class="order-card-number">${echapperHtml(c.name)} · ${echapperHtml(libelleLandAdmin(c.stateSlug))}</p>
+          <p class="order-card-date">${echapperHtml(c.phone || "—")}${c.address ? ` · ${echapperHtml(c.address)}` : ""}</p>
+        </div>
+        <span class="status-badge admin-status-badge ${publie ? "paid" : "cancelled"}">${publie ? "Publiée" : "En attente"}</span>
+      </div>
+      <ul class="admin-hairdresser-meta">
+        <li><strong>Déplacement :</strong> ${c.travelAvailable ? "Oui" : "Non"}${c.travelNotes ? ` — ${echapperHtml(c.travelNotes)}` : ""}</li>
+        <li><strong>Pose perruque :</strong> ${c.wigInstallCustomisation ? "Oui" : "Non"}</li>
+        ${liens ? `<li><strong>Liens pro :</strong><ul>${liens}</ul></li>` : ""}
+      </ul>
+      <div class="admin-order-actions">
+        ${
+          !publie
+            ? `<button type="button" class="auth-btn auth-btn--fill admin-approve-hairdresser" data-hairdresser-id="${c.id}">Approuver</button>`
+            : `<button type="button" class="auth-btn auth-btn--outline admin-unpublish-hairdresser" data-hairdresser-id="${c.id}">Masquer</button>`
+        }
+        <button type="button" class="auth-btn auth-btn--outline admin-delete-hairdresser" data-hairdresser-id="${c.id}">Supprimer</button>
+      </div>
+      <p class="admin-order-feedback" data-hairdresser-feedback="${c.id}" hidden></p>
+    </article>`;
+    })
+    .join("");
+}
+
+async function chargerCoiffeusesAdmin() {
+  const conteneur = document.getElementById("admin-hairdressers");
+  if (conteneur) {
+    conteneur.innerHTML = `<p class="account-loading">Chargement des coiffeuses…</p>`;
+  }
+
+  const data = await requeteAdmin("/api/admin/hairdressers");
+  coiffeusesAdminCache = data.hairdressers || [];
+  filtrerCoiffeusesAdmin();
+}
+
+async function approuverCoiffeuse(id) {
+  const feedback = document.querySelector(`[data-hairdresser-feedback="${id}"]`);
+  if (feedback) {
+    feedback.hidden = false;
+    feedback.textContent = "Approbation…";
+    feedback.className = "admin-order-feedback";
+  }
+
+  try {
+    const data = await requeteAdmin(`/api/admin/hairdressers/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ isPublished: true }),
+    });
+
+    coiffeusesAdminCache = coiffeusesAdminCache.map((c) =>
+      c.id === id ? { ...c, ...data.hairdresser } : c
+    );
+    filtrerCoiffeusesAdmin();
+
+    if (feedback) {
+      feedback.textContent = "Fiche approuvée et visible dans l'annuaire.";
+      feedback.classList.add("admin-order-feedback--ok");
+    }
+  } catch (err) {
+    if (feedback) {
+      feedback.textContent = err.message;
+      feedback.classList.add("admin-order-feedback--error");
+    }
+  }
+}
+
+async function masquerCoiffeuse(id) {
+  const feedback = document.querySelector(`[data-hairdresser-feedback="${id}"]`);
+  if (feedback) {
+    feedback.hidden = false;
+    feedback.textContent = "Masquage…";
+    feedback.className = "admin-order-feedback";
+  }
+
+  try {
+    const data = await requeteAdmin(`/api/admin/hairdressers/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ isPublished: false }),
+    });
+
+    coiffeusesAdminCache = coiffeusesAdminCache.map((c) =>
+      c.id === id ? { ...c, ...data.hairdresser } : c
+    );
+    filtrerCoiffeusesAdmin();
+
+    if (feedback) {
+      feedback.textContent = "Fiche masquée de l'annuaire.";
+      feedback.classList.add("admin-order-feedback--ok");
+    }
+  } catch (err) {
+    if (feedback) {
+      feedback.textContent = err.message;
+      feedback.classList.add("admin-order-feedback--error");
+    }
+  }
+}
+
+async function supprimerCoiffeuse(id, nom) {
+  if (!window.confirm(`Supprimer définitivement la fiche de ${nom || "cette coiffeuse"} ?`)) {
+    return;
+  }
+
+  const feedback = document.querySelector(`[data-hairdresser-feedback="${id}"]`);
+  if (feedback) {
+    feedback.hidden = false;
+    feedback.textContent = "Suppression…";
+    feedback.className = "admin-order-feedback";
+  }
+
+  try {
+    await requeteAdmin(`/api/admin/hairdressers/${id}`, { method: "DELETE" });
+    coiffeusesAdminCache = coiffeusesAdminCache.filter((c) => c.id !== id);
+    filtrerCoiffeusesAdmin();
+  } catch (err) {
+    if (feedback) {
+      feedback.textContent = err.message;
+      feedback.classList.add("admin-order-feedback--error");
+    }
+  }
+}
+
 function basculerOngletAdmin(onglet) {
   ongletAdminActif = onglet;
 
@@ -410,14 +591,21 @@ function basculerOngletAdmin(onglet) {
 
   document.getElementById("admin-panel-orders")?.toggleAttribute("hidden", onglet !== "orders");
   document.getElementById("admin-panel-reviews")?.toggleAttribute("hidden", onglet !== "reviews");
+  document.getElementById("admin-panel-hairdressers")?.toggleAttribute("hidden", onglet !== "hairdressers");
 
   const titre = document.getElementById("admin-page-title");
-  if (titre) titre.textContent = onglet === "reviews" ? "Avis clients" : "Commandes";
+  if (titre) {
+    if (onglet === "reviews") titre.textContent = "Avis clients";
+    else if (onglet === "hairdressers") titre.textContent = "Coiffeuses";
+    else titre.textContent = "Commandes";
+  }
 }
 
 async function actualiserOngletAdmin() {
   if (ongletAdminActif === "reviews") {
     await chargerAvisAdmin();
+  } else if (ongletAdminActif === "hairdressers") {
+    await chargerCoiffeusesAdmin();
   } else {
     await chargerCommandes();
   }
@@ -527,10 +715,35 @@ function initAdmin() {
       if (onglet === "reviews" && !avisCache.length) {
         chargerAvisAdmin().catch((err) => alert(err.message));
       }
+      if (onglet === "hairdressers" && !coiffeusesAdminCache.length) {
+        chargerCoiffeusesAdmin().catch((err) => alert(err.message));
+      }
     });
   });
 
   document.getElementById("admin-filter-status")?.addEventListener("change", filtrerCommandes);
+  document.getElementById("admin-filter-hairdressers")?.addEventListener("change", filtrerCoiffeusesAdmin);
+
+  document.getElementById("admin-hairdressers")?.addEventListener("click", (e) => {
+    const approveBtn = e.target.closest(".admin-approve-hairdresser");
+    if (approveBtn) {
+      approuverCoiffeuse(approveBtn.dataset.hairdresserId);
+      return;
+    }
+
+    const unpublishBtn = e.target.closest(".admin-unpublish-hairdresser");
+    if (unpublishBtn) {
+      masquerCoiffeuse(unpublishBtn.dataset.hairdresserId);
+      return;
+    }
+
+    const deleteBtn = e.target.closest(".admin-delete-hairdresser");
+    if (deleteBtn) {
+      const card = deleteBtn.closest(".admin-hairdresser-card");
+      const nom = card?.querySelector(".order-card-number")?.textContent?.split(" · ")[0] || "";
+      supprimerCoiffeuse(deleteBtn.dataset.hairdresserId, nom);
+    }
+  });
 
   document.getElementById("admin-orders")?.addEventListener("click", (e) => {
     const quickBtn = e.target.closest(".admin-quick-status");

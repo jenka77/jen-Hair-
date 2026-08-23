@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260706c" />
+  <link rel="stylesheet" href="style.css?v=20260823" />
 </head>
 <body class="admin-body">
 
@@ -44,6 +44,7 @@
     <nav class="admin-tabs" role="tablist" aria-label="Sections admin">
       <button type="button" class="admin-tab active" data-admin-tab="orders" role="tab" aria-selected="true">Commandes</button>
       <button type="button" class="admin-tab" data-admin-tab="reviews" role="tab" aria-selected="false">Avis</button>
+      <button type="button" class="admin-tab" data-admin-tab="hairdressers" role="tab" aria-selected="false">Coiffeuses</button>
     </nav>
 
     <section id="admin-panel-orders" class="admin-panel">
@@ -73,8 +74,24 @@
         <p class="account-loading">Chargement des avis…</p>
       </div>
     </section>
+
+    <section id="admin-panel-hairdressers" class="admin-panel" hidden>
+      <div class="admin-filters">
+        <label class="admin-filter">
+          <span>Filtrer les fiches</span>
+          <select id="admin-filter-hairdressers">
+            <option value="">Toutes</option>
+            <option value="pending">En attente de validation</option>
+            <option value="published">Publiées</option>
+          </select>
+        </label>
+      </div>
+      <div id="admin-hairdressers" class="admin-hairdressers">
+        <p class="account-loading">Chargement des coiffeuses…</p>
+      </div>
+    </section>
   </div>
 
-  <script src="gestion-commandes.js?v=20260706"></script>
+  <script src="gestion-commandes.js?v=20260823"></script>
 </body>
 </html>

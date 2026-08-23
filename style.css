@@ -3937,3 +3937,157 @@ img {
   line-height: 1.45;
 }
 
+.coiffeuses-register-prompt {
+  text-align: center;
+}
+
+.coiffeuses-register-state {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(201, 169, 98, 0.08);
+  border: 1px solid rgba(201, 169, 98, 0.22);
+}
+
+.coiffeuses-register-state strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.05rem;
+  color: var(--gold-light);
+}
+
+.coiffeuses-register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.coiffeuses-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.coiffeuses-fieldset {
+  border: 1px solid rgba(201, 169, 98, 0.22);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 0;
+}
+
+.coiffeuses-fieldset legend {
+  padding: 0 6px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.coiffeuses-radio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.coiffeuses-field-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+}
+
+.coiffeuses-pro-links-field {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.coiffeuses-pro-links-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.coiffeuses-pro-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.coiffeuses-pro-link-row {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 600px) {
+  .coiffeuses-pro-link-row {
+    grid-template-columns: 1fr 1fr;
+    padding-right: 44px;
+  }
+}
+
+.coiffeuses-remove-link {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.coiffeuses-add-link {
+  align-self: flex-start;
+}
+
+.admin-hairdressers {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-hairdresser-card {
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(201, 169, 98, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.admin-hairdresser-meta {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.admin-hairdresser-meta ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.admin-hairdresser-meta a {
+  color: var(--gold-light);
+}
+

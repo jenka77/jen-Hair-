@@ -45,6 +45,25 @@ const coiffeuseAdminSchema = z.object({
   isPublished: z.boolean().optional(),
 });
 
+const coiffeuseSubmitSchema = z.object({
+  stateSlug: z.string().min(1),
+  name: z.string().trim().min(2).max(120),
+  phone: z.string().trim().min(3).max(40),
+  address: z.string().trim().min(5).max(500),
+  travelAvailable: z.boolean(),
+  travelNotes: z.string().trim().min(2).max(500),
+  wigInstallCustomisation: z.boolean(),
+  profileImageUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(500)
+    .refine((url) => url.startsWith("https://"), {
+      message: "L'URL de la photo doit commencer par https://",
+    }),
+  professionalLinks: z.array(lienProSchema).min(1).max(12),
+});
+
 function colonnesProfilManquantes(error) {
   const msg = String(error?.message || error?.details || "").toLowerCase();
   return msg.includes("profile_image_url") || msg.includes("professional_links");
@@ -147,6 +166,77 @@ router.get("/hairdressers", async (req, res, next) => {
 
     const data = await selectionnerCoiffeusesPubliques(state || "");
     res.json({ hairdressers: data.map((row) => normaliserCoiffeuse(row)) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/hairdressers/submit", async (req, res, next) => {
+  try {
+    if (String(req.body?.companyWebsite || "").trim()) {
+      return res.status(400).json({ error: "Requête invalide" });
+    }
+
+    const validation = coiffeuseSubmitSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Données invalides",
+        details: validation.error.flatten(),
+      });
+    }
+
+    const {
+      stateSlug,
+      name,
+      phone,
+      address,
+      travelAvailable,
+      travelNotes,
+      wigInstallCustomisation,
+      profileImageUrl,
+      professionalLinks,
+    } = validation.data;
+
+    if (!estLandAllemandValide(stateSlug)) {
+      return res.status(400).json({ error: "Land (Bundesland) invalide" });
+    }
+
+    const payload = {
+      state_slug: stateSlug,
+      name: name.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      travel_available: travelAvailable,
+      travel_notes: travelNotes.trim(),
+      wig_install_customisation: wigInstallCustomisation,
+      profile_image_url: profileImageUrl.trim(),
+      professional_links: normaliserLiensProfessionnels(professionalLinks),
+      sort_order: 0,
+      is_published: false,
+    };
+
+    let { data, error } = await supabase
+      .from("hairdressers")
+      .insert(payload)
+      .select(`${COLS_PUBLIC}, is_published`)
+      .single();
+
+    if (error && colonnesProfilManquantes(error)) {
+      delete payload.profile_image_url;
+      delete payload.professional_links;
+      ({ data, error } = await supabase
+        .from("hairdressers")
+        .insert(payload)
+        .select(`${COLS_BASE}, is_published`)
+        .single());
+    }
+
+    if (error) throw error;
+    res.status(201).json({
+      ok: true,
+      message: "Profil envoyé. Il sera visible après validation.",
+      hairdresser: normaliserCoiffeuse(data),
+    });
   } catch (error) {
     next(error);
   }
