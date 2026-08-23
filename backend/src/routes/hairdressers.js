@@ -1,10 +1,46 @@
 const express = require("express");
+const multer = require("multer");
 const { z } = require("zod");
 const { supabase } = require("../supabase");
 const { verifierAdmin } = require("../middleware/admin");
 const { GERMAN_STATE_SLUGS, estLandAllemandValide } = require("../constants/germanStates");
 
 const router = express.Router();
+
+const PHOTO_TYPES_COIFFEUSE = ["image/jpeg", "image/png", "image/webp"];
+const PHOTO_TAILLE_MAX_COIFFEUSE = 5 * 1024 * 1024;
+const BUCKET_PHOTOS_COIFFEUSE = "review-images";
+const DOSSIER_PHOTOS_COIFFEUSE = "hairdressers";
+
+const uploadPhotoCoiffeuse = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: PHOTO_TAILLE_MAX_COIFFEUSE, files: 1 },
+  fileFilter(req, file, cb) {
+    if (PHOTO_TYPES_COIFFEUSE.includes(file.mimetype)) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error("Format de photo non supporté (JPEG, PNG ou WebP)."));
+  },
+});
+
+function prefixeStockagePhotoCoiffeuse() {
+  const base = String(process.env.SUPABASE_URL || "").replace(/\/$/, "");
+  if (!base) return null;
+  return `${base}/storage/v1/object/public/${BUCKET_PHOTOS_COIFFEUSE}/${DOSSIER_PHOTOS_COIFFEUSE}/`;
+}
+
+function estUrlPhotoCoiffeuseAutorisee(url) {
+  const prefix = prefixeStockagePhotoCoiffeuse();
+  if (!prefix) return false;
+  return String(url || "").trim().startsWith(prefix);
+}
+
+function extensionDepuisMimeCoiffeuse(mimetype) {
+  if (mimetype === "image/png") return "png";
+  if (mimetype === "image/webp") return "webp";
+  return "jpg";
+}
 
 const COLS_BASE =
   "id, state_slug, name, phone, address, travel_available, travel_notes, wig_install_customisation, sort_order";
@@ -201,6 +237,10 @@ router.post("/hairdressers/submit", async (req, res, next) => {
       return res.status(400).json({ error: "Land (Bundesland) invalide" });
     }
 
+    if (!estUrlPhotoCoiffeuseAutorisee(profileImageUrl)) {
+      return res.status(400).json({ error: "Photo de profil invalide ou non téléversée." });
+    }
+
     const payload = {
       state_slug: stateSlug,
       name: name.trim(),
@@ -237,6 +277,47 @@ router.post("/hairdressers/submit", async (req, res, next) => {
       message: "Profil envoyé. Il sera visible après validation.",
       hairdresser: normaliserCoiffeuse(data),
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/hairdressers/upload-photo", (req, res, next) => {
+  uploadPhotoCoiffeuse.single("photo")(req, res, (err) => {
+    if (err) {
+      const message =
+        err.code === "LIMIT_FILE_SIZE"
+          ? "La photo doit faire 5 Mo ou moins."
+          : err.message || "Upload impossible";
+      return res.status(400).json({ error: message });
+    }
+    next();
+  });
+}, async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Aucune photo reçue." });
+    }
+
+    const ext = extensionDepuisMimeCoiffeuse(req.file.mimetype);
+    const chemin = `${DOSSIER_PHOTOS_COIFFEUSE}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+
+    const { error } = await supabase.storage.from(BUCKET_PHOTOS_COIFFEUSE).upload(chemin, req.file.buffer, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: req.file.mimetype,
+    });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage.from(BUCKET_PHOTOS_COIFFEUSE).getPublicUrl(chemin);
+    const url = data?.publicUrl || "";
+
+    if (!url.startsWith("https://")) {
+      return res.status(500).json({ error: "Impossible de générer l'URL de la photo." });
+    }
+
+    res.json({ ok: true, url });
   } catch (error) {
     next(error);
   }

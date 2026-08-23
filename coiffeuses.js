@@ -24,6 +24,11 @@ const LAND_SLUGS = [
 let landSelectionne = "";
 let coiffeusesCache = [];
 let fermerDropdownLand = null;
+let fichierPhotoCoiffeuse = null;
+let urlPhotoCoiffeuse = "";
+
+const COIFFEUSE_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const COIFFEUSE_PHOTO_TAILLE_MAX = 5 * 1024 * 1024;
 
 function apiCoiffeuses() {
   if (typeof API_BASE_URL !== "undefined") return API_BASE_URL;
@@ -345,16 +350,83 @@ async function afficherCoiffeusesLand(land) {
   }
 }
 
+function reinitialiserPhotoProfilCoiffeuse() {
+  fichierPhotoCoiffeuse = null;
+  urlPhotoCoiffeuse = "";
+  const input = document.getElementById("coiffeuses-profile-photo");
+  const hidden = document.getElementById("coiffeuses-profile-image-url");
+  const preview = document.getElementById("coiffeuses-profile-photo-preview");
+  if (input) input.value = "";
+  if (hidden) hidden.value = "";
+  if (preview) {
+    preview.querySelectorAll("img[src^='blob:']").forEach((img) => URL.revokeObjectURL(img.src));
+    preview.innerHTML = "";
+    preview.hidden = true;
+  }
+}
+
+function validerFichierPhotoCoiffeuse(fichier) {
+  if (!fichier) throw new Error(t("coiffeuses.profilePhotoRequired"));
+  if (!COIFFEUSE_PHOTO_TYPES.includes(fichier.type)) {
+    throw new Error(t("coiffeuses.profilePhotoInvalidType"));
+  }
+  if (fichier.size > COIFFEUSE_PHOTO_TAILLE_MAX) {
+    throw new Error(t("coiffeuses.profilePhotoTooLarge"));
+  }
+  return fichier;
+}
+
+function rendreApercuPhotoProfilCoiffeuse(fichier) {
+  const preview = document.getElementById("coiffeuses-profile-photo-preview");
+  if (!preview) return;
+
+  preview.querySelectorAll("img[src^='blob:']").forEach((img) => URL.revokeObjectURL(img.src));
+
+  if (!fichier) {
+    preview.innerHTML = "";
+    preview.hidden = true;
+    return;
+  }
+
+  preview.hidden = false;
+  preview.innerHTML = `
+    <figure class="coiffeuses-photo-preview-figure">
+      <img src="${URL.createObjectURL(fichier)}" alt="" />
+      <button type="button" class="coiffeuses-photo-remove" id="coiffeuses-profile-photo-remove" aria-label="${echapperTexteCoiffeuse(t("coiffeuses.profilePhotoRemove"))}">×</button>
+    </figure>`;
+}
+
+async function uploaderPhotoProfilCoiffeuse(fichier) {
+  const formData = new FormData();
+  formData.append("photo", fichier);
+
+  const reponse = await fetch(`${apiCoiffeuses()}/api/hairdressers/upload-photo`, {
+    method: "POST",
+    body: formData,
+  });
+  const data = await reponse.json().catch(() => ({}));
+
+  if (!reponse.ok) {
+    throw new Error(data?.error || t("coiffeuses.profilePhotoUploadError"));
+  }
+
+  if (!data?.url) {
+    throw new Error(t("coiffeuses.profilePhotoUploadError"));
+  }
+
+  return data.url;
+}
+
 function htmlLienProInscription(index) {
   return `
     <div class="coiffeuses-pro-link-row" data-pro-index="${index}">
       <label class="field coiffeuses-pro-link-field">
         <span>${t("coiffeuses.proLinkUrl")} *</span>
-        <input type="url" name="proUrl_${index}" required maxlength="500" placeholder="https://" inputmode="url" />
+        <input type="url" name="proUrl_${index}" class="coiffeuses-input" required maxlength="500" placeholder="https://" inputmode="url" />
       </label>
       <label class="field coiffeuses-pro-link-field">
         <span>${t("coiffeuses.proLinkLabel")}</span>
-        <input type="text" name="proLabel_${index}" maxlength="80" placeholder="${echapperTexteCoiffeuse(t("coiffeuses.proLinkLabelHint"))}" />
+        <input type="text" name="proLabel_${index}" class="coiffeuses-input" maxlength="80" placeholder="${echapperTexteCoiffeuse(t("coiffeuses.proLinkLabelHint"))}" />
       </label>
       ${index > 0 ? `<button type="button" class="coiffeuses-remove-link" data-remove-pro="${index}" aria-label="${echapperTexteCoiffeuse(t("coiffeuses.removeProLink"))}">×</button>` : ""}
     </div>`;
@@ -445,18 +517,14 @@ async function soumettreInscriptionCoiffeuse(e) {
     return;
   }
 
-  const payload = {
-    stateSlug: String(stateSlug),
-    name: String(fd.get("name") || "").trim(),
-    phone: String(fd.get("phone") || "").trim(),
-    address: String(fd.get("address") || "").trim(),
-    travelAvailable: fd.get("travelAvailable") === "yes",
-    travelNotes: String(fd.get("travelNotes") || "").trim(),
-    wigInstallCustomisation: fd.get("wigInstallCustomisation") === "yes",
-    profileImageUrl: String(fd.get("profileImageUrl") || "").trim(),
-    professionalLinks,
-    companyWebsite: String(fd.get("companyWebsite") || "").trim(),
-  };
+  if (!fichierPhotoCoiffeuse && !urlPhotoCoiffeuse) {
+    if (messageEl) {
+      messageEl.hidden = false;
+      messageEl.className = "account-message account-message--error";
+      messageEl.textContent = t("coiffeuses.profilePhotoRequired");
+    }
+    return;
+  }
 
   if (messageEl) messageEl.hidden = true;
   if (submitBtn) {
@@ -464,7 +532,33 @@ async function soumettreInscriptionCoiffeuse(e) {
     submitBtn.textContent = t("coiffeuses.registerSending");
   }
 
+  let profileImageUrl = urlPhotoCoiffeuse;
+
   try {
+    if (fichierPhotoCoiffeuse) {
+      if (submitBtn) submitBtn.textContent = t("coiffeuses.profilePhotoUploading");
+      profileImageUrl = await uploaderPhotoProfilCoiffeuse(fichierPhotoCoiffeuse);
+      urlPhotoCoiffeuse = profileImageUrl;
+    }
+
+    const hiddenUrl = document.getElementById("coiffeuses-profile-image-url");
+    if (hiddenUrl) hiddenUrl.value = profileImageUrl;
+
+    if (submitBtn) submitBtn.textContent = t("coiffeuses.registerSending");
+
+    const payload = {
+      stateSlug: String(stateSlug),
+      name: String(fd.get("name") || "").trim(),
+      phone: String(fd.get("phone") || "").trim(),
+      address: String(fd.get("address") || "").trim(),
+      travelAvailable: fd.get("travelAvailable") === "yes",
+      travelNotes: String(fd.get("travelNotes") || "").trim(),
+      wigInstallCustomisation: fd.get("wigInstallCustomisation") === "yes",
+      profileImageUrl,
+      professionalLinks,
+      companyWebsite: String(fd.get("companyWebsite") || "").trim(),
+    };
+
     const reponse = await fetch(`${apiCoiffeuses()}/api/hairdressers/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -478,6 +572,7 @@ async function soumettreInscriptionCoiffeuse(e) {
 
     form.reset();
     initialiserLiensProInscription();
+    reinitialiserPhotoProfilCoiffeuse();
     const slugInput = document.getElementById("coiffeuses-register-state-slug");
     if (slugInput) slugInput.value = landSelectionne;
 
@@ -514,6 +609,35 @@ function attacherFormulaireInscription() {
     retirerLienProInscription(btn.dataset.removePro);
   });
 
+  document.getElementById("coiffeuses-profile-photo")?.addEventListener("change", (e) => {
+    const messageEl = document.getElementById("coiffeuses-register-message");
+    if (messageEl) messageEl.hidden = true;
+
+    try {
+      const fichier = e.target.files?.[0];
+      if (!fichier) {
+        reinitialiserPhotoProfilCoiffeuse();
+        return;
+      }
+      fichierPhotoCoiffeuse = validerFichierPhotoCoiffeuse(fichier);
+      urlPhotoCoiffeuse = "";
+      rendreApercuPhotoProfilCoiffeuse(fichierPhotoCoiffeuse);
+    } catch (err) {
+      reinitialiserPhotoProfilCoiffeuse();
+      if (messageEl) {
+        messageEl.hidden = false;
+        messageEl.className = "account-message account-message--error";
+        messageEl.textContent = err.message;
+      }
+    }
+  });
+
+  document.getElementById("coiffeuses-register-form")?.addEventListener("click", (e) => {
+    if (e.target.id === "coiffeuses-profile-photo-remove") {
+      reinitialiserPhotoProfilCoiffeuse();
+    }
+  });
+
   initialiserLiensProInscription();
   mettreAJourSectionInscription(landSelectionne);
 }
@@ -535,7 +659,7 @@ function pageCoiffeusesHtml() {
         <span class="coiffeuses-label">${t("coiffeuses.stateLabel")}</span>
         <strong id="coiffeuses-register-state-name"></strong>
       </p>
-      <form id="coiffeuses-register-form" class="coiffeuses-register-form" novalidate>
+      <form id="coiffeuses-register-form" class="coiffeuses-register-form account-form" novalidate>
         <input type="hidden" name="stateSlug" id="coiffeuses-register-state-slug" value="" />
         <div class="coiffeuses-honeypot" aria-hidden="true">
           <label>
@@ -545,47 +669,56 @@ function pageCoiffeusesHtml() {
         </div>
         <label class="field">
           <span>${t("coiffeuses.name")} *</span>
-          <input type="text" name="name" required minlength="2" maxlength="120" autocomplete="name" />
+          <input class="coiffeuses-input" type="text" name="name" required minlength="2" maxlength="120" autocomplete="name" />
         </label>
         <label class="field">
           <span>${t("coiffeuses.phone")} *</span>
-          <input type="tel" name="phone" required minlength="3" maxlength="40" autocomplete="tel" />
+          <input class="coiffeuses-input" type="tel" name="phone" required minlength="3" maxlength="40" autocomplete="tel" />
         </label>
-        <label class="field">
+        <label class="field coiffeuses-field--large">
           <span>${t("coiffeuses.address")} *</span>
-          <textarea name="address" required minlength="5" maxlength="500" rows="2" autocomplete="street-address"></textarea>
+          <textarea class="coiffeuses-textarea coiffeuses-textarea--large" name="address" required minlength="5" maxlength="500" rows="4" autocomplete="street-address" placeholder="${echapperTexteCoiffeuse(t("coiffeuses.addressHint"))}"></textarea>
         </label>
         <fieldset class="coiffeuses-fieldset">
           <legend>${t("coiffeuses.travel")} *</legend>
-          <label class="coiffeuses-radio">
-            <input type="radio" name="travelAvailable" value="yes" required />
-            <span>${t("coiffeuses.travelYes")}</span>
-          </label>
-          <label class="coiffeuses-radio">
-            <input type="radio" name="travelAvailable" value="no" required />
-            <span>${t("coiffeuses.travelNo")}</span>
-          </label>
+          <div class="coiffeuses-radio-group">
+            <label class="coiffeuses-radio">
+              <input type="radio" name="travelAvailable" value="yes" required />
+              <span>${t("coiffeuses.travelYes")}</span>
+            </label>
+            <label class="coiffeuses-radio">
+              <input type="radio" name="travelAvailable" value="no" required />
+              <span>${t("coiffeuses.travelNo")}</span>
+            </label>
+          </div>
         </fieldset>
-        <label class="field">
+        <label class="field coiffeuses-field--large">
           <span>${t("coiffeuses.travelNotes")} *</span>
-          <textarea name="travelNotes" required minlength="2" maxlength="500" rows="2" placeholder="${echapperTexteCoiffeuse(t("coiffeuses.travelNotesHint"))}"></textarea>
+          <textarea class="coiffeuses-textarea coiffeuses-textarea--xlarge" name="travelNotes" required minlength="2" maxlength="500" rows="5" placeholder="${echapperTexteCoiffeuse(t("coiffeuses.travelNotesHint"))}"></textarea>
         </label>
         <fieldset class="coiffeuses-fieldset">
           <legend>${t("coiffeuses.wigInstall")} *</legend>
-          <label class="coiffeuses-radio">
-            <input type="radio" name="wigInstallCustomisation" value="yes" required />
-            <span>${t("coiffeuses.wigInstallYes")}</span>
-          </label>
-          <label class="coiffeuses-radio">
-            <input type="radio" name="wigInstallCustomisation" value="no" required />
-            <span>${t("coiffeuses.wigInstallNo")}</span>
-          </label>
+          <div class="coiffeuses-radio-group">
+            <label class="coiffeuses-radio">
+              <input type="radio" name="wigInstallCustomisation" value="yes" required />
+              <span>${t("coiffeuses.wigInstallYes")}</span>
+            </label>
+            <label class="coiffeuses-radio">
+              <input type="radio" name="wigInstallCustomisation" value="no" required />
+              <span>${t("coiffeuses.wigInstallNo")}</span>
+            </label>
+          </div>
         </fieldset>
-        <label class="field">
-          <span>${t("coiffeuses.profilePhoto")} *</span>
-          <input type="url" name="profileImageUrl" required maxlength="500" placeholder="https://" inputmode="url" />
-          <small class="coiffeuses-field-hint">${t("coiffeuses.profilePhotoHint")}</small>
-        </label>
+        <fieldset class="coiffeuses-photo-field">
+          <legend>${t("coiffeuses.profilePhoto")} *</legend>
+          <p class="coiffeuses-field-hint">${t("coiffeuses.profilePhotoUploadHint")}</p>
+          <label class="coiffeuses-photo-upload">
+            <input type="file" id="coiffeuses-profile-photo" accept="image/jpeg,image/png,image/webp" />
+            <span class="coiffeuses-photo-upload-btn">${t("coiffeuses.profilePhotoChoose")}</span>
+          </label>
+          <div id="coiffeuses-profile-photo-preview" class="coiffeuses-photo-preview-wrap" hidden></div>
+          <input type="hidden" name="profileImageUrl" id="coiffeuses-profile-image-url" value="" />
+        </fieldset>
         <div class="coiffeuses-pro-links-field">
           <span class="coiffeuses-pro-links-label">${t("coiffeuses.proLinks")} *</span>
           <div id="coiffeuses-pro-links-list" class="coiffeuses-pro-links-list"></div>
