@@ -23,6 +23,7 @@ const LAND_SLUGS = [
 
 let landSelectionne = "";
 let coiffeusesCache = [];
+let clientConnecteCoiffeuses = false;
 let fermerDropdownLand = null;
 let fichierPhotoCoiffeuse = null;
 let urlPhotoCoiffeuse = "";
@@ -252,6 +253,56 @@ function attacherMenuDeroulantLand() {
   document.addEventListener("keydown", fermerDropdownLand);
 }
 
+function urlConnexionCoiffeuses() {
+  const page = window.location.pathname.split("/").pop() || "type.html";
+  const retour = encodeURIComponent(`${page}${window.location.search}`);
+  if (typeof cheminPageCompte === "function") {
+    return cheminPageCompte(`mode=login&return=${retour}`);
+  }
+  return `compte.html?mode=login&return=${retour}`;
+}
+
+function texteMoyenneNotes(c) {
+  const count = Number(c.ratingCount) || 0;
+  const avg = Number(c.averageRating) || 0;
+  if (!count) return t("coiffeuses.ratingNone");
+  const noteAffichee = avg % 1 === 0 ? String(avg) : avg.toFixed(1);
+  return t("coiffeuses.ratingAverage", { avg: noteAffichee, count });
+}
+
+function blocNotesCoiffeuseHtml(c) {
+  const moyenne = Math.round(Number(c.averageRating) || 0);
+  const noteUtilisateur = Number(c.userRating) || 0;
+
+  const affichageMoyenne = `
+    <div class="coiffeuse-rating-summary">
+      <span class="coiffeuse-label">${t("coiffeuses.rating")}</span>
+      ${typeof etoilesHtml === "function" ? etoilesHtml(moyenne) : ""}
+      <span class="coiffeuse-rating-meta">${echapperTexteCoiffeuse(texteMoyenneNotes(c))}</span>
+    </div>`;
+
+  if (!clientConnecteCoiffeuses) {
+    return `
+      <div class="coiffeuse-rating" data-coiffeuse-id="${echapperTexteCoiffeuse(c.id)}">
+        ${affichageMoyenne}
+        <p class="coiffeuse-rating-login">
+          ${t("coiffeuses.ratingLogin")}
+          <a class="coiffeuse-link" href="${echapperTexteCoiffeuse(urlConnexionCoiffeuses())}">${t("coiffeuses.ratingLoginBtn")}</a>
+        </p>
+      </div>`;
+  }
+
+  return `
+    <div class="coiffeuse-rating" data-coiffeuse-id="${echapperTexteCoiffeuse(c.id)}">
+      ${affichageMoyenne}
+      <div class="coiffeuse-rating-yours">
+        <span class="coiffeuse-label">${t("coiffeuses.ratingYours")}</span>
+        ${typeof etoilesHtml === "function" ? etoilesHtml(noteUtilisateur, true) : ""}
+      </div>
+      <p class="coiffeuse-rating-feedback" data-coiffeuse-rating-feedback="${echapperTexteCoiffeuse(c.id)}" hidden></p>
+    </div>`;
+}
+
 function carteCoiffeuse(c) {
   const tel = (c.phone || "").trim();
   const telHref = tel ? `tel:${tel.replace(/\s+/g, "")}` : "";
@@ -278,11 +329,12 @@ function carteCoiffeuse(c) {
     : `<span class="coiffeuse-badge coiffeuse-badge--no">${t("coiffeuses.wigInstallNo")}</span>`;
 
   return `
-    <article class="coiffeuse-card account-card">
+    <article class="coiffeuse-card account-card" data-coiffeuse-id="${echapperTexteCoiffeuse(c.id)}">
       <div class="coiffeuse-card-head">
         ${avatarCoiffeuseHtml(c)}
         <h3 class="coiffeuse-name">${echapperTexteCoiffeuse(c.name)}</h3>
       </div>
+      ${blocNotesCoiffeuseHtml(c)}
       <ul class="coiffeuse-meta">
         <li>
           <span class="coiffeuse-label">${t("coiffeuses.proLinks")}</span>
@@ -319,10 +371,26 @@ function listeCoiffeusesHtml(liste) {
   return `<div class="coiffeuses-list">${liste.map(carteCoiffeuse).join("")}</div>`;
 }
 
+async function actualiserConnexionCoiffeuses() {
+  if (typeof obtenirUtilisateur !== "function") {
+    clientConnecteCoiffeuses = false;
+    return false;
+  }
+  const user = await obtenirUtilisateur();
+  clientConnecteCoiffeuses = Boolean(user);
+  return clientConnecteCoiffeuses;
+}
+
 async function chargerCoiffeuses(land) {
+  const headers = {};
+  if (typeof obtenirTokenAuth === "function") {
+    const token = await obtenirTokenAuth();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
   const reponse = await fetch(
     `${apiCoiffeuses()}/api/hairdressers?state=${encodeURIComponent(land)}`,
-    { cache: "no-store" }
+    { cache: "no-store", headers }
   );
   const data = await reponse.json().catch(() => ({}));
   if (!reponse.ok) {
@@ -346,8 +414,10 @@ async function afficherCoiffeusesLand(land) {
   listeEl.innerHTML = `<p class="account-loading">${t("coiffeuses.loading")}</p>`;
 
   try {
+    await actualiserConnexionCoiffeuses();
     coiffeusesCache = await chargerCoiffeuses(land);
     listeEl.innerHTML = listeCoiffeusesHtml(coiffeusesCache);
+    attacherNotesCoiffeuses();
   } catch (err) {
     listeEl.innerHTML = `<p class="account-empty">${err.message}</p>`;
   }
@@ -700,6 +770,91 @@ async function soumettreInscriptionCoiffeuse(e) {
   }
 }
 
+function mettreAJourCarteCoiffeuseDansDom(coiffeuse) {
+  const carte = document.querySelector(`.coiffeuse-card[data-coiffeuse-id="${coiffeuse.id}"]`);
+  if (!carte) return;
+  const bloc = carte.querySelector(".coiffeuse-rating");
+  if (bloc) {
+    bloc.outerHTML = blocNotesCoiffeuseHtml(coiffeuse);
+  }
+}
+
+function afficherFeedbackNoteCoiffeuse(id, texte, type = "info") {
+  const el = document.querySelector(`[data-coiffeuse-rating-feedback="${id}"]`);
+  if (!el) return;
+  el.hidden = !texte;
+  el.textContent = texte;
+  el.className = `coiffeuse-rating-feedback coiffeuse-rating-feedback--${type}`;
+}
+
+async function envoyerNoteCoiffeuse(coiffeuseId, rating) {
+  const token =
+    typeof obtenirTokenAuth === "function" ? await obtenirTokenAuth() : null;
+  if (!token) {
+    window.location.href = urlConnexionCoiffeuses();
+    return;
+  }
+
+  afficherFeedbackNoteCoiffeuse(coiffeuseId, t("coiffeuses.ratingSending"));
+
+  const reponse = await fetch(`${apiCoiffeuses()}/api/hairdressers/${coiffeuseId}/rate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ rating }),
+  });
+  const data = await reponse.json().catch(() => ({}));
+
+  if (!reponse.ok) {
+    const message =
+      reponse.status === 403
+        ? t("coiffeuses.ratingSelfBlocked")
+        : data?.error || t("coiffeuses.ratingError");
+    afficherFeedbackNoteCoiffeuse(coiffeuseId, message, "error");
+    return;
+  }
+
+  coiffeusesCache = coiffeusesCache.map((c) =>
+    c.id === coiffeuseId
+      ? {
+          ...c,
+          averageRating: data.averageRating ?? c.averageRating,
+          ratingCount: data.ratingCount ?? c.ratingCount,
+          userRating: data.userRating ?? rating,
+        }
+      : c
+  );
+
+  const miseAJour = coiffeusesCache.find((c) => c.id === coiffeuseId);
+  if (miseAJour) mettreAJourCarteCoiffeuseDansDom(miseAJour);
+  afficherFeedbackNoteCoiffeuse(coiffeuseId, t("coiffeuses.ratingSaved"), "success");
+}
+
+function attacherNotesCoiffeuses() {
+  const liste = document.getElementById("coiffeuses-list");
+  if (!liste || liste.dataset.ratingBound === "1") return;
+  liste.dataset.ratingBound = "1";
+
+  liste.addEventListener("click", (e) => {
+    const btn = e.target.closest(".coiffeuse-rating .avis-star-btn");
+    if (!btn) return;
+
+    if (!clientConnecteCoiffeuses) {
+      window.location.href = urlConnexionCoiffeuses();
+      return;
+    }
+
+    const bloc = btn.closest(".coiffeuse-rating");
+    const coiffeuseId = bloc?.dataset.coiffeuseId;
+    const rating = Number(btn.dataset.star) || 0;
+    if (!coiffeuseId || rating < 1) return;
+
+    envoyerNoteCoiffeuse(coiffeuseId, rating);
+  });
+}
+
 function attacherFormulaireInscription() {
   const form = document.getElementById("coiffeuses-register-form");
   form?.addEventListener("submit", soumettreInscriptionCoiffeuse);
@@ -904,5 +1059,11 @@ window.rendrePageCoiffeuses = rendrePageCoiffeuses;
 document.addEventListener("langchange", () => {
   if (typeof etatType !== "undefined" && etatType.coiffeuses) {
     rendrePageCoiffeuses();
+  }
+});
+
+document.addEventListener("authchange", () => {
+  if (typeof etatType !== "undefined" && etatType.coiffeuses && landSelectionne) {
+    afficherCoiffeusesLand(landSelectionne);
   }
 });

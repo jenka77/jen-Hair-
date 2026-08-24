@@ -3937,6 +3937,59 @@ img {
   line-height: 1.45;
 }
 
+.coiffeuse-rating {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(201, 169, 98, 0.15);
+}
+
+.coiffeuse-rating-summary,
+.coiffeuse-rating-yours {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.coiffeuse-rating-meta {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.coiffeuse-rating-login {
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.coiffeuse-rating-login a {
+  margin-left: 6px;
+}
+
+.coiffeuse-rating-feedback {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.coiffeuse-rating-feedback--success {
+  color: #8fd4a8;
+}
+
+.coiffeuse-rating-feedback--error {
+  color: #f0a0a0;
+}
+
+.coiffeuse-rating .avis-star,
+.coiffeuse-rating .avis-star-btn {
+  font-size: 1.35rem;
+}
+
+.coiffeuse-rating-yours .avis-star-btn.is-active {
+  color: var(--gold-light);
+}
+
 .coiffeuses-register-area {
   display: flex;
   flex-direction: column;

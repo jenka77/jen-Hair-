@@ -468,6 +468,7 @@ function afficherCoiffeusesAdmin(coiffeuses) {
         ${c.address ? `<li><strong>Adresse :</strong> ${echapperHtml(c.address)}</li>` : ""}
         <li><strong>Déplacement :</strong> ${c.travelAvailable ? "Oui" : "Non"}${c.travelNotes ? ` — ${echapperHtml(c.travelNotes)}` : ""}</li>
         <li><strong>Pose perruque :</strong> ${c.wigInstallCustomisation ? "Oui" : "Non"}</li>
+        <li><strong>Note :</strong> ${Number(c.ratingCount) > 0 ? `${Number(c.averageRating) || 0}/5 (${c.ratingCount} avis)` : "—"}</li>
         ${liens ? `<li><strong>Liens pro :</strong><ul>${liens}</ul></li>` : ""}
       </ul>
       <div class="admin-order-actions">

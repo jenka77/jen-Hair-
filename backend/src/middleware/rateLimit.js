@@ -36,6 +36,14 @@ const limiterPaypal = rateLimit({
   message: messageLimite("Trop de tentatives de paiement. Réessayez plus tard."),
 });
 
+const limiterNotesCoiffeuse = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: messageLimite("Limite de notes atteinte. Réessayez dans une heure."),
+});
+
 function estRouteAdminApi(req) {
   const chemin = req.path || "";
 
@@ -60,6 +68,10 @@ function appliquerLimitesParRoute(req, res, next) {
     return limiterAvis(req, res, next);
   }
 
+  if (req.method === "POST" && /^\/hairdressers\/[^/]+\/rate$/.test(req.path)) {
+    return limiterNotesCoiffeuse(req, res, next);
+  }
+
   if (
     req.method === "POST" &&
     (req.path === "/paypal/create-order" || req.path === "/paypal/capture-order")
@@ -79,5 +91,6 @@ module.exports = {
   limiterAdmin,
   limiterAvis,
   limiterPaypal,
+  limiterNotesCoiffeuse,
   appliquerLimitesParRoute,
 };

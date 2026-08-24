@@ -5,6 +5,8 @@ backend/.env
 
 # Supabase — migrations, scripts SQL et docs internes (ne pas publier)
 supabase/
+backend/sql/
+*.sql
 SUPABASE_PROTOCOL.md
 SUPABASE_STORAGE_PROTOCOL.md
 

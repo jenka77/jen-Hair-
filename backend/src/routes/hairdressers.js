@@ -3,6 +3,7 @@ const multer = require("multer");
 const { z } = require("zod");
 const { supabase } = require("../supabase");
 const { verifierAdmin } = require("../middleware/admin");
+const { authOptionnelle, authObligatoire } = require("../middleware/auth");
 const { GERMAN_STATE_SLUGS, estLandAllemandValide } = require("../constants/germanStates");
 const {
   envoyerEmailNouvelleInscriptionCoiffeuse,
@@ -49,7 +50,8 @@ function extensionDepuisMimeCoiffeuse(mimetype) {
 
 const COLS_BASE =
   "id, state_slug, name, phone, address, travel_available, travel_notes, wig_install_customisation, sort_order";
-const COLS_PUBLIC = `${COLS_BASE}, profile_image_url, professional_links`;
+const COLS_PUBLIC = `${COLS_BASE}, profile_image_url, professional_links, average_rating, rating_count`;
+const COLS_PUBLIC_LEGACY = `${COLS_BASE}, profile_image_url, professional_links`;
 const COLS_ADMIN = `${COLS_PUBLIC}, contact_email, is_published`;
 
 const lienProSchema = z.object({
@@ -109,6 +111,10 @@ const coiffeuseSubmitSchema = z.object({
   locale: z.enum(["fr", "de", "en"]).optional(),
 });
 
+const noteCoiffeuseSchema = z.object({
+  rating: z.coerce.number().int().min(1).max(5),
+});
+
 function messageErreurValidationCoiffeuse(zodError) {
   const LABELS = {
     stateSlug: "Land (État)",
@@ -166,7 +172,67 @@ function colonneContactEmailManquante(error) {
 }
 
 function colonnesAdminManquantes(error) {
-  return colonnesProfilManquantes(error) || colonneContactEmailManquante(error);
+  return (
+    colonnesProfilManquantes(error) ||
+    colonneContactEmailManquante(error) ||
+    colonnesNotesManquantes(error)
+  );
+}
+
+function colonnesNotesManquantes(error) {
+  const msg = String(error?.message || error?.details || "").toLowerCase();
+  return msg.includes("average_rating") || msg.includes("rating_count");
+}
+
+function tableNotesCoiffeuseManquante(error) {
+  const msg = String(error?.message || error?.details || "").toLowerCase();
+  return msg.includes("hairdresser_ratings");
+}
+
+async function chargerNotesUtilisateur(userId, coiffeuseIds) {
+  if (!userId || !coiffeuseIds.length) return {};
+
+  const { data, error } = await supabase
+    .from("hairdresser_ratings")
+    .select("hairdresser_id, rating")
+    .eq("user_id", userId)
+    .in("hairdresser_id", coiffeuseIds);
+
+  if (error) {
+    if (tableNotesCoiffeuseManquante(error)) return {};
+    throw error;
+  }
+
+  const parId = {};
+  (data || []).forEach((row) => {
+    parId[row.hairdresser_id] = Number(row.rating) || 0;
+  });
+  return parId;
+}
+
+async function recalculerNotesCoiffeuse(hairdresserId) {
+  const { data: notes, error: errNotes } = await supabase
+    .from("hairdresser_ratings")
+    .select("rating")
+    .eq("hairdresser_id", hairdresserId);
+
+  if (errNotes) throw errNotes;
+
+  const liste = notes || [];
+  const ratingCount = liste.length;
+  const averageRating = ratingCount
+    ? Math.round((liste.reduce((sum, row) => sum + Number(row.rating), 0) / ratingCount) * 100) /
+      100
+    : 0;
+
+  const { error: errUpdate } = await supabase
+    .from("hairdressers")
+    .update({ average_rating: averageRating, rating_count: ratingCount })
+    .eq("id", hairdresserId);
+
+  if (errUpdate && !colonnesNotesManquantes(errUpdate)) throw errUpdate;
+
+  return { averageRating, ratingCount };
 }
 
 function normaliserLiensProfessionnels(raw) {
@@ -198,6 +264,9 @@ function normaliserCoiffeuse(row, { inclureEmail = false } = {}) {
     profileImageUrl: (row.profile_image_url || "").trim() || null,
     professionalLinks: normaliserLiensProfessionnels(row.professional_links),
     sortOrder: Number(row.sort_order) || 0,
+    averageRating: Number(row.average_rating) || 0,
+    ratingCount: Number(row.rating_count) || 0,
+    ...(row.user_rating !== undefined ? { userRating: Number(row.user_rating) || null } : {}),
     ...(inclureEmail && row.contact_email !== undefined
       ? { contactEmail: (row.contact_email || "").trim().toLowerCase() || null }
       : {}),
@@ -206,28 +275,28 @@ function normaliserCoiffeuse(row, { inclureEmail = false } = {}) {
 }
 
 async function selectionnerCoiffeusesPubliques(state) {
-  let query = supabase
-    .from("hairdressers")
-    .select(COLS_PUBLIC)
-    .eq("is_published", true)
-    .order("sort_order", { ascending: true })
-    .order("name", { ascending: true })
-    .limit(200);
+  const construireRequete = (cols, triParNotes) => {
+    let query = supabase.from("hairdressers").select(cols).eq("is_published", true).limit(200);
 
-  if (state) query = query.eq("state_slug", state);
+    if (triParNotes) {
+      query = query
+        .order("average_rating", { ascending: false })
+        .order("rating_count", { ascending: false })
+        .order("name", { ascending: true });
+    } else {
+      query = query.order("sort_order", { ascending: true }).order("name", { ascending: true });
+    }
 
-  let { data, error } = await query;
+    if (state) query = query.eq("state_slug", state);
+    return query;
+  };
+
+  let { data, error } = await construireRequete(COLS_PUBLIC, true);
 
   if (error && colonnesProfilManquantes(error)) {
-    query = supabase
-      .from("hairdressers")
-      .select(COLS_BASE)
-      .eq("is_published", true)
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true })
-      .limit(200);
-    if (state) query = query.eq("state_slug", state);
-    ({ data, error } = await query);
+    ({ data, error } = await construireRequete(COLS_BASE, false));
+  } else if (error && colonnesNotesManquantes(error)) {
+    ({ data, error } = await construireRequete(COLS_PUBLIC_LEGACY, false));
   }
 
   if (error) throw error;
@@ -259,7 +328,7 @@ router.get("/hairdressers/states", async (req, res, next) => {
   }
 });
 
-router.get("/hairdressers", async (req, res, next) => {
+router.get("/hairdressers", authOptionnelle, async (req, res, next) => {
   try {
     const state = String(req.query.state || "").trim();
 
@@ -268,7 +337,85 @@ router.get("/hairdressers", async (req, res, next) => {
     }
 
     const data = await selectionnerCoiffeusesPubliques(state || "");
-    res.json({ hairdressers: data.map((row) => normaliserCoiffeuse(row)) });
+    const ids = data.map((row) => row.id);
+    const notesUtilisateur = req.user?.id ? await chargerNotesUtilisateur(req.user.id, ids) : {};
+
+    const coiffeuses = data.map((row) =>
+      normaliserCoiffeuse({
+        ...row,
+        ...(req.user?.id ? { user_rating: notesUtilisateur[row.id] ?? null } : {}),
+      })
+    );
+
+    res.json({ hairdressers: coiffeuses });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/hairdressers/:id/rate", authObligatoire, async (req, res, next) => {
+  try {
+    const validation = noteCoiffeuseSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Note invalide (1 à 5 étoiles)." });
+    }
+
+    const { rating } = validation.data;
+    const coiffeuseId = req.params.id;
+
+    const { data: coiffeuse, error: errCoiffeuse } = await supabase
+      .from("hairdressers")
+      .select("id, is_published, contact_email")
+      .eq("id", coiffeuseId)
+      .maybeSingle();
+
+    if (errCoiffeuse) throw errCoiffeuse;
+    if (!coiffeuse || coiffeuse.is_published === false) {
+      return res.status(404).json({ error: "Coiffeuse introuvable" });
+    }
+
+    const emailClient = String(req.user.email || "")
+      .trim()
+      .toLowerCase();
+    const emailCoiffeuse = String(coiffeuse.contact_email || "")
+      .trim()
+      .toLowerCase();
+
+    if (emailClient && emailCoiffeuse && emailClient === emailCoiffeuse) {
+      return res.status(403).json({
+        error: "Vous ne pouvez pas noter votre propre profil coiffeuse.",
+      });
+    }
+
+    const { error: errNote } = await supabase.from("hairdresser_ratings").upsert(
+      {
+        hairdresser_id: coiffeuseId,
+        user_id: req.user.id,
+        rating,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "hairdresser_id,user_id" }
+    );
+
+    if (errNote) {
+      if (tableNotesCoiffeuseManquante(errNote)) {
+        return res.status(503).json({
+          error:
+            "Système de notes indisponible. Exécutez backend/sql/add_hairdresser_ratings.sql dans Supabase.",
+        });
+      }
+      throw errNote;
+    }
+
+    const stats = await recalculerNotesCoiffeuse(coiffeuseId);
+
+    res.json({
+      ok: true,
+      rating,
+      averageRating: stats.averageRating,
+      ratingCount: stats.ratingCount,
+      userRating: rating,
+    });
   } catch (error) {
     next(error);
   }
