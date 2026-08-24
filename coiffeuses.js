@@ -24,6 +24,8 @@ const LAND_SLUGS = [
 let landSelectionne = "";
 let coiffeusesCache = [];
 let clientConnecteCoiffeuses = false;
+const editionNotesCoiffeuse = new Set();
+const selectionNotesCoiffeuse = {};
 let fermerDropdownLand = null;
 let fichierPhotoCoiffeuse = null;
 let urlPhotoCoiffeuse = "";
@@ -270,9 +272,22 @@ function texteMoyenneNotes(c) {
   return t("coiffeuses.ratingAverage", { avg: noteAffichee, count });
 }
 
+function estEnEditionNoteCoiffeuse(c) {
+  if (editionNotesCoiffeuse.has(c.id)) return true;
+  return !(Number(c.userRating) >= 1);
+}
+
+function noteBrouillonCoiffeuse(c) {
+  const brouillon = selectionNotesCoiffeuse[c.id];
+  if (brouillon >= 1) return brouillon;
+  return Number(c.userRating) || 0;
+}
+
 function blocNotesCoiffeuseHtml(c) {
   const moyenne = Math.round(Number(c.averageRating) || 0);
   const noteUtilisateur = Number(c.userRating) || 0;
+  const enEdition = estEnEditionNoteCoiffeuse(c);
+  const noteSelectionnee = noteBrouillonCoiffeuse(c);
 
   const affichageMoyenne = `
     <div class="coiffeuse-rating-summary">
@@ -292,13 +307,37 @@ function blocNotesCoiffeuseHtml(c) {
       </div>`;
   }
 
-  return `
-    <div class="coiffeuse-rating" data-coiffeuse-id="${echapperTexteCoiffeuse(c.id)}">
-      ${affichageMoyenne}
-      <div class="coiffeuse-rating-yours">
+  const blocVotreNote = enEdition
+    ? `
+      <div class="coiffeuse-rating-yours coiffeuse-rating-yours--edit">
         <span class="coiffeuse-label">${t("coiffeuses.ratingYours")}</span>
-        ${typeof etoilesHtml === "function" ? etoilesHtml(noteUtilisateur, true) : ""}
-      </div>
+        <div class="coiffeuse-rating-stars-input">${typeof etoilesHtml === "function" ? etoilesHtml(noteSelectionnee, true) : ""}</div>
+        <p class="coiffeuse-rating-hint">${t("coiffeuses.ratingSelectHint")}</p>
+        <div class="coiffeuse-rating-actions">
+          <button type="button" class="auth-btn auth-btn--fill coiffeuse-rating-save" data-coiffeuse-id="${echapperTexteCoiffeuse(c.id)}"${noteSelectionnee < 1 ? " disabled" : ""}>
+            ${noteUtilisateur >= 1 ? t("coiffeuses.ratingKeep") : t("coiffeuses.ratingSave")}
+          </button>
+          ${
+            noteUtilisateur >= 1
+              ? `<button type="button" class="auth-btn auth-btn--outline coiffeuse-rating-cancel" data-coiffeuse-id="${echapperTexteCoiffeuse(c.id)}">${t("coiffeuses.ratingCancel")}</button>`
+              : ""
+          }
+        </div>
+      </div>`
+    : `
+      <div class="coiffeuse-rating-yours coiffeuse-rating-yours--saved">
+        <span class="coiffeuse-label">${t("coiffeuses.ratingYours")}</span>
+        ${typeof etoilesHtml === "function" ? etoilesHtml(noteUtilisateur) : ""}
+        <span class="coiffeuse-rating-meta">${t("coiffeuses.ratingYoursValue", { n: noteUtilisateur })}</span>
+        <button type="button" class="auth-btn auth-btn--outline coiffeuse-rating-modify" data-coiffeuse-id="${echapperTexteCoiffeuse(c.id)}">
+          ${t("coiffeuses.ratingModify")}
+        </button>
+      </div>`;
+
+  return `
+    <div class="coiffeuse-rating" data-coiffeuse-id="${echapperTexteCoiffeuse(c.id)}" data-rating-mode="${enEdition ? "edit" : "view"}">
+      ${affichageMoyenne}
+      ${blocVotreNote}
       <p class="coiffeuse-rating-feedback" data-coiffeuse-rating-feedback="${echapperTexteCoiffeuse(c.id)}" hidden></p>
     </div>`;
 }
@@ -415,6 +454,8 @@ async function afficherCoiffeusesLand(land) {
 
   try {
     await actualiserConnexionCoiffeuses();
+    editionNotesCoiffeuse.clear();
+    Object.keys(selectionNotesCoiffeuse).forEach((id) => delete selectionNotesCoiffeuse[id]);
     coiffeusesCache = await chargerCoiffeuses(land);
     listeEl.innerHTML = listeCoiffeusesHtml(coiffeusesCache);
     attacherNotesCoiffeuses();
@@ -770,12 +811,15 @@ async function soumettreInscriptionCoiffeuse(e) {
   }
 }
 
-function mettreAJourCarteCoiffeuseDansDom(coiffeuse) {
+function mettreAJourCarteCoiffeuseDansDom(coiffeuse, feedback) {
   const carte = document.querySelector(`.coiffeuse-card[data-coiffeuse-id="${coiffeuse.id}"]`);
   if (!carte) return;
   const bloc = carte.querySelector(".coiffeuse-rating");
   if (bloc) {
     bloc.outerHTML = blocNotesCoiffeuseHtml(coiffeuse);
+  }
+  if (feedback?.text) {
+    afficherFeedbackNoteCoiffeuse(coiffeuse.id, feedback.text, feedback.type || "info");
   }
 }
 
@@ -787,6 +831,21 @@ function afficherFeedbackNoteCoiffeuse(id, texte, type = "info") {
   el.className = `coiffeuse-rating-feedback coiffeuse-rating-feedback--${type}`;
 }
 
+function activerEditionNoteCoiffeuse(coiffeuseId) {
+  const coiffeuse = coiffeusesCache.find((c) => c.id === coiffeuseId);
+  if (!coiffeuse) return;
+  editionNotesCoiffeuse.add(coiffeuseId);
+  selectionNotesCoiffeuse[coiffeuseId] = Number(coiffeuse.userRating) || 0;
+  mettreAJourCarteCoiffeuseDansDom(coiffeuse);
+}
+
+function annulerEditionNoteCoiffeuse(coiffeuseId) {
+  editionNotesCoiffeuse.delete(coiffeuseId);
+  delete selectionNotesCoiffeuse[coiffeuseId];
+  const coiffeuse = coiffeusesCache.find((c) => c.id === coiffeuseId);
+  if (coiffeuse) mettreAJourCarteCoiffeuseDansDom(coiffeuse);
+}
+
 async function envoyerNoteCoiffeuse(coiffeuseId, rating) {
   const token =
     typeof obtenirTokenAuth === "function" ? await obtenirTokenAuth() : null;
@@ -795,7 +854,14 @@ async function envoyerNoteCoiffeuse(coiffeuseId, rating) {
     return;
   }
 
-  afficherFeedbackNoteCoiffeuse(coiffeuseId, t("coiffeuses.ratingSending"));
+  const saveBtn = document.querySelector(
+    `.coiffeuse-rating-save[data-coiffeuse-id="${coiffeuseId}"]`
+  );
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = t("coiffeuses.ratingSending");
+  }
+  afficherFeedbackNoteCoiffeuse(coiffeuseId, "");
 
   const reponse = await fetch(`${apiCoiffeuses()}/api/hairdressers/${coiffeuseId}/rate`, {
     method: "POST",
@@ -812,9 +878,19 @@ async function envoyerNoteCoiffeuse(coiffeuseId, rating) {
       reponse.status === 403
         ? t("coiffeuses.ratingSelfBlocked")
         : data?.error || t("coiffeuses.ratingError");
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent =
+        Number(coiffeusesCache.find((c) => c.id === coiffeuseId)?.userRating) >= 1
+          ? t("coiffeuses.ratingKeep")
+          : t("coiffeuses.ratingSave");
+    }
     afficherFeedbackNoteCoiffeuse(coiffeuseId, message, "error");
     return;
   }
+
+  editionNotesCoiffeuse.delete(coiffeuseId);
+  delete selectionNotesCoiffeuse[coiffeuseId];
 
   coiffeusesCache = coiffeusesCache.map((c) =>
     c.id === coiffeuseId
@@ -828,8 +904,12 @@ async function envoyerNoteCoiffeuse(coiffeuseId, rating) {
   );
 
   const miseAJour = coiffeusesCache.find((c) => c.id === coiffeuseId);
-  if (miseAJour) mettreAJourCarteCoiffeuseDansDom(miseAJour);
-  afficherFeedbackNoteCoiffeuse(coiffeuseId, t("coiffeuses.ratingSaved"), "success");
+  if (miseAJour) {
+    mettreAJourCarteCoiffeuseDansDom(miseAJour, {
+      text: t("coiffeuses.ratingSaved"),
+      type: "success",
+    });
+  }
 }
 
 function attacherNotesCoiffeuses() {
@@ -838,20 +918,47 @@ function attacherNotesCoiffeuses() {
   liste.dataset.ratingBound = "1";
 
   liste.addEventListener("click", (e) => {
-    const btn = e.target.closest(".coiffeuse-rating .avis-star-btn");
-    if (!btn) return;
+    const saveBtn = e.target.closest(".coiffeuse-rating-save");
+    if (saveBtn) {
+      if (!clientConnecteCoiffeuses) {
+        window.location.href = urlConnexionCoiffeuses();
+        return;
+      }
+      const coiffeuseId = saveBtn.dataset.coiffeuseId;
+      const rating = selectionNotesCoiffeuse[coiffeuseId] || 0;
+      if (!coiffeuseId || rating < 1) return;
+      envoyerNoteCoiffeuse(coiffeuseId, rating);
+      return;
+    }
+
+    const modifyBtn = e.target.closest(".coiffeuse-rating-modify");
+    if (modifyBtn?.dataset.coiffeuseId) {
+      activerEditionNoteCoiffeuse(modifyBtn.dataset.coiffeuseId);
+      return;
+    }
+
+    const cancelBtn = e.target.closest(".coiffeuse-rating-cancel");
+    if (cancelBtn?.dataset.coiffeuseId) {
+      annulerEditionNoteCoiffeuse(cancelBtn.dataset.coiffeuseId);
+      return;
+    }
+
+    const starBtn = e.target.closest(".coiffeuse-rating-yours--edit .avis-star-btn");
+    if (!starBtn) return;
 
     if (!clientConnecteCoiffeuses) {
       window.location.href = urlConnexionCoiffeuses();
       return;
     }
 
-    const bloc = btn.closest(".coiffeuse-rating");
+    const bloc = starBtn.closest(".coiffeuse-rating");
     const coiffeuseId = bloc?.dataset.coiffeuseId;
-    const rating = Number(btn.dataset.star) || 0;
+    const rating = Number(starBtn.dataset.star) || 0;
     if (!coiffeuseId || rating < 1) return;
 
-    envoyerNoteCoiffeuse(coiffeuseId, rating);
+    selectionNotesCoiffeuse[coiffeuseId] = rating;
+    const coiffeuse = coiffeusesCache.find((c) => c.id === coiffeuseId);
+    if (coiffeuse) mettreAJourCarteCoiffeuseDansDom(coiffeuse);
   });
 }
 

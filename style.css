@@ -3990,6 +3990,23 @@ img {
   color: var(--gold-light);
 }
 
+.coiffeuse-rating-hint {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.coiffeuse-rating-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.coiffeuse-rating-yours--saved .coiffeuse-rating-modify {
+  margin-left: auto;
+}
+
 .coiffeuses-register-area {
   display: flex;
   flex-direction: column;
