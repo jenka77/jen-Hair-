@@ -2,6 +2,9 @@
    Jen's & Floran — Annuaire coiffeurs (type n°14)
    ============================================================ */
 
+(function () {
+"use strict";
+
 const LAND_SLUGS = [
   "baden-wuerttemberg",
   "bayern",
@@ -1174,3 +1177,5 @@ document.addEventListener("authchange", () => {
     afficherCoiffeursLand(landSelectionne);
   }
 });
+
+})();
