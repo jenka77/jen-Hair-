@@ -40,6 +40,7 @@ function libelleModeRecuperationAdmin(mode) {
 let commandesCache = [];
 let avisCache = [];
 let coiffeusesAdminCache = [];
+let coiffeursAdminCache = [];
 let ongletAdminActif = "orders";
 
 function apiBase() {
@@ -597,6 +598,181 @@ async function supprimerCoiffeuse(id, nom) {
   }
 }
 
+function filtrerCoiffeursAdmin() {
+  const filtre = document.getElementById("admin-filter-barbers")?.value || "";
+  let liste = coiffeursAdminCache;
+
+  if (filtre === "pending") {
+    liste = liste.filter((c) => c.isPublished === false);
+  } else if (filtre === "published") {
+    liste = liste.filter((c) => c.isPublished !== false);
+  }
+
+  afficherCoiffeursAdmin(liste);
+}
+
+function afficherCoiffeursAdmin(coiffeurs) {
+  const conteneur = document.getElementById("admin-barbers");
+  if (!conteneur) return;
+
+  if (!coiffeurs.length) {
+    conteneur.innerHTML = `<p class="account-empty">Aucune fiche coiffeur.</p>`;
+    return;
+  }
+
+  conteneur.innerHTML = coiffeurs
+    .map((c) => {
+      const publie = c.isPublished !== false;
+      const liens = (c.professionalLinks || [])
+        .map(
+          (l) =>
+            `<li><a href="${echapperHtml(l.url)}" target="_blank" rel="noopener noreferrer">${echapperHtml(l.label || l.url)}</a></li>`
+        )
+        .join("");
+
+      return `
+    <article class="admin-hairdresser-card" data-barber-id="${c.id}">
+      <div class="admin-order-head">
+        <div>
+          <p class="order-card-number">${echapperHtml(c.name)} · ${echapperHtml(libelleLandAdmin(c.stateSlug))}</p>
+          <p class="order-card-date">${echapperHtml(c.phone || "—")}${c.contactEmail ? ` · ${echapperHtml(c.contactEmail)}` : ""}</p>
+        </div>
+        <span class="status-badge admin-status-badge ${publie ? "paid" : "cancelled"}">${publie ? "Publiée" : "En attente"}</span>
+      </div>
+      <ul class="admin-hairdresser-meta">
+        ${c.address ? `<li><strong>Adresse :</strong> ${echapperHtml(c.address)}</li>` : ""}
+        <li><strong>Déplacement :</strong> ${c.travelAvailable ? "Oui" : "Non"}${c.travelNotes ? ` — ${echapperHtml(c.travelNotes)}` : ""}</li>
+        <li><strong>Pose perruque :</strong> ${c.wigInstallCustomisation ? "Oui" : "Non"}</li>
+        <li><strong>Note :</strong> ${Number(c.ratingCount) > 0 ? `${Number(c.averageRating) || 0}/5 (${c.ratingCount} avis)` : "—"}</li>
+        ${liens ? `<li><strong>Liens pro :</strong><ul>${liens}</ul></li>` : ""}
+      </ul>
+      <div class="admin-order-actions">
+        ${
+          !publie
+            ? `<button type="button" class="auth-btn auth-btn--fill admin-approve-barber" data-barber-id="${c.id}">Approuver</button>`
+            : `<button type="button" class="auth-btn auth-btn--outline admin-unpublish-barber" data-barber-id="${c.id}">Masquer</button>`
+        }
+        <button type="button" class="auth-btn auth-btn--outline admin-delete-barber" data-barber-id="${c.id}">Supprimer</button>
+      </div>
+      <p class="admin-order-feedback" data-barber-feedback="${c.id}" hidden></p>
+    </article>`;
+    })
+    .join("");
+}
+
+async function chargerCoiffeursAdmin() {
+  const conteneur = document.getElementById("admin-barbers");
+  if (conteneur) {
+    conteneur.innerHTML = `<p class="account-loading">Chargement des coiffeurs…</p>`;
+  }
+
+  const data = await requeteAdmin("/api/admin/barbers");
+  coiffeursAdminCache = data.barbers || [];
+  filtrerCoiffeursAdmin();
+}
+
+async function approuverCoiffeur(id) {
+  const feedback = document.querySelector(`[data-barber-feedback="${id}"]`);
+  if (feedback) {
+    feedback.hidden = false;
+    feedback.textContent = "Approbation…";
+    feedback.className = "admin-order-feedback";
+  }
+
+  try {
+    const data = await requeteAdmin(`/api/admin/barbers/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ isPublished: true }),
+    });
+
+    coiffeursAdminCache = coiffeursAdminCache.map((c) =>
+      c.id === id ? { ...c, ...data.barber } : c
+    );
+    filtrerCoiffeursAdmin();
+
+    if (feedback) {
+      let message = "Fiche approuvée et visible dans l'annuaire.";
+      if (data.email?.sent) {
+        message += " E-mail de confirmation envoyé au coiffeur.";
+      } else if (data.email?.reason === "email_introuvable") {
+        message += " E-mail non envoyé : adresse introuvable.";
+        feedback.classList.add("admin-order-feedback--error");
+      } else if (data.email?.error) {
+        message += ` E-mail non envoyé : ${data.email.error}`;
+        feedback.classList.add("admin-order-feedback--error");
+      } else if (data.email?.reason === "resend_non_configure") {
+        message += " E-mail non envoyé (Resend non configuré).";
+        feedback.classList.add("admin-order-feedback--error");
+      }
+      feedback.textContent = message;
+      if (!feedback.classList.contains("admin-order-feedback--error")) {
+        feedback.classList.add("admin-order-feedback--ok");
+      }
+    }
+  } catch (err) {
+    if (feedback) {
+      feedback.textContent = err.message;
+      feedback.classList.add("admin-order-feedback--error");
+    }
+  }
+}
+
+async function masquerCoiffeur(id) {
+  const feedback = document.querySelector(`[data-barber-feedback="${id}"]`);
+  if (feedback) {
+    feedback.hidden = false;
+    feedback.textContent = "Masquage…";
+    feedback.className = "admin-order-feedback";
+  }
+
+  try {
+    const data = await requeteAdmin(`/api/admin/barbers/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ isPublished: false }),
+    });
+
+    coiffeursAdminCache = coiffeursAdminCache.map((c) =>
+      c.id === id ? { ...c, ...data.barber } : c
+    );
+    filtrerCoiffeursAdmin();
+
+    if (feedback) {
+      feedback.textContent = "Fiche masquée de l'annuaire.";
+      feedback.classList.add("admin-order-feedback--ok");
+    }
+  } catch (err) {
+    if (feedback) {
+      feedback.textContent = err.message;
+      feedback.classList.add("admin-order-feedback--error");
+    }
+  }
+}
+
+async function supprimerCoiffeur(id, nom) {
+  if (!window.confirm(`Supprimer définitivement la fiche de ${nom || "ce coiffeur"} ?`)) {
+    return;
+  }
+
+  const feedback = document.querySelector(`[data-barber-feedback="${id}"]`);
+  if (feedback) {
+    feedback.hidden = false;
+    feedback.textContent = "Suppression…";
+    feedback.className = "admin-order-feedback";
+  }
+
+  try {
+    await requeteAdmin(`/api/admin/barbers/${id}`, { method: "DELETE" });
+    coiffeursAdminCache = coiffeursAdminCache.filter((c) => c.id !== id);
+    filtrerCoiffeursAdmin();
+  } catch (err) {
+    if (feedback) {
+      feedback.textContent = err.message;
+      feedback.classList.add("admin-order-feedback--error");
+    }
+  }
+}
+
+
 function basculerOngletAdmin(onglet) {
   ongletAdminActif = onglet;
 
@@ -609,11 +785,13 @@ function basculerOngletAdmin(onglet) {
   document.getElementById("admin-panel-orders")?.toggleAttribute("hidden", onglet !== "orders");
   document.getElementById("admin-panel-reviews")?.toggleAttribute("hidden", onglet !== "reviews");
   document.getElementById("admin-panel-hairdressers")?.toggleAttribute("hidden", onglet !== "hairdressers");
+  document.getElementById("admin-panel-barbers")?.toggleAttribute("hidden", onglet !== "barbers");
 
   const titre = document.getElementById("admin-page-title");
   if (titre) {
     if (onglet === "reviews") titre.textContent = "Avis clients";
     else if (onglet === "hairdressers") titre.textContent = "Coiffeuses";
+    else if (onglet === "barbers") titre.textContent = "Coiffeurs";
     else titre.textContent = "Commandes";
   }
 }
@@ -623,6 +801,8 @@ async function actualiserOngletAdmin() {
     await chargerAvisAdmin();
   } else if (ongletAdminActif === "hairdressers") {
     await chargerCoiffeusesAdmin();
+  } else if (ongletAdminActif === "barbers") {
+    await chargerCoiffeursAdmin();
   } else {
     await chargerCommandes();
   }
@@ -735,11 +915,15 @@ function initAdmin() {
       if (onglet === "hairdressers" && !coiffeusesAdminCache.length) {
         chargerCoiffeusesAdmin().catch((err) => alert(err.message));
       }
+      if (onglet === "barbers" && !coiffeursAdminCache.length) {
+        chargerCoiffeursAdmin().catch((err) => alert(err.message));
+      }
     });
   });
 
   document.getElementById("admin-filter-status")?.addEventListener("change", filtrerCommandes);
   document.getElementById("admin-filter-hairdressers")?.addEventListener("change", filtrerCoiffeusesAdmin);
+  document.getElementById("admin-filter-barbers")?.addEventListener("change", filtrerCoiffeursAdmin);
 
   document.getElementById("admin-hairdressers")?.addEventListener("click", (e) => {
     const approveBtn = e.target.closest(".admin-approve-hairdresser");
@@ -759,6 +943,27 @@ function initAdmin() {
       const card = deleteBtn.closest(".admin-hairdresser-card");
       const nom = card?.querySelector(".order-card-number")?.textContent?.split(" · ")[0] || "";
       supprimerCoiffeuse(deleteBtn.dataset.hairdresserId, nom);
+    }
+  });
+
+  document.getElementById("admin-barbers")?.addEventListener("click", (e) => {
+    const approveBtn = e.target.closest(".admin-approve-barber");
+    if (approveBtn) {
+      approuverCoiffeur(approveBtn.dataset.barberId);
+      return;
+    }
+
+    const unpublishBtn = e.target.closest(".admin-unpublish-barber");
+    if (unpublishBtn) {
+      masquerCoiffeur(unpublishBtn.dataset.barberId);
+      return;
+    }
+
+    const deleteBtn = e.target.closest(".admin-delete-barber");
+    if (deleteBtn) {
+      const card = deleteBtn.closest(".admin-barber-card");
+      const nom = card?.querySelector(".order-card-number")?.textContent?.split(" · ")[0] || "";
+      supprimerCoiffeur(deleteBtn.dataset.barberId, nom);
     }
   });
 

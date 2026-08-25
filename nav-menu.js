@@ -16,11 +16,13 @@ const TYPES_MENU_FALLBACK = [
   { slug: "accessoires", name: "Accessoires" },
   { slug: "commentaires", name: "Vos avis" },
   { slug: "coiffeuses", name: "Coiffeuses" },
+  { slug: "coiffeurs", name: "Coiffeurs" },
 ];
 
 const PAGES_SPECIALES_MENU = [
   { slug: "commentaires", name: "Vos avis" },
   { slug: "coiffeuses", name: "Coiffeuses" },
+  { slug: "coiffeurs", name: "Coiffeurs" },
 ];
 
 function cheminTypeCatalogue(slug) {

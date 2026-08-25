@@ -45,6 +45,7 @@
       <button type="button" class="admin-tab active" data-admin-tab="orders" role="tab" aria-selected="true">Commandes</button>
       <button type="button" class="admin-tab" data-admin-tab="reviews" role="tab" aria-selected="false">Avis</button>
       <button type="button" class="admin-tab" data-admin-tab="hairdressers" role="tab" aria-selected="false">Coiffeuses</button>
+      <button type="button" class="admin-tab" data-admin-tab="barbers" role="tab" aria-selected="false">Coiffeurs</button>
     </nav>
 
     <section id="admin-panel-orders" class="admin-panel">
@@ -90,8 +91,24 @@
         <p class="account-loading">Chargement des coiffeuses…</p>
       </div>
     </section>
+
+    <section id="admin-panel-barbers" class="admin-panel" hidden>
+      <div class="admin-filters">
+        <label class="admin-filter">
+          <span>Filtrer les fiches</span>
+          <select id="admin-filter-barbers">
+            <option value="">Toutes</option>
+            <option value="pending">En attente de validation</option>
+            <option value="published">Publiées</option>
+          </select>
+        </label>
+      </div>
+      <div id="admin-barbers" class="admin-hairdressers">
+        <p class="account-loading">Chargement des coiffeurs…</p>
+      </div>
+    </section>
   </div>
 
-  <script src="gestion-commandes.js?v=20260823d"></script>
+  <script src="gestion-commandes.js?v=20260826a"></script>
 </body>
 </html>

@@ -9,9 +9,15 @@ const {
   genererHtmlNouvelleCoiffeuseAdmin,
   genererHtmlCoiffeuseApprouvee,
   genererHtmlReceptionCoiffeuse,
+  genererHtmlNouvelleCoiffeurAdmin,
+  genererHtmlCoiffeurApprouvee,
+  genererHtmlReceptionCoiffeur,
   texteNouvelleCoiffeuseAdmin,
   texteCoiffeuseApprouvee,
   texteReceptionCoiffeuse,
+  texteNouvelleCoiffeurAdmin,
+  texteCoiffeurApprouvee,
+  texteReceptionCoiffeur,
   normaliserLocale,
   tr,
 } = require("./emailTemplates");
@@ -351,10 +357,97 @@ async function envoyerEmailCoiffeuseApprouvee(coiffeuse, locale = "fr") {
   return { ...result, to: email };
 }
 
+function urlAnnuaireCoiffeurs(stateSlug) {
+  const base = (process.env.SITE_URL || "https://www.jens-flora.com").replace(/\/$/, "");
+  const params = new URLSearchParams({ type: "coiffeurs" });
+  if (stateSlug) params.set("land", stateSlug);
+  return `${base}/type.html?${params.toString()}`;
+}
+
+async function envoyerEmailNouvelleInscriptionCoiffeur(coiffeur, locale = "fr") {
+  const adminEmail = process.env.EMAIL_ADMIN;
+  if (!adminEmail) {
+    console.warn("EMAIL_ADMIN manquant : notification coiffeur non envoyée.");
+    return { skipped: true, reason: "admin_email_manquant" };
+  }
+
+  const lang = normaliserLocale(locale);
+  const adminUrl = urlAdminCoiffeuses();
+  const subject = tr(lang, "coiffeurAdminSubject", { name: coiffeur.name || "Coiffeur" });
+
+  const result = await envoyerEmail({
+    to: adminEmail,
+    subject,
+    replyTo: coiffeur.contactEmail || undefined,
+    text: texteNouvelleCoiffeurAdmin({ coiffeur, adminUrl, locale: lang }),
+    html: genererHtmlNouvelleCoiffeurAdmin({ coiffeur, adminUrl, locale: lang }),
+  });
+
+  if (!result?.skipped) {
+    console.log(`Notification nouveau coiffeur envoyée à ${adminEmail} (${coiffeur.name})`);
+  }
+
+  return result;
+}
+
+async function envoyerEmailReceptionCoiffeur(coiffeur, locale = "fr") {
+  const email = String(coiffeur.contactEmail || "").trim().toLowerCase();
+  if (!email || !email.includes("@")) {
+    return { skipped: true, reason: "email_introuvable" };
+  }
+
+  const lang = normaliserLocale(locale);
+  const directoryUrl = urlAnnuaireCoiffeurs(coiffeur.stateSlug);
+  const subject = tr(lang, "coiffeurReceivedSubject");
+
+  const result = await envoyerEmail({
+    to: email,
+    subject,
+    text: texteReceptionCoiffeur({ coiffeur, directoryUrl, locale: lang }),
+    html: genererHtmlReceptionCoiffeur({ coiffeur, directoryUrl, locale: lang }),
+  });
+
+  if (!result?.skipped) {
+    console.log(`Accusé réception coiffeur envoyé à ${email} (${coiffeur.name})`);
+  }
+
+  return { ...result, to: email };
+}
+
+async function envoyerEmailCoiffeurApprouvee(coiffeur, locale = "fr") {
+  const email = String(coiffeur.contactEmail || "").trim().toLowerCase();
+  if (!email || !email.includes("@")) {
+    console.warn(`Email approbation coiffeur non envoyé : adresse introuvable (${coiffeur.name})`);
+    return { skipped: true, reason: "email_introuvable" };
+  }
+
+  const lang = normaliserLocale(locale);
+  const directoryUrl = urlAnnuaireCoiffeurs(coiffeur.stateSlug);
+  const adminEmail = process.env.EMAIL_ADMIN;
+  const subject = tr(lang, "coiffeurApprovedSubject");
+
+  const result = await envoyerEmail({
+    to: email,
+    subject,
+    replyTo: adminEmail || undefined,
+    text: texteCoiffeurApprouvee({ coiffeur, directoryUrl, locale: lang }),
+    html: genererHtmlCoiffeurApprouvee({ coiffeur, directoryUrl, locale: lang }),
+  });
+
+  if (!result?.skipped) {
+    console.log(`Email approbation coiffeur envoyé à ${email} (${coiffeur.name})`);
+  }
+
+  return { ...result, to: email };
+}
+
 module.exports = {
   envoyerEmailsCommande,
   envoyerEmailChangementStatut,
   envoyerEmailNouvelleInscriptionCoiffeuse,
   envoyerEmailReceptionCoiffeuse,
   envoyerEmailCoiffeuseApprouvee,
+  envoyerEmailNouvelleInscriptionCoiffeur,
+  envoyerEmailReceptionCoiffeur,
+  envoyerEmailCoiffeurApprouvee,
 };

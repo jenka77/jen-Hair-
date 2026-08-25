@@ -72,6 +72,10 @@ function appliquerLimitesParRoute(req, res, next) {
     return limiterNotesCoiffeuse(req, res, next);
   }
 
+  if (req.method === "POST" && /^\/barbers\/[^/]+\/rate$/.test(req.path)) {
+    return limiterNotesCoiffeuse(req, res, next);
+  }
+
   if (
     req.method === "POST" &&
     (req.path === "/paypal/create-order" || req.path === "/paypal/capture-order")
