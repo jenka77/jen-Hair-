@@ -119,12 +119,76 @@ function echapperHtmlCompte(texte) {
 
 function urlImageCommande(url) {
   const nettoyee = (url || "").trim();
-  if (!nettoyee || !/^https:\/\//i.test(nettoyee)) return "";
-  try {
-    return encodeURI(decodeURI(nettoyee));
-  } catch {
-    return nettoyee.replace(/ /g, "%20");
+  if (!nettoyee) return "";
+
+  if (/^https?:\/\//i.test(nettoyee)) {
+    try {
+      return encodeURI(decodeURI(nettoyee));
+    } catch {
+      return nettoyee.replace(/ /g, "%20");
+    }
   }
+
+  const base =
+    typeof urlSiteCanonique === "function"
+      ? urlSiteCanonique().replace(/\/$/, "")
+      : window.location.origin.replace(/\/$/, "");
+  const chemin = nettoyee.replace(/^\//, "");
+  try {
+    return encodeURI(`${base}/${chemin}`);
+  } catch {
+    return `${base}/${chemin.replace(/ /g, "%20")}`;
+  }
+}
+
+function premiereImageDepuisProduit(produit) {
+  if (!produit) return null;
+  const urls = [produit.image_url, produit.image_url_2, produit.image_url_3, produit.image]
+    .map((url) => String(url || "").trim())
+    .filter(Boolean);
+  return urls[0] || null;
+}
+
+async function enrichirImagesCommandesCoteClient(orders) {
+  if (!Array.isArray(orders) || !orders.length) return orders;
+
+  const manquantes = [];
+  orders.forEach((order) => {
+    (order.items || []).forEach((item) => {
+      if (!item.imageUrl && item.name) {
+        manquantes.push(String(item.name).trim());
+      }
+    });
+  });
+
+  if (!manquantes.length) return orders;
+
+  const imagesParNom = {};
+
+  if (typeof clientSupabase !== "undefined" && clientSupabase) {
+    const nomsUniques = [...new Set(manquantes)];
+    const { data: produits } = await clientSupabase
+      .from("products")
+      .select("name, image_url, image_url_2, image_url_3")
+      .in("name", nomsUniques);
+
+    (produits || []).forEach((produit) => {
+      const image = premiereImageDepuisProduit(produit);
+      if (image) {
+        imagesParNom[String(produit.name || "").trim().toLowerCase()] = image;
+      }
+    });
+  }
+
+  return orders.map((order) => ({
+    ...order,
+    items: (order.items || []).map((item) => {
+      if (item.imageUrl) return item;
+      const image =
+        imagesParNom[String(item.name || "").trim().toLowerCase()] || null;
+      return image ? { ...item, imageUrl: image } : item;
+    }),
+  }));
 }
 
 function miniatureArticleCommande(item) {
@@ -229,7 +293,8 @@ async function basculerVueConnecte() {
 
     try {
       const data = await chargerMesCommandes();
-      afficherCommandes(data.orders || []);
+      const commandes = await enrichirImagesCommandesCoteClient(data.orders || []);
+      afficherCommandes(commandes);
     } catch (err) {
       const conteneur = document.getElementById("orders-list");
       if (conteneur) {

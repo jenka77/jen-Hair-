@@ -4,6 +4,24 @@ const { authObligatoire } = require("../middleware/auth");
 
 const router = express.Router();
 
+const SITE_URL = String(
+  process.env.SITE_URL || process.env.FRONTEND_URL || "https://www.jens-flora.com"
+).replace(/\/$/, "");
+
+function resoudreUrlImageProduit(imageUrl) {
+  const raw = String(imageUrl || "").trim();
+  if (!raw) return null;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `${SITE_URL}/${raw.replace(/^\//, "")}`;
+}
+
+function premiereImageProduit(produit) {
+  if (!produit) return null;
+  return [produit.image_url, produit.image_url_2, produit.image_url_3]
+    .map((url) => String(url || "").trim())
+    .find(Boolean) || null;
+}
+
 function genererNumeroCommande(order) {
   const date = new Date(order.created_at || Date.now());
   const y = date.getFullYear();
@@ -19,7 +37,7 @@ function normaliserCommande(order) {
     quantity: item.quantity,
     unitPrice: Number(item.unit_price) || 0,
     lineTotal: (Number(item.unit_price) || 0) * (Number(item.quantity) || 0),
-    imageUrl: String(item.image_url || "").trim() || null,
+    imageUrl: resoudreUrlImageProduit(item.image_url),
   }));
 
   return {
@@ -36,30 +54,61 @@ function normaliserCommande(order) {
 
 async function enrichirCommandesAvecImages(orders) {
   const productIds = new Set();
+  const productNames = new Set();
 
   (orders || []).forEach((order) => {
     (order.order_items || []).forEach((item) => {
       if (item.product_id) productIds.add(item.product_id);
+      else if (item.product_name) productNames.add(String(item.product_name).trim());
     });
   });
 
-  if (!productIds.size) return orders || [];
+  let produitsParId = {};
+  let produitsParNom = {};
 
-  const { data: produits, error } = await supabase
-    .from("products")
-    .select("id, image_url")
-    .in("id", [...productIds]);
+  if (productIds.size) {
+    const { data: produits, error } = await supabase
+      .from("products")
+      .select("id, name, image_url, image_url_2, image_url_3")
+      .in("id", [...productIds]);
 
-  if (error) throw error;
+    if (error) throw error;
+    produitsParId = Object.fromEntries((produits || []).map((p) => [p.id, p]));
+  }
 
-  const produitsParId = Object.fromEntries((produits || []).map((p) => [p.id, p]));
+  const nomsRestants = [...productNames].filter(
+    (nom) =>
+      !Object.values(produitsParId).some(
+        (p) => String(p.name || "").trim().toLowerCase() === nom.toLowerCase()
+      )
+  );
+
+  if (nomsRestants.length) {
+    const { data: produits, error } = await supabase
+      .from("products")
+      .select("id, name, image_url, image_url_2, image_url_3")
+      .in("name", nomsRestants);
+
+    if (error) throw error;
+    produitsParNom = Object.fromEntries(
+      (produits || []).map((p) => [String(p.name || "").trim().toLowerCase(), p])
+    );
+  }
 
   return (orders || []).map((order) => ({
     ...order,
-    order_items: (order.order_items || []).map((item) => ({
-      ...item,
-      image_url: produitsParId[item.product_id]?.image_url || null,
-    })),
+    order_items: (order.order_items || []).map((item) => {
+      const nomNormalise = String(item.product_name || "").trim().toLowerCase();
+      const produit =
+        (item.product_id && produitsParId[item.product_id]) ||
+        produitsParNom[nomNormalise] ||
+        null;
+
+      return {
+        ...item,
+        image_url: premiereImageProduit(produit),
+      };
+    }),
   }));
 }
 
