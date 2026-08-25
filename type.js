@@ -401,10 +401,9 @@ function rendreGrille() {
 
   if (etatType.commentaires || etatType.coiffeuses) return;
 
-  grille.className = "product-grid";
-
   const total = etatType.produits.length;
   if (total === 0) {
+    grille.className = "product-grid";
     grille.innerHTML = `<p class="cart-empty">${t("type.noProducts")}</p>`;
     mettreAJourBarreRecherche(0, 0);
     return;
@@ -412,6 +411,11 @@ function rendreGrille() {
 
   const filtrés = produitsFiltres();
   mettreAJourBarreRecherche(total, filtrés.length);
+
+  grille.className = "product-grid";
+  if (filtrés.length === 1) {
+    grille.classList.add("product-grid--single");
+  }
 
   if (filtrés.length === 0) {
     grille.innerHTML = `<p class="cart-empty">${t("type.searchNoResults")}</p>`;
