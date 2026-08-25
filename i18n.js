@@ -14,6 +14,12 @@ const I18N = {
     "nav.account": "Mon compte",
     "nav.collection": "Collection",
 
+    "announce.a11y": "Annonces",
+    "announce.home":
+      "Espace Coiffeurs & Coiffeuses : Ouverture des inscriptions ! Créez votre compte professionnel dès aujourd'hui. Lancement officiel des ventes et premiers achats le 1er décembre 2026.",
+    "announce.account":
+      "Bienvenue aux professionnels de la coiffure. Notre plateforme prépare son lancement officiel. En tant que coiffeur ou coiffeuse, vous pouvez dès maintenant créer et valider votre compte professionnel pour être prêt(e) le jour J. Note : L'ensemble du catalogue sera disponible à la commande à partir du 1er décembre 2026.",
+
     "auth.loginTitle": "Connexion",
     "auth.loginLead": "Accédez à l'historique de vos commandes.",
     "auth.registerTitle": "Créer un compte",
@@ -509,6 +515,12 @@ const I18N = {
     "nav.account": "Mein Konto",
     "nav.collection": "Kollektion",
 
+    "announce.a11y": "Ankündigungen",
+    "announce.home":
+      "Friseure & Friseurinnen : Anmeldungen geöffnet ! Erstellen Sie noch heute Ihr professionelles Profil. Offizieller Verkaufsstart und erste Bestellungen am 1. Dezember 2026.",
+    "announce.account":
+      "Willkommen an alle Friseurprofis. Unsere Plattform bereitet den offiziellen Start vor. Als Friseur oder Friseurin können Sie ab sofort Ihr professionelles Konto erstellen und validieren lassen, um am großen Tag bereit zu sein. Hinweis : Der gesamte Katalog ist ab dem 1. Dezember 2026 bestellbar.",
+
     "auth.loginTitle": "Anmelden",
     "auth.loginLead": "Greifen Sie auf Ihre Bestellhistorie zu.",
     "auth.registerTitle": "Konto erstellen",
@@ -1003,6 +1015,12 @@ const I18N = {
     "nav.register": "Register",
     "nav.account": "My account",
     "nav.collection": "Collection",
+
+    "announce.a11y": "Announcements",
+    "announce.home":
+      "Barbers & Hairdressers Hub: Registrations now open! Create your professional account today. Official sales launch and first orders on 1 December 2026.",
+    "announce.account":
+      "Welcome to hair professionals. Our platform is preparing for its official launch. As a barber or hairdresser, you can now create and validate your professional account to be ready on the big day. Note: The full catalogue will be available to order from 1 December 2026.",
 
     "auth.loginTitle": "Log in",
     "auth.loginLead": "Access your order history.",
