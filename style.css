@@ -451,10 +451,15 @@ img {
   justify-content: start;
 }
 
-@media (min-width: 641px) {
-  .product-grid--single {
-    grid-template-columns: minmax(250px, 300px);
-  }
+/* Un seul résultat (recherche) : largeur de carte normale, sans étirement */
+.product-grid.product-grid--single {
+  grid-template-columns: minmax(250px, 280px);
+  justify-content: start;
+}
+
+.product-grid.product-grid--single .product-card {
+  max-width: 280px;
+  width: 100%;
 }
 
 .type-search-section {
@@ -2217,6 +2222,12 @@ img {
   .product-grid {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+
+  .product-grid.product-grid--single {
+    grid-template-columns: minmax(250px, min(280px, 100%));
+    justify-content: start;
+    max-width: 280px;
   }
 
   .product-body {

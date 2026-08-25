@@ -440,7 +440,8 @@ function rendreGrille() {
   mettreAJourBarreRecherche(total, filtrés.length);
 
   grille.className = "product-grid";
-  if (filtrés.length === 1) {
+  const rechercheActive = !!filtreRecherche.trim();
+  if (filtrés.length === 1 && rechercheActive) {
     grille.classList.add("product-grid--single");
   }
 
