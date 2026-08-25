@@ -109,6 +109,33 @@ function formaterDate(iso) {
   }
 }
 
+function echapperHtmlCompte(texte) {
+  return String(texte ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function urlImageCommande(url) {
+  const nettoyee = (url || "").trim();
+  if (!nettoyee || !/^https:\/\//i.test(nettoyee)) return "";
+  try {
+    return encodeURI(decodeURI(nettoyee));
+  } catch {
+    return nettoyee.replace(/ /g, "%20");
+  }
+}
+
+function miniatureArticleCommande(item) {
+  const url = urlImageCommande(item.imageUrl);
+  const alt = echapperHtmlCompte(item.name);
+  if (url) {
+    return `<img class="order-item-thumb" src="${echapperHtmlCompte(url)}" alt="${alt}" loading="lazy" width="52" height="52" />`;
+  }
+  return `<span class="order-item-thumb order-item-thumb--placeholder" aria-hidden="true"></span>`;
+}
+
 function afficherCommandes(orders) {
   const conteneur = document.getElementById("orders-list");
   if (!conteneur) return;
@@ -123,7 +150,11 @@ function afficherCommandes(orders) {
       const lignes = (order.items || [])
         .map(
           (item) =>
-            `<li><span>${item.name} × ${item.quantity}</span><strong>${formaterPrix(item.lineTotal)}</strong></li>`
+            `<li class="order-item-row">
+              ${miniatureArticleCommande(item)}
+              <span class="order-item-info">${echapperHtmlCompte(item.name)} × ${item.quantity}</span>
+              <strong class="order-item-price">${formaterPrix(item.lineTotal)}</strong>
+            </li>`
         )
         .join("");
 

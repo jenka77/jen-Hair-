@@ -19,6 +19,7 @@ function normaliserCommande(order) {
     quantity: item.quantity,
     unitPrice: Number(item.unit_price) || 0,
     lineTotal: (Number(item.unit_price) || 0) * (Number(item.quantity) || 0),
+    imageUrl: String(item.image_url || "").trim() || null,
   }));
 
   return {
@@ -31,6 +32,35 @@ function normaliserCommande(order) {
     createdAt: order.created_at,
     items,
   };
+}
+
+async function enrichirCommandesAvecImages(orders) {
+  const productIds = new Set();
+
+  (orders || []).forEach((order) => {
+    (order.order_items || []).forEach((item) => {
+      if (item.product_id) productIds.add(item.product_id);
+    });
+  });
+
+  if (!productIds.size) return orders || [];
+
+  const { data: produits, error } = await supabase
+    .from("products")
+    .select("id, image_url")
+    .in("id", [...productIds]);
+
+  if (error) throw error;
+
+  const produitsParId = Object.fromEntries((produits || []).map((p) => [p.id, p]));
+
+  return (orders || []).map((order) => ({
+    ...order,
+    order_items: (order.order_items || []).map((item) => ({
+      ...item,
+      image_url: produitsParId[item.product_id]?.image_url || null,
+    })),
+  }));
 }
 
 router.get("/me", authObligatoire, async (req, res) => {
@@ -48,7 +78,7 @@ router.get("/me/orders", authObligatoire, async (req, res, next) => {
     let requete = supabase
       .from("orders")
       .select(
-        "id, total_amount, status, pickup_mode, delivery_address, created_at, order_items(product_name, quantity, unit_price)"
+        "id, total_amount, status, pickup_mode, delivery_address, created_at, order_items(product_name, quantity, unit_price, product_id)"
       )
       .order("created_at", { ascending: false });
 
@@ -62,8 +92,10 @@ router.get("/me/orders", authObligatoire, async (req, res, next) => {
 
     if (error) throw error;
 
+    const commandesAvecImages = await enrichirCommandesAvecImages(data || []);
+
     res.json({
-      orders: (data || []).map(normaliserCommande),
+      orders: commandesAvecImages.map(normaliserCommande),
     });
   } catch (error) {
     next(error);

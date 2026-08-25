@@ -3029,11 +3029,46 @@ img {
 
 .order-card-items li {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 6px 0;
+  padding: 10px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 0.92rem;
+}
+
+.order-item-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.order-item-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(201, 169, 98, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
+}
+
+.order-item-thumb--placeholder {
+  display: block;
+  background:
+    linear-gradient(135deg, rgba(201, 169, 98, 0.12), rgba(255, 255, 255, 0.04));
+}
+
+.order-item-info {
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.35;
+}
+
+.order-item-price {
+  white-space: nowrap;
+  color: #fff;
 }
 
 .order-card-total {
