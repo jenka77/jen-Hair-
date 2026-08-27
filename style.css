@@ -1128,9 +1128,14 @@ img {
 }
 
 .contact-mail {
-  color: inherit;
+  color: var(--grey);
   text-decoration: none;
   word-break: break-word;
+}
+
+.contact-mail:link,
+.contact-mail:visited {
+  color: var(--grey);
 }
 
 .contact-mail:hover {
@@ -1138,16 +1143,44 @@ img {
   text-decoration: underline;
 }
 
-.contact-value,
-.contact-phone {
+.contact-value {
   color: var(--grey);
+}
+
+.contact-phone-link,
+.contact-phone-link:link,
+.contact-phone-link:visited,
+.contact-card a[href^="tel:"] {
+  color: var(--grey);
+  text-decoration: none;
+  font-weight: 500;
+  -webkit-text-fill-color: var(--grey);
+}
+
+.contact-phone-link:hover,
+.contact-card a[href^="tel:"]:hover {
+  color: var(--gold-light);
+  -webkit-text-fill-color: var(--gold-light);
 }
 
 @media (max-width: 900px) {
   .contact-card p.contact-value,
-  .contact-card p.contact-phone,
-  .contact-card .contact-mail {
+  .contact-card .contact-mail,
+  .contact-card .contact-mail:link,
+  .contact-card .contact-mail:visited,
+  .contact-card .contact-phone-link,
+  .contact-card .contact-phone-link:link,
+  .contact-card .contact-phone-link:visited,
+  .contact-card a[href^="tel:"],
+  .contact-card a[href^="tel:"]:visited {
     color: #fff;
+    -webkit-text-fill-color: #fff;
+  }
+
+  .contact-card .contact-phone-link:hover,
+  .contact-card a[href^="tel:"]:hover {
+    color: var(--gold-light);
+    -webkit-text-fill-color: var(--gold-light);
   }
 }
 
@@ -4090,10 +4123,13 @@ img {
   color: var(--grey);
 }
 
-.coiffeuse-link {
+.coiffeuse-link,
+.coiffeuse-link:link,
+.coiffeuse-link:visited {
   color: var(--gold-light);
   text-decoration: none;
   font-weight: 500;
+  -webkit-text-fill-color: var(--gold-light);
 }
 
 .coiffeuse-link:hover {
