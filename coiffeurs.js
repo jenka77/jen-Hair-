@@ -33,6 +33,7 @@ let fermerDropdownLand = null;
 let fichierPhotoCoiffeur = null;
 let urlPhotoCoiffeur = "";
 let formulaireInscriptionOuvert = false;
+let filtreRechercheCoiffeurs = "";
 
 const COIFFEUR_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const COIFFEUR_PHOTO_TAILLE_MAX = 5 * 1024 * 1024;
@@ -413,6 +414,157 @@ function listeCoiffeursHtml(liste) {
   return `<div class="coiffeuses-list">${liste.map(carteCoiffeur).join("")}</div>`;
 }
 
+function normaliserRechercheAnnuaire(texte) {
+  return String(texte || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function texteRechercheCoiffeur(c) {
+  return [c.name, c.address].filter(Boolean).join(" ");
+}
+
+function coiffeurCorrespondRecherche(c, query) {
+  if (!query) return true;
+  const haystack = normaliserRechercheAnnuaire(texteRechercheCoiffeur(c));
+  const mots = normaliserRechercheAnnuaire(query).split(/\s+/).filter(Boolean);
+  return mots.every((mot) => haystack.includes(mot));
+}
+
+function coiffeursFiltres() {
+  const query = filtreRechercheCoiffeurs.trim();
+  if (!query) return coiffeursCache;
+  return coiffeursCache.filter((c) => coiffeurCorrespondRecherche(c, query));
+}
+
+function barreRechercheCoiffeursHtml() {
+  return `
+    <div class="coiffeuses-search-section" id="coiffeurs-search-section" hidden>
+      <div class="type-search-wrap coiffeuses-search-wrap">
+        <div class="type-search-field">
+          <svg class="type-search-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M20 20l-3.5-3.5"></path>
+          </svg>
+          <input
+            type="search"
+            id="coiffeurs-search"
+            class="type-search-input"
+            data-i18n-placeholder="coiffeurs.searchPlaceholder"
+            placeholder="Rechercher par nom ou ville…"
+            autocomplete="off"
+            enterkeyhint="search"
+          />
+          <button
+            type="button"
+            id="coiffeurs-search-clear"
+            class="type-search-clear"
+            data-i18n-aria="coiffeurs.searchClear"
+            aria-label="Effacer la recherche"
+            hidden
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18"></path>
+            </svg>
+          </button>
+        </div>
+        <p id="coiffeurs-search-status" class="type-search-status" aria-live="polite"></p>
+      </div>
+    </div>`;
+}
+
+function mettreAJourBoutonEffacerRechercheCoiffeurs() {
+  const clearBtn = document.getElementById("coiffeurs-search-clear");
+  const input = document.getElementById("coiffeurs-search");
+  const visible = !!(input?.value.trim() || filtreRechercheCoiffeurs.trim());
+  if (clearBtn) clearBtn.hidden = !visible;
+}
+
+function mettreAJourStatutRechercheCoiffeurs(total, affiches) {
+  const section = document.getElementById("coiffeurs-search-section");
+  const status = document.getElementById("coiffeurs-search-status");
+  mettreAJourBoutonEffacerRechercheCoiffeurs();
+  if (section) section.hidden = !landSelectionne;
+  if (!status) return;
+  const query = filtreRechercheCoiffeurs.trim();
+  if (!query) {
+    status.textContent = "";
+    return;
+  }
+  status.textContent =
+    affiches === 0
+      ? t("coiffeurs.searchNoResults")
+      : t("coiffeurs.searchResults", { n: affiches, total });
+}
+
+function reinitialiserRechercheCoiffeurs() {
+  filtreRechercheCoiffeurs = "";
+  const input = document.getElementById("coiffeurs-search");
+  const clearBtn = document.getElementById("coiffeurs-search-clear");
+  if (input) input.value = "";
+  if (clearBtn) clearBtn.hidden = true;
+  const status = document.getElementById("coiffeurs-search-status");
+  if (status) status.textContent = "";
+}
+
+function rendreListeCoiffeurs() {
+  const listeEl = document.getElementById("coiffeurs-list");
+  if (!listeEl) return;
+
+  if (!landSelectionne) {
+    listeEl.innerHTML = listeCoiffeursHtml([]);
+    mettreAJourStatutRechercheCoiffeurs(0, 0);
+    return;
+  }
+
+  const filtres = coiffeursFiltres();
+  const query = filtreRechercheCoiffeurs.trim();
+
+  if (!coiffeursCache.length) {
+    listeEl.innerHTML = listeCoiffeursHtml([]);
+    mettreAJourStatutRechercheCoiffeurs(0, 0);
+    return;
+  }
+
+  if (query && !filtres.length) {
+    listeEl.innerHTML = `<p class="account-empty">${t("coiffeurs.searchNoResults")}</p>`;
+  } else {
+    listeEl.innerHTML = listeCoiffeursHtml(filtres);
+  }
+
+  mettreAJourStatutRechercheCoiffeurs(coiffeursCache.length, filtres.length);
+}
+
+function attacherRechercheCoiffeurs() {
+  const input = document.getElementById("coiffeurs-search");
+  const clearBtn = document.getElementById("coiffeurs-search-clear");
+  if (!input || input.dataset.searchBound === "1") return;
+  input.dataset.searchBound = "1";
+
+  input.addEventListener("input", () => {
+    filtreRechercheCoiffeurs = input.value;
+    rendreListeCoiffeurs();
+  });
+
+  clearBtn?.addEventListener("click", () => {
+    filtreRechercheCoiffeurs = "";
+    input.value = "";
+    input.focus();
+    rendreListeCoiffeurs();
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && input.value) {
+      e.preventDefault();
+      filtreRechercheCoiffeurs = "";
+      input.value = "";
+      rendreListeCoiffeurs();
+    }
+  });
+}
+
 async function actualiserConnexionCoiffeurs() {
   if (typeof obtenirUtilisateur !== "function") {
     clientConnecteCoiffeurs = false;
@@ -445,25 +597,30 @@ async function afficherCoiffeursLand(land) {
   const listeEl = document.getElementById("coiffeurs-list");
   if (!listeEl) return;
 
+  reinitialiserRechercheCoiffeurs();
   mettreAJourSectionInscription(land);
 
   if (!land) {
     coiffeursCache = [];
-    listeEl.innerHTML = listeCoiffeursHtml([]);
+    rendreListeCoiffeurs();
     return;
   }
 
   listeEl.innerHTML = `<p class="account-loading">${t("coiffeurs.loading")}</p>`;
+  const sectionRecherche = document.getElementById("coiffeurs-search-section");
+  if (sectionRecherche) sectionRecherche.hidden = true;
 
   try {
     await actualiserConnexionCoiffeurs();
     editionNotesCoiffeur.clear();
     Object.keys(selectionNotesCoiffeur).forEach((id) => delete selectionNotesCoiffeur[id]);
     coiffeursCache = await chargerCoiffeurs(land);
-    listeEl.innerHTML = listeCoiffeursHtml(coiffeursCache);
+    rendreListeCoiffeurs();
     attacherNotesCoiffeurs();
   } catch (err) {
+    coiffeursCache = [];
     listeEl.innerHTML = `<p class="account-empty">${err.message}</p>`;
+    mettreAJourStatutRechercheCoiffeurs(0, 0);
   }
 }
 
@@ -1129,6 +1286,7 @@ function pageCoiffeursHtml() {
     </section>
     <section class="coiffeuses-results">
       <h2 class="coiffeuses-results-title">${t("coiffeurs.resultsTitle")}</h2>
+      ${barreRechercheCoiffeursHtml()}
       <div id="coiffeurs-list" class="coiffeuses-list-wrap">
         <p class="account-empty">${t("coiffeurs.pickState")}</p>
       </div>
@@ -1155,6 +1313,7 @@ async function rendrePageCoiffeurs() {
 
   attacherMenuDeroulantLand();
   attacherFormulaireInscription();
+  attacherRechercheCoiffeurs();
 
   if (landSelectionne) {
     mettreAJourLibelleDropdown();
