@@ -49,7 +49,7 @@ function extensionDepuisMimeCoiffeur(mimetype) {
 }
 
 const COLS_BASE =
-  "id, state_slug, name, phone, address, travel_available, travel_notes, wig_install_customisation, sort_order";
+  "id, state_slug, name, phone, address, travel_available, travel_notes, hair_coloring_available, sort_order";
 const COLS_PUBLIC = `${COLS_BASE}, profile_image_url, professional_links, average_rating, rating_count`;
 const COLS_PUBLIC_LEGACY = `${COLS_BASE}, profile_image_url, professional_links`;
 const COLS_ADMIN = `${COLS_PUBLIC}, contact_email, is_published`;
@@ -74,7 +74,7 @@ const coiffeurAdminSchema = z.object({
   address: z.string().trim().max(500).nullable().optional(),
   travelAvailable: z.boolean().optional(),
   travelNotes: z.string().trim().max(500).nullable().optional(),
-  wigInstallCustomisation: z.boolean().optional(),
+  hairColoringAvailable: z.boolean().optional(),
   profileImageUrl: z
     .string()
     .trim()
@@ -98,7 +98,7 @@ const coiffeurSubmitSchema = z.object({
   address: z.string().trim().min(5).max(500),
   travelAvailable: z.boolean(),
   travelNotes: z.string().trim().min(2).max(500),
-  wigInstallCustomisation: z.boolean(),
+  hairColoringAvailable: z.boolean(),
   profileImageUrl: z
     .string()
     .trim()
@@ -124,7 +124,7 @@ function messageErreurValidationCoiffeur(zodError) {
     address: "Adresse",
     travelAvailable: "Déplacement",
     travelNotes: "Précisions déplacement",
-    wigInstallCustomisation: "Pose & customisation perruque",
+    hairColoringAvailable: "Teinture",
     profileImageUrl: "Photo de profil",
     professionalLinks: "Liens professionnels",
   };
@@ -146,7 +146,7 @@ function messageErreurValidationCoiffeur(zodError) {
       }
       return "Au moins un lien professionnel valide est requis.";
     }
-    if (field === "travelAvailable" || field === "wigInstallCustomisation") {
+    if (field === "travelAvailable" || field === "hairColoringAvailable") {
       return `${label} : veuillez sélectionner une option (Oui ou Non).`;
     }
     if (issue.code === "too_small") {
@@ -260,7 +260,8 @@ function normaliserCoiffeur(row, { inclureEmail = false } = {}) {
     address: row.address || null,
     travelAvailable: row.travel_available === true,
     travelNotes: (row.travel_notes || "").trim() || null,
-    wigInstallCustomisation: row.wig_install_customisation === true,
+    hairColoringAvailable:
+      row.hair_coloring_available === true || row.wig_install_customisation === true,
     profileImageUrl: (row.profile_image_url || "").trim() || null,
     professionalLinks: normaliserLiensProfessionnels(row.professional_links),
     sortOrder: Number(row.sort_order) || 0,
@@ -443,7 +444,7 @@ router.post("/barbers/submit", async (req, res, next) => {
       address,
       travelAvailable,
       travelNotes,
-      wigInstallCustomisation,
+      hairColoringAvailable,
       profileImageUrl,
       professionalLinks,
       locale,
@@ -465,7 +466,7 @@ router.post("/barbers/submit", async (req, res, next) => {
       address: address.trim(),
       travel_available: travelAvailable,
       travel_notes: travelNotes.trim(),
-      wig_install_customisation: wigInstallCustomisation,
+      hair_coloring_available: hairColoringAvailable,
       profile_image_url: profileImageUrl.trim(),
       professional_links: normaliserLiensProfessionnels(professionalLinks),
       sort_order: 0,
@@ -629,7 +630,7 @@ router.post("/admin/barbers", async (req, res, next) => {
       address,
       travelAvailable,
       travelNotes,
-      wigInstallCustomisation,
+      hairColoringAvailable,
       profileImageUrl,
       professionalLinks,
       sortOrder,
@@ -647,7 +648,7 @@ router.post("/admin/barbers", async (req, res, next) => {
       address: address?.trim() || null,
       travel_available: travelAvailable ?? false,
       travel_notes: travelNotes?.trim() || null,
-      wig_install_customisation: wigInstallCustomisation ?? false,
+      hair_coloring_available: hairColoringAvailable ?? false,
       profile_image_url: profileImageUrl?.trim() || null,
       professional_links: normaliserLiensProfessionnels(professionalLinks || []),
       sort_order: sortOrder ?? 0,
@@ -719,7 +720,7 @@ router.patch("/admin/barbers/:id", async (req, res, next) => {
       address,
       travelAvailable,
       travelNotes,
-      wigInstallCustomisation,
+      hairColoringAvailable,
       profileImageUrl,
       professionalLinks,
       sortOrder,
@@ -738,8 +739,8 @@ router.patch("/admin/barbers/:id", async (req, res, next) => {
     if (address !== undefined) payload.address = address?.trim() || null;
     if (travelAvailable !== undefined) payload.travel_available = travelAvailable;
     if (travelNotes !== undefined) payload.travel_notes = travelNotes?.trim() || null;
-    if (wigInstallCustomisation !== undefined) {
-      payload.wig_install_customisation = wigInstallCustomisation;
+    if (hairColoringAvailable !== undefined) {
+      payload.hair_coloring_available = hairColoringAvailable;
     }
     if (profileImageUrl !== undefined) {
       payload.profile_image_url = profileImageUrl?.trim() || null;

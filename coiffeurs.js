@@ -366,9 +366,9 @@ function carteCoiffeur(c) {
     ? `<p class="coiffeuse-travel-notes">${echapperTexteCoiffeur(notes)}</p>`
     : "";
 
-  const wigInstall = c.wigInstallCustomisation
-    ? `<span class="coiffeuse-badge coiffeuse-badge--yes">${t("coiffeurs.wigInstallYes")}</span>`
-    : `<span class="coiffeuse-badge coiffeuse-badge--no">${t("coiffeurs.wigInstallNo")}</span>`;
+  const teinture = c.hairColoringAvailable
+    ? `<span class="coiffeuse-badge coiffeuse-badge--yes">${t("coiffeurs.hairColoringYes")}</span>`
+    : `<span class="coiffeuse-badge coiffeuse-badge--no">${t("coiffeurs.hairColoringNo")}</span>`;
 
   return `
     <article class="coiffeuse-card account-card" data-coiffeur-id="${echapperTexteCoiffeur(c.id)}">
@@ -396,8 +396,8 @@ function carteCoiffeur(c) {
           ${notesHtml}
         </li>
         <li>
-          <span class="coiffeuse-label">${t("coiffeurs.wigInstall")}</span>
-          ${wigInstall}
+          <span class="coiffeuse-label">${t("coiffeurs.hairColoring")}</span>
+          ${teinture}
         </li>
       </ul>
     </article>`;
@@ -655,7 +655,7 @@ function messageErreurReponseInscriptionCoiffeur(data) {
     "address",
     "travelAvailable",
     "travelNotes",
-    "wigInstallCustomisation",
+    "hairColoringAvailable",
     "profileImageUrl",
     "professionalLinks",
   ];
@@ -687,9 +687,9 @@ function messageErreurReponseInscriptionCoiffeur(data) {
 
 function validerRadiosObligatoires(form) {
   const travel = form.querySelector('input[name="travelAvailable"]:checked');
-  const wig = form.querySelector('input[name="wigInstallCustomisation"]:checked');
+  const teinture = form.querySelector('input[name="hairColoringAvailable"]:checked');
   if (!travel) return t("coiffeurs.validation.travelAvailable");
-  if (!wig) return t("coiffeurs.validation.wigInstallCustomisation");
+  if (!teinture) return t("coiffeurs.validation.hairColoringAvailable");
   return "";
 }
 
@@ -769,7 +769,7 @@ async function soumettreInscriptionCoiffeur(e) {
       address: String(fd.get("address") || "").trim(),
       travelAvailable: fd.get("travelAvailable") === "yes",
       travelNotes: String(fd.get("travelNotes") || "").trim(),
-      wigInstallCustomisation: fd.get("wigInstallCustomisation") === "yes",
+      hairColoringAvailable: fd.get("hairColoringAvailable") === "yes",
       profileImageUrl,
       professionalLinks,
       companyWebsite: String(fd.get("companyWebsite") || "").trim(),
@@ -1094,15 +1094,15 @@ function pageCoiffeursHtml() {
           <textarea class="coiffeuses-textarea coiffeuses-textarea--xlarge" name="travelNotes" required minlength="2" maxlength="500" rows="5" placeholder="${echapperTexteCoiffeur(t("coiffeurs.travelNotesHint"))}"></textarea>
         </label>
         <fieldset class="coiffeuses-fieldset">
-          <legend>${t("coiffeurs.wigInstall")} *</legend>
+          <legend>${t("coiffeurs.hairColoring")} *</legend>
           <div class="coiffeuses-radio-group">
             <label class="coiffeuses-radio">
-              <input type="radio" name="wigInstallCustomisation" value="yes" required />
-              <span>${t("coiffeurs.wigInstallYes")}</span>
+              <input type="radio" name="hairColoringAvailable" value="yes" required />
+              <span>${t("coiffeurs.hairColoringYes")}</span>
             </label>
             <label class="coiffeuses-radio">
-              <input type="radio" name="wigInstallCustomisation" value="no" required />
-              <span>${t("coiffeurs.wigInstallNo")}</span>
+              <input type="radio" name="hairColoringAvailable" value="no" required />
+              <span>${t("coiffeurs.hairColoringNo")}</span>
             </label>
           </div>
         </fieldset>
