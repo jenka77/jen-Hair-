@@ -617,10 +617,9 @@ async function afficherCoiffeursLand(land) {
     coiffeursCache = await chargerCoiffeurs(land);
     rendreListeCoiffeurs();
     attacherNotesCoiffeurs();
-  } catch (err) {
+  } catch {
     coiffeursCache = [];
-    listeEl.innerHTML = `<p class="account-empty">${err.message}</p>`;
-    mettreAJourStatutRechercheCoiffeurs(0, 0);
+    rendreListeCoiffeurs();
   }
 }
 
