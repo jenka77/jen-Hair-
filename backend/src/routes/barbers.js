@@ -50,9 +50,14 @@ function extensionDepuisMimeCoiffeur(mimetype) {
 
 const COLS_BASE =
   "id, state_slug, name, phone, address, travel_available, travel_notes, hair_coloring_available, sort_order";
+const COLS_BASE_LEGACY =
+  "id, state_slug, name, phone, address, travel_available, travel_notes, wig_install_customisation, sort_order";
 const COLS_PUBLIC = `${COLS_BASE}, profile_image_url, professional_links, average_rating, rating_count`;
-const COLS_PUBLIC_LEGACY = `${COLS_BASE}, profile_image_url, professional_links`;
+const COLS_PUBLIC_LEGACY = `${COLS_BASE_LEGACY}, profile_image_url, professional_links, average_rating, rating_count`;
+const COLS_PUBLIC_SANS_NOTES = `${COLS_BASE}, profile_image_url, professional_links`;
+const COLS_PUBLIC_LEGACY_SANS_NOTES = `${COLS_BASE_LEGACY}, profile_image_url, professional_links`;
 const COLS_ADMIN = `${COLS_PUBLIC}, contact_email, is_published`;
+const COLS_ADMIN_LEGACY = `${COLS_PUBLIC_LEGACY}, contact_email, is_published`;
 
 const lienProSchema = z.object({
   label: z.string().trim().max(80).nullable().optional(),
@@ -169,6 +174,20 @@ function colonnesProfilManquantes(error) {
 function colonneContactEmailManquante(error) {
   const msg = String(error?.message || error?.details || "").toLowerCase();
   return msg.includes("contact_email");
+}
+
+function colonneHairColoringManquante(error) {
+  const msg = String(error?.message || error?.details || "").toLowerCase();
+  return msg.includes("hair_coloring_available");
+}
+
+function appliquerTeintureSurPayload(payload, hairColoringAvailable, legacy = false) {
+  delete payload.hair_coloring_available;
+  delete payload.wig_install_customisation;
+  if (hairColoringAvailable === undefined) return payload;
+  if (legacy) payload.wig_install_customisation = hairColoringAvailable;
+  else payload.hair_coloring_available = hairColoringAvailable;
+  return payload;
 }
 
 function colonnesAdminManquantes(error) {
@@ -292,16 +311,23 @@ async function selectionnerCoiffeursPubliques(state) {
     return query;
   };
 
-  let { data, error } = await construireRequete(COLS_PUBLIC, true);
+  const plans = [
+    [COLS_PUBLIC, true],
+    [COLS_PUBLIC_LEGACY, true],
+    [COLS_PUBLIC_SANS_NOTES, false],
+    [COLS_PUBLIC_LEGACY_SANS_NOTES, false],
+    [COLS_BASE, false],
+    [COLS_BASE_LEGACY, false],
+  ];
 
-  if (error && colonnesProfilManquantes(error)) {
-    ({ data, error } = await construireRequete(COLS_BASE, false));
-  } else if (error && colonnesNotesManquantes(error)) {
-    ({ data, error } = await construireRequete(COLS_PUBLIC_LEGACY, false));
+  let lastError = null;
+  for (const [cols, triParNotes] of plans) {
+    const { data, error } = await construireRequete(cols, triParNotes);
+    if (!error) return data || [];
+    lastError = error;
   }
 
-  if (error) throw error;
-  return data || [];
+  throw lastError;
 }
 
 router.get("/barbers/states", async (req, res, next) => {
@@ -466,18 +492,21 @@ router.post("/barbers/submit", async (req, res, next) => {
       address: address.trim(),
       travel_available: travelAvailable,
       travel_notes: travelNotes.trim(),
-      hair_coloring_available: hairColoringAvailable,
       profile_image_url: profileImageUrl.trim(),
       professional_links: normaliserLiensProfessionnels(professionalLinks),
       sort_order: 0,
       is_published: false,
     };
+    appliquerTeintureSurPayload(payload, hairColoringAvailable, false);
 
-    let { data, error } = await supabase
-      .from("barbers")
-      .insert(payload)
-      .select(COLS_ADMIN)
-      .single();
+    let selectCols = COLS_ADMIN;
+    let { data, error } = await supabase.from("barbers").insert(payload).select(selectCols).single();
+
+    if (error && colonneHairColoringManquante(error)) {
+      appliquerTeintureSurPayload(payload, hairColoringAvailable, true);
+      selectCols = COLS_ADMIN_LEGACY;
+      ({ data, error } = await supabase.from("barbers").insert(payload).select(selectCols).single());
+    }
 
     if (error && colonnesAdminManquantes(error)) {
       if (colonneContactEmailManquante(error)) {
@@ -488,10 +517,11 @@ router.post("/barbers/submit", async (req, res, next) => {
       }
       delete payload.profile_image_url;
       delete payload.professional_links;
+      const colsFallback = selectCols === COLS_ADMIN_LEGACY ? COLS_BASE_LEGACY : COLS_BASE;
       ({ data, error } = await supabase
         .from("barbers")
         .insert(payload)
-        .select(`${COLS_BASE}, contact_email, is_published`)
+        .select(`${colsFallback}, contact_email, is_published`)
         .single());
     }
 
@@ -593,10 +623,21 @@ router.get("/admin/barbers", async (req, res, next) => {
 
     let { data, error } = await query;
 
+    if (error && colonneHairColoringManquante(error)) {
+      query = supabase
+        .from("barbers")
+        .select(COLS_ADMIN_LEGACY)
+        .order("state_slug", { ascending: true })
+        .order("sort_order", { ascending: true })
+        .limit(500);
+      if (state) query = query.eq("state_slug", state);
+      ({ data, error } = await query);
+    }
+
     if (error && colonnesAdminManquantes(error)) {
       query = supabase
         .from("barbers")
-        .select(`${COLS_BASE}, is_published`)
+        .select(`${COLS_BASE_LEGACY}, contact_email, is_published`)
         .order("state_slug", { ascending: true })
         .order("sort_order", { ascending: true })
         .limit(500);
@@ -648,26 +689,32 @@ router.post("/admin/barbers", async (req, res, next) => {
       address: address?.trim() || null,
       travel_available: travelAvailable ?? false,
       travel_notes: travelNotes?.trim() || null,
-      hair_coloring_available: hairColoringAvailable ?? false,
       profile_image_url: profileImageUrl?.trim() || null,
       professional_links: normaliserLiensProfessionnels(professionalLinks || []),
       sort_order: sortOrder ?? 0,
       is_published: isPublished !== false,
     };
+    appliquerTeintureSurPayload(payload, hairColoringAvailable ?? false, false);
 
-    let { data, error } = await supabase
-      .from("barbers")
-      .insert(payload)
-      .select(`${COLS_PUBLIC}, is_published`)
-      .single();
+    let teintureLegacy = false;
+    let selectCols = `${COLS_PUBLIC}, is_published`;
+    let { data, error } = await supabase.from("barbers").insert(payload).select(selectCols).single();
+
+    if (error && colonneHairColoringManquante(error)) {
+      teintureLegacy = true;
+      appliquerTeintureSurPayload(payload, hairColoringAvailable ?? false, true);
+      selectCols = `${COLS_PUBLIC_LEGACY}, is_published`;
+      ({ data, error } = await supabase.from("barbers").insert(payload).select(selectCols).single());
+    }
 
     if (error && colonnesProfilManquantes(error)) {
       delete payload.profile_image_url;
       delete payload.professional_links;
+      const colsFallback = teintureLegacy ? COLS_BASE_LEGACY : COLS_BASE;
       ({ data, error } = await supabase
         .from("barbers")
         .insert(payload)
-        .select(`${COLS_BASE}, is_published`)
+        .select(`${colsFallback}, is_published`)
         .single());
     }
 
@@ -697,10 +744,18 @@ router.patch("/admin/barbers/:id", async (req, res, next) => {
       .eq("id", req.params.id)
       .maybeSingle();
 
+    if (erreurAvant && colonneHairColoringManquante(erreurAvant)) {
+      ({ data: avant, error: erreurAvant } = await supabase
+        .from("barbers")
+        .select(COLS_ADMIN_LEGACY)
+        .eq("id", req.params.id)
+        .maybeSingle());
+    }
+
     if (erreurAvant && colonnesAdminManquantes(erreurAvant)) {
       ({ data: avant, error: erreurAvant } = await supabase
         .from("barbers")
-        .select(`${COLS_BASE}, is_published`)
+        .select(`${COLS_BASE_LEGACY}, contact_email, is_published`)
         .eq("id", req.params.id)
         .maybeSingle());
     }
@@ -740,7 +795,7 @@ router.patch("/admin/barbers/:id", async (req, res, next) => {
     if (travelAvailable !== undefined) payload.travel_available = travelAvailable;
     if (travelNotes !== undefined) payload.travel_notes = travelNotes?.trim() || null;
     if (hairColoringAvailable !== undefined) {
-      payload.hair_coloring_available = hairColoringAvailable;
+      appliquerTeintureSurPayload(payload, hairColoringAvailable, false);
     }
     if (profileImageUrl !== undefined) {
       payload.profile_image_url = profileImageUrl?.trim() || null;
@@ -751,22 +806,37 @@ router.patch("/admin/barbers/:id", async (req, res, next) => {
     if (sortOrder !== undefined) payload.sort_order = sortOrder;
     if (isPublished !== undefined) payload.is_published = isPublished;
 
+    let selectCols = COLS_ADMIN;
     let { data, error } = await supabase
       .from("barbers")
       .update(payload)
       .eq("id", req.params.id)
-      .select(COLS_ADMIN)
+      .select(selectCols)
       .single();
+
+    if (error && colonneHairColoringManquante(error)) {
+      if (hairColoringAvailable !== undefined) {
+        appliquerTeintureSurPayload(payload, hairColoringAvailable, true);
+      }
+      selectCols = COLS_ADMIN_LEGACY;
+      ({ data, error } = await supabase
+        .from("barbers")
+        .update(payload)
+        .eq("id", req.params.id)
+        .select(selectCols)
+        .single());
+    }
 
     if (error && colonnesAdminManquantes(error)) {
       delete payload.profile_image_url;
       delete payload.professional_links;
       if (payload.contact_email !== undefined) delete payload.contact_email;
+      const colsFallback = selectCols === COLS_ADMIN_LEGACY ? COLS_BASE_LEGACY : COLS_BASE;
       ({ data, error } = await supabase
         .from("barbers")
         .update(payload)
         .eq("id", req.params.id)
-        .select(`${COLS_BASE}, is_published`)
+        .select(`${colsFallback}, is_published`)
         .single());
     }
 

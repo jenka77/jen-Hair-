@@ -616,6 +616,8 @@ function libelleLandCoiffeuse(slug) {
   return LIBELLES_LAND_FR[slug] || slug || "—";
 }
 
+const libelleLandCoiffeur = libelleLandCoiffeuse;
+
 function ligneInfoCoiffeuse(label, valeur) {
   if (!valeur) return "";
   return `<tr>
@@ -623,6 +625,8 @@ function ligneInfoCoiffeuse(label, valeur) {
     <td style="padding:6px 0;color:#1a1a1a;font-size:14px;vertical-align:top;">${echapperHtml(valeur)}</td>
   </tr>`;
 }
+
+const ligneInfoCoiffeur = ligneInfoCoiffeuse;
 
 function genererHtmlNouvelleCoiffeuseAdmin({ coiffeuse, adminUrl, locale = "fr" }) {
   const lang = normaliserLocale(locale);
