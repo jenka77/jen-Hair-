@@ -1127,6 +1127,30 @@ img {
   color: #1a1206;
 }
 
+.contact-card--whatsapp .contact-ico {
+  border-color: #25d366;
+  color: #25d366;
+}
+
+.contact-card--instagram .contact-ico {
+  border-color: #e1306c;
+  background: linear-gradient(135deg, rgba(240, 148, 51, 0.12), rgba(188, 24, 136, 0.12));
+}
+
+.contact-card--instagram .contact-ico--brand {
+  color: transparent;
+}
+
+.contact-card--tiktok .contact-ico {
+  border-color: #fe2c55;
+  background: linear-gradient(135deg, rgba(37, 244, 238, 0.14), rgba(254, 44, 85, 0.18));
+  color: #fff;
+}
+
+.contact-ico--brand svg {
+  display: block;
+}
+
 .contact-mail {
   color: var(--grey);
   text-decoration: none;
