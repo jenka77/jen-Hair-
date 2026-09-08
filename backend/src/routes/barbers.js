@@ -10,6 +10,11 @@ const {
   envoyerEmailReceptionCoiffeur,
   envoyerEmailCoiffeurApprouvee,
 } = require("../services/email");
+const {
+  normaliserNomVille,
+  villeAnnuaireSchema,
+  villeAnnuaireOptionnelleSchema,
+} = require("../utils/cityName");
 
 const router = express.Router();
 
@@ -76,7 +81,7 @@ const coiffeurAdminSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.string().trim().email().max(200).optional(),
   phone: z.string().trim().max(40).nullable().optional(),
-  address: z.string().trim().max(500).nullable().optional(),
+  address: villeAnnuaireOptionnelleSchema,
   travelAvailable: z.boolean().optional(),
   travelNotes: z.string().trim().max(500).nullable().optional(),
   hairColoringAvailable: z.boolean().optional(),
@@ -100,7 +105,7 @@ const coiffeurSubmitSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.string().trim().email().max(200),
   phone: z.string().trim().min(3).max(40),
-  address: z.string().trim().min(5).max(500),
+  address: villeAnnuaireSchema,
   travelAvailable: z.boolean(),
   travelNotes: z.string().trim().min(2).max(500),
   hairColoringAvailable: z.boolean(),
@@ -126,7 +131,7 @@ function messageErreurValidationCoiffeur(zodError) {
     name: "Nom / prénom",
     email: "Adresse e-mail",
     phone: "Téléphone",
-    address: "Adresse",
+    address: "Ville",
     travelAvailable: "Déplacement",
     travelNotes: "Précisions déplacement",
     hairColoringAvailable: "Teinture",
@@ -489,7 +494,7 @@ router.post("/barbers/submit", async (req, res, next) => {
       name: name.trim(),
       contact_email: email.trim().toLowerCase(),
       phone: phone.trim(),
-      address: address.trim(),
+      address: normaliserNomVille(address),
       travel_available: travelAvailable,
       travel_notes: travelNotes.trim(),
       profile_image_url: profileImageUrl.trim(),
@@ -686,7 +691,7 @@ router.post("/admin/barbers", async (req, res, next) => {
       state_slug: stateSlug,
       name: name.trim(),
       phone: phone?.trim() || null,
-      address: address?.trim() || null,
+      address: address != null && address !== "" ? normaliserNomVille(address) : null,
       travel_available: travelAvailable ?? false,
       travel_notes: travelNotes?.trim() || null,
       profile_image_url: profileImageUrl?.trim() || null,
@@ -791,7 +796,12 @@ router.patch("/admin/barbers/:id", async (req, res, next) => {
     if (name !== undefined) payload.name = name.trim();
     if (email !== undefined) payload.contact_email = email.trim().toLowerCase();
     if (phone !== undefined) payload.phone = phone?.trim() || null;
-    if (address !== undefined) payload.address = address?.trim() || null;
+    if (address !== undefined) {
+      payload.address =
+        address != null && String(address).trim() !== ""
+          ? normaliserNomVille(address)
+          : null;
+    }
     if (travelAvailable !== undefined) payload.travel_available = travelAvailable;
     if (travelNotes !== undefined) payload.travel_notes = travelNotes?.trim() || null;
     if (hairColoringAvailable !== undefined) {

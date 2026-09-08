@@ -24,6 +24,24 @@ const LAND_SLUGS = [
   "thueringen",
 ];
 
+function estNomVilleAnnuaireValide(value) {
+  const ville = String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+  if (ville.length < 2 || ville.length > 80) return false;
+  if (/\d/.test(ville)) return false;
+  if (/[,;@#\\/]/.test(ville)) return false;
+  if (!/^[\p{L}][\p{L}\s'.-]*$/u.test(ville)) return false;
+  if (
+    /\b(strasse|straße|str\.|street|st\.|rue|avenue|av\.|weg|platz|allee|route|via|bd\.|boulevard|boul\.|gasse|damm|ufer|ring)\b/i.test(
+      ville
+    )
+  ) {
+    return false;
+  }
+  return true;
+}
+
 let landSelectionne = "";
 let coiffeursCache = [];
 let clientConnecteCoiffeurs = false;
@@ -878,6 +896,16 @@ async function soumettreInscriptionCoiffeur(e) {
     return;
   }
 
+  const ville = String(fd.get("address") || "").trim();
+  if (!estNomVilleAnnuaireValide(ville)) {
+    if (messageEl) {
+      messageEl.hidden = false;
+      messageEl.className = "account-message account-message--error";
+      messageEl.textContent = t("coiffeurs.validation.address");
+    }
+    return;
+  }
+
   const professionalLinks = lireLiensProDepuisFormulaire(form);
   if (!professionalLinks.length) {
     if (messageEl) {
@@ -1228,9 +1256,9 @@ function pageCoiffeursHtml() {
           <span>${t("coiffeurs.phone")} *</span>
           <input class="coiffeuses-input" type="tel" name="phone" required minlength="3" maxlength="40" autocomplete="tel" />
         </label>
-        <label class="field coiffeuses-field--large">
+        <label class="field">
           <span>${t("coiffeurs.address")} *</span>
-          <textarea class="coiffeuses-textarea coiffeuses-textarea--large" name="address" required minlength="5" maxlength="500" rows="4" autocomplete="street-address" placeholder="${echapperTexteCoiffeur(t("coiffeurs.addressHint"))}"></textarea>
+          <input class="coiffeuses-input" type="text" name="address" required minlength="2" maxlength="80" autocomplete="address-level2" placeholder="${echapperTexteCoiffeur(t("coiffeurs.addressHint"))}" />
         </label>
         <fieldset class="coiffeuses-fieldset">
           <legend>${t("coiffeurs.travel")} *</legend>

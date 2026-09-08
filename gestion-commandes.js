@@ -466,7 +466,7 @@ function afficherCoiffeusesAdmin(coiffeuses) {
         <span class="status-badge admin-status-badge ${publie ? "paid" : "cancelled"}">${publie ? "Publiée" : "En attente"}</span>
       </div>
       <ul class="admin-hairdresser-meta">
-        ${c.address ? `<li><strong>Adresse :</strong> ${echapperHtml(c.address)}</li>` : ""}
+        ${c.address ? `<li><strong>Ville :</strong> ${echapperHtml(c.address)}</li>` : ""}
         <li><strong>Déplacement :</strong> ${c.travelAvailable ? "Oui" : "Non"}${c.travelNotes ? ` — ${echapperHtml(c.travelNotes)}` : ""}</li>
         <li><strong>Pose perruque :</strong> ${c.wigInstallCustomisation ? "Oui" : "Non"}</li>
         <li><strong>Note :</strong> ${Number(c.ratingCount) > 0 ? `${Number(c.averageRating) || 0}/5 (${c.ratingCount} avis)` : "—"}</li>
@@ -640,7 +640,7 @@ function afficherCoiffeursAdmin(coiffeurs) {
         <span class="status-badge admin-status-badge ${publie ? "paid" : "cancelled"}">${publie ? "Publiée" : "En attente"}</span>
       </div>
       <ul class="admin-hairdresser-meta">
-        ${c.address ? `<li><strong>Adresse :</strong> ${echapperHtml(c.address)}</li>` : ""}
+        ${c.address ? `<li><strong>Ville :</strong> ${echapperHtml(c.address)}</li>` : ""}
         <li><strong>Déplacement :</strong> ${c.travelAvailable ? "Oui" : "Non"}${c.travelNotes ? ` — ${echapperHtml(c.travelNotes)}` : ""}</li>
         <li><strong>Teinture :</strong> ${c.hairColoringAvailable ? "Oui" : "Non"}</li>
         <li><strong>Note :</strong> ${Number(c.ratingCount) > 0 ? `${Number(c.averageRating) || 0}/5 (${c.ratingCount} avis)` : "—"}</li>
