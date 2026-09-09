@@ -1204,6 +1204,18 @@ function attacherFormulaireInscription() {
   mettreAJourSectionInscription(landSelectionne);
 }
 
+function noteServicesAnnuaireHtml(prefix) {
+  return `
+    <div class="coiffeuses-service-note">
+      <p class="coiffeuses-service-note-text">${t(`${prefix}.serviceNote`)}</p>
+      <ul class="coiffeuses-service-tags" role="list">
+        <li>${t(`${prefix}.serviceTag1`)}</li>
+        <li>${t(`${prefix}.serviceTag2`)}</li>
+        <li>${t(`${prefix}.serviceTag3`)}</li>
+      </ul>
+    </div>`;
+}
+
 function pageCoiffeursHtml() {
   return `
     <section class="coiffeuses-intro account-card">
@@ -1317,7 +1329,8 @@ function pageCoiffeursHtml() {
       <div id="coiffeurs-list" class="coiffeuses-list-wrap">
         <p class="account-empty">${t("coiffeurs.pickState")}</p>
       </div>
-    </section>`;
+    </section>
+    ${noteServicesAnnuaireHtml("coiffeurs")}`;
 }
 
 async function rendrePageCoiffeurs() {

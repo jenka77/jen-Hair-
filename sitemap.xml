@@ -56,7 +56,17 @@
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.jens-flora.com/en/returns.html</loc>
+    <loc>https://www.jens-flora.com/fr/mentions-legales.html</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.jens-flora.com/de/impressum.html</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.jens-flora.com/en/legal-notice.html</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

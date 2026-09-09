@@ -6,18 +6,22 @@ const LEGAL_PAGES = {
   cgv: { fr: "fr/cgv.html", en: "en/gtc.html", de: "de/agb.html" },
   retours: { fr: "fr/retours.html", en: "en/returns.html", de: "de/widerruf.html" },
   privacy: { fr: "fr/confidentialite.html", en: "en/privacy.html", de: "de/datenschutz.html" },
+  impressum: { fr: "fr/mentions-legales.html", en: "en/legal-notice.html", de: "de/impressum.html" },
 };
 
 const LEGAL_LANG_SISTER = {
   "fr/cgv.html": LEGAL_PAGES.cgv,
   "fr/retours.html": LEGAL_PAGES.retours,
   "fr/confidentialite.html": LEGAL_PAGES.privacy,
+  "fr/mentions-legales.html": LEGAL_PAGES.impressum,
   "en/gtc.html": LEGAL_PAGES.cgv,
   "en/returns.html": LEGAL_PAGES.retours,
   "en/privacy.html": LEGAL_PAGES.privacy,
+  "en/legal-notice.html": LEGAL_PAGES.impressum,
   "de/agb.html": LEGAL_PAGES.cgv,
   "de/widerruf.html": LEGAL_PAGES.retours,
   "de/datenschutz.html": LEGAL_PAGES.privacy,
+  "de/impressum.html": LEGAL_PAGES.impressum,
 };
 
 function dossierLangueCourant() {
