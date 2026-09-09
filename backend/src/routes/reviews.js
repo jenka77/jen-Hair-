@@ -9,6 +9,8 @@ const {
   construireTexteI18n,
   serialiserTexteI18n,
   resoudreTexteI18nPourLangue,
+  estTexteI18nStocke,
+  resoudreTextePourAffichage,
 } = require("../services/contentTranslations");
 
 const router = express.Router();
@@ -179,13 +181,46 @@ async function selectionnerAvisAdmin() {
   return data || [];
 }
 
+async function normaliserAvisPublicTraduit(row, lang) {
+  const replyVisible = row.reply_visible !== false;
+  const adminReplyBrut = String(row.admin_reply || "").trim();
+  const showReply = replyVisible && adminReplyBrut.length > 0;
+
+  const persisterChamp = (champ) => async (json) => {
+    await supabase.from("site_reviews").update({ [champ]: json }).eq("id", row.id);
+  };
+
+  const comment = await resoudreTextePourAffichage(row.comment, lang, {
+    sourceLocale: "fr",
+    persister: estTexteI18nStocke(row.comment) ? undefined : persisterChamp("comment"),
+  });
+
+  let adminReply = null;
+  if (showReply) {
+    adminReply = await resoudreTextePourAffichage(row.admin_reply, lang, {
+      sourceLocale: "fr",
+      persister: estTexteI18nStocke(row.admin_reply) ? undefined : persisterChamp("admin_reply"),
+    });
+  }
+
+  return {
+    id: row.id,
+    authorName: row.author_name,
+    rating: Number(row.rating) || 0,
+    comment: comment || "",
+    imageUrls: urlsImagesDepuisRow(row),
+    createdAt: row.created_at,
+    adminReply: adminReply || null,
+    repliedAt: showReply && row.replied_at ? row.replied_at : null,
+  };
+}
+
 router.get("/reviews", async (req, res, next) => {
   try {
     const lang = resoudreLangueRequete(req);
     const data = await selectionnerAvisPublics();
-    res.json({
-      reviews: data.map((row) => normaliserAvis(row, { publicView: true, lang })),
-    });
+    const reviews = await Promise.all(data.map((row) => normaliserAvisPublicTraduit(row, lang)));
+    res.json({ reviews });
   } catch (error) {
     next(error);
   }

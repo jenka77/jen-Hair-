@@ -474,10 +474,30 @@ async function rendrePageCommentaires() {
   }
 }
 
+async function rechargerListeAvis() {
+  const liste = document.getElementById("avis-list");
+  const titre = document.querySelector(".avis-list-title");
+  if (titre) titre.textContent = t("avis.listTitle");
+
+  if (!liste) return;
+
+  liste.innerHTML = `<p class="account-loading">${t("avis.loading")}</p>`;
+  try {
+    avisCache = await chargerAvisPublics();
+    liste.innerHTML = listeAvisHtml(avisCache);
+  } catch (err) {
+    const msg =
+      typeof traduireErreurApi === "function"
+        ? traduireErreurApi(err.message, "errors.generic")
+        : err.message;
+    liste.innerHTML = `<p class="account-empty">${msg}</p>`;
+  }
+}
+
 window.rendrePageCommentaires = rendrePageCommentaires;
 
 document.addEventListener("langchange", () => {
   if (typeof etatType !== "undefined" && etatType.commentaires) {
-    rendrePageCommentaires();
+    rechargerListeAvis();
   }
 });

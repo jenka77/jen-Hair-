@@ -1,4 +1,4 @@
-const { LANGS, normaliserLocale, traduireTextes } = require("./deepl");
+const { LANGS, normaliserLocale, traduireTextes, deeplDisponible } = require("./deepl");
 
 const PRODUCT_FIELDS = ["name", "description", "wig_type", "wig_size", "color", "lace_size"];
 
@@ -278,6 +278,44 @@ function resoudreTexteI18nPourLangue(stored, lang) {
   return texte;
 }
 
+function estTexteI18nStocke(stored) {
+  const texte = String(stored || "").trim();
+  if (!texte.startsWith("{")) return false;
+
+  try {
+    const objet = JSON.parse(texte);
+    return estFormatTexteI18n(objet);
+  } catch {
+    return false;
+  }
+}
+
+async function resoudreTextePourAffichage(stored, lang, { sourceLocale = "fr", persister } = {}) {
+  const brut = String(stored || "").trim();
+  if (!brut) return null;
+
+  if (estTexteI18nStocke(brut)) {
+    return resoudreTexteI18nPourLangue(brut, lang);
+  }
+
+  const locale = normaliserLocale(lang);
+  const source = normaliserLocale(sourceLocale);
+
+  if (locale === source) return brut;
+  if (!deeplDisponible()) return brut;
+
+  const i18n = await construireTexteI18n(brut, source);
+  if (!i18n) return brut;
+
+  if (typeof persister === "function") {
+    persister(serialiserTexteI18n(i18n)).catch((err) => {
+      console.warn("[i18n] persistance texte:", err.message);
+    });
+  }
+
+  return String(i18n[locale] || brut).trim() || brut;
+}
+
 module.exports = {
   LANGS,
   PRODUCT_FIELDS,
@@ -295,4 +333,6 @@ module.exports = {
   construireTexteI18n,
   serialiserTexteI18n,
   resoudreTexteI18nPourLangue,
+  estTexteI18nStocke,
+  resoudreTextePourAffichage,
 };
