@@ -3,6 +3,13 @@ const { z } = require("zod");
 const { supabase } = require("../supabase");
 const { authOptionnelle } = require("../middleware/auth");
 const { verifierAdmin } = require("../middleware/admin");
+const {
+  resoudreLangueRequete,
+  extraireTexteSourceI18n,
+  construireTexteI18n,
+  serialiserTexteI18n,
+  resoudreTexteI18nPourLangue,
+} = require("../services/contentTranslations");
 
 const router = express.Router();
 
@@ -18,6 +25,7 @@ const avisSchema = z.object({
   rating: z.coerce.number().int().min(1).max(5),
   comment: z.string().trim().min(10).max(2000),
   imageUrls: z.array(z.string().trim().url().max(500)).max(2).optional(),
+  locale: z.enum(["fr", "de", "en"]).optional(),
 });
 
 const avisAdminSchema = z.object({
@@ -82,19 +90,26 @@ function urlsImagesDepuisRow(row) {
     .filter(Boolean);
 }
 
-function normaliserAvis(row, { publicView = false } = {}) {
+function normaliserAvis(row, { publicView = false, lang = "fr", adminView = false } = {}) {
   const replyVisible = row.reply_visible !== false;
-  const adminReply = (row.admin_reply || "").trim();
-  const showReply = !publicView || (replyVisible && adminReply.length > 0);
+  const adminReplyBrut = String(row.admin_reply || "").trim();
+  const showReply = !publicView || (replyVisible && adminReplyBrut.length > 0);
+
+  const comment = adminView
+    ? extraireTexteSourceI18n(row.comment, "fr")
+    : resoudreTexteI18nPourLangue(row.comment, lang);
+  const adminReply = adminView
+    ? extraireTexteSourceI18n(row.admin_reply, "fr")
+    : resoudreTexteI18nPourLangue(row.admin_reply, lang);
 
   return {
     id: row.id,
     authorName: row.author_name,
     rating: Number(row.rating) || 0,
-    comment: row.comment,
+    comment: comment || "",
     imageUrls: urlsImagesDepuisRow(row),
     createdAt: row.created_at,
-    adminReply: showReply ? adminReply : null,
+    adminReply: showReply && adminReply ? adminReply : null,
     repliedAt: showReply && row.replied_at ? row.replied_at : null,
     ...(publicView
       ? {}
@@ -166,8 +181,11 @@ async function selectionnerAvisAdmin() {
 
 router.get("/reviews", async (req, res, next) => {
   try {
+    const lang = resoudreLangueRequete(req);
     const data = await selectionnerAvisPublics();
-    res.json({ reviews: data.map((row) => normaliserAvis(row, { publicView: true })) });
+    res.json({
+      reviews: data.map((row) => normaliserAvis(row, { publicView: true, lang })),
+    });
   } catch (error) {
     next(error);
   }
@@ -184,6 +202,7 @@ router.post("/reviews", authOptionnelle, async (req, res, next) => {
     }
 
     const { rating, comment } = validation.data;
+    const sourceLocale = resoudreLangueRequete(req);
     let authorName = validation.data.authorName || "";
     let authorEmail = null;
     let userId = null;
@@ -207,12 +226,20 @@ router.post("/reviews", authOptionnelle, async (req, res, next) => {
 
     const imageUrls = validerUrlsImagesAvis(validation.data.imageUrls, userId);
 
+    let commentStocke = comment.trim();
+    try {
+      const i18n = await construireTexteI18n(commentStocke, sourceLocale);
+      if (i18n) commentStocke = serialiserTexteI18n(i18n);
+    } catch {
+      /* DeepL indisponible : conserver le texte original */
+    }
+
     const payload = {
       author_name: authorName.trim(),
       author_email: authorEmail,
       user_id: userId,
       rating,
-      comment: comment.trim(),
+      comment: commentStocke,
       is_published: true,
       image_url_1: imageUrls[0] || null,
       image_url_2: imageUrls[1] || null,
@@ -235,7 +262,9 @@ router.post("/reviews", authOptionnelle, async (req, res, next) => {
     }
 
     if (error) throw error;
-    res.status(201).json({ review: normaliserAvis(data, { publicView: true }) });
+    res.status(201).json({
+      review: normaliserAvis(data, { publicView: true, lang: sourceLocale }),
+    });
   } catch (error) {
     next(error);
   }
@@ -246,7 +275,7 @@ router.get("/admin/reviews", async (req, res, next) => {
 
   try {
     const data = await selectionnerAvisAdmin();
-    res.json({ reviews: data.map((row) => normaliserAvis(row)) });
+    res.json({ reviews: data.map((row) => normaliserAvis(row, { adminView: true })) });
   } catch (error) {
     next(error);
   }
@@ -278,7 +307,16 @@ router.patch("/admin/reviews/:id", async (req, res, next) => {
 
     if (adminReply !== undefined) {
       const texte = adminReply ? adminReply.trim() : "";
-      payload.admin_reply = texte || null;
+      if (texte) {
+        try {
+          const i18n = await construireTexteI18n(texte, "fr");
+          payload.admin_reply = i18n ? serialiserTexteI18n(i18n) : texte;
+        } catch {
+          payload.admin_reply = texte;
+        }
+      } else {
+        payload.admin_reply = null;
+      }
       payload.replied_at = texte ? new Date().toISOString() : null;
     }
     if (replyVisible !== undefined) payload.reply_visible = replyVisible;
@@ -299,7 +337,7 @@ router.patch("/admin/reviews/:id", async (req, res, next) => {
     }
 
     if (error) throw error;
-    res.json({ review: normaliserAvis(data) });
+    res.json({ review: normaliserAvis(data, { adminView: true }) });
   } catch (error) {
     next(error);
   }

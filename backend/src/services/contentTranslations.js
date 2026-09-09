@@ -213,6 +213,71 @@ function resoudreCategoriePourLangue(row, lang) {
   };
 }
 
+function estFormatTexteI18n(objet) {
+  return estFormatTravelNotesI18nTexte(objet);
+}
+
+function extraireTexteSourceI18n(raw, sourceLocale = "fr") {
+  if (!raw) return "";
+  const texte = String(raw).trim();
+  if (!texte) return "";
+  if (!texte.startsWith("{")) return texte;
+
+  try {
+    const objet = JSON.parse(texte);
+    if (estFormatTexteI18n(objet)) {
+      const source = normaliserLocale(sourceLocale);
+      return String(objet[source] || objet.fr || objet.de || objet.en || "").trim();
+    }
+  } catch {
+    return texte;
+  }
+
+  return texte;
+}
+
+function serialiserTexteI18n(blocParLangue) {
+  return JSON.stringify(blocParLangue);
+}
+
+async function construireTexteI18n(texteBrut, sourceLocale) {
+  const source = normaliserLocale(sourceLocale);
+  const texte = extraireTexteSourceI18n(texteBrut, source);
+  if (!texte.trim()) return null;
+
+  const resultat = {};
+  for (const lang of LANGS) {
+    if (lang === source) {
+      resultat[lang] = texte.trim();
+      continue;
+    }
+    const [traduit] = await traduireTextes([texte], source, lang);
+    resultat[lang] = (traduit || texte).trim();
+  }
+
+  return resultat;
+}
+
+function resoudreTexteI18nPourLangue(stored, lang) {
+  if (!stored) return null;
+  const texte = String(stored).trim();
+  if (!texte) return null;
+  if (!texte.startsWith("{")) return texte;
+
+  try {
+    const objet = JSON.parse(texte);
+    if (estFormatTexteI18n(objet)) {
+      const locale = normaliserLocale(lang);
+      const resolu = String(objet[locale] || objet.fr || objet.de || objet.en || "").trim();
+      return resolu || null;
+    }
+  } catch {
+    return texte;
+  }
+
+  return texte;
+}
+
 module.exports = {
   LANGS,
   PRODUCT_FIELDS,
@@ -226,4 +291,8 @@ module.exports = {
   resoudreProduitPourLangue,
   resoudreCategoriePourLangue,
   traduireChampsVersLangues,
+  extraireTexteSourceI18n,
+  construireTexteI18n,
+  serialiserTexteI18n,
+  resoudreTexteI18nPourLangue,
 };

@@ -347,7 +347,7 @@ router.post("/admin/backfill-translations", async (req, res, next) => {
 
     const scope = String(req.body?.scope || "all");
     const sourceLocale = normaliserLocale(req.body?.source_locale || "fr");
-    const rapport = { products: 0, hairdressers: 0, barbers: 0, errors: [] };
+    const rapport = { products: 0, hairdressers: 0, barbers: 0, reviews: 0, errors: [] };
 
     if (scope === "all" || scope === "products") {
       const { data: produits, error } = await supabase.from("products").select(COLS_PRODUIT).eq("is_active", true);
@@ -376,6 +376,49 @@ router.post("/admin/backfill-translations", async (req, res, next) => {
           rapport.products += 1;
         } catch (itemError) {
           rapport.errors.push(`product:${produit.id}:${itemError.message}`);
+        }
+      }
+    }
+
+    if (scope === "all" || scope === "reviews") {
+      const {
+        construireTexteI18n,
+        serialiserTexteI18n,
+        extraireTexteSourceI18n,
+      } = require("../services/contentTranslations");
+
+      const { data: avis, error: avisError } = await supabase
+        .from("site_reviews")
+        .select("id, comment, admin_reply")
+        .limit(500);
+
+      if (avisError) throw avisError;
+
+      for (const row of avis || []) {
+        try {
+          const payload = {};
+          const commentSource = extraireTexteSourceI18n(row.comment, sourceLocale);
+          if (commentSource && !String(row.comment || "").trim().startsWith("{")) {
+            const i18n = await construireTexteI18n(commentSource, sourceLocale);
+            if (i18n) payload.comment = serialiserTexteI18n(i18n);
+          }
+
+          const replySource = extraireTexteSourceI18n(row.admin_reply, sourceLocale);
+          if (replySource && !String(row.admin_reply || "").trim().startsWith("{")) {
+            const i18nReply = await construireTexteI18n(replySource, sourceLocale);
+            if (i18nReply) payload.admin_reply = serialiserTexteI18n(i18nReply);
+          }
+
+          if (!Object.keys(payload).length) continue;
+
+          const { error: updateError } = await supabase
+            .from("site_reviews")
+            .update(payload)
+            .eq("id", row.id);
+          if (updateError) throw updateError;
+          rapport.reviews += 1;
+        } catch (itemError) {
+          rapport.errors.push(`review:${row.id}:${itemError.message}`);
         }
       }
     }

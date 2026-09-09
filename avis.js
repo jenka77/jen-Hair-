@@ -289,8 +289,16 @@ function listeAvisHtml(reviews) {
     .join("");
 }
 
+function langueAvis() {
+  return typeof langueActuelle !== "undefined" ? langueActuelle : "fr";
+}
+
 async function chargerAvisPublics() {
-  const reponse = await fetch(`${apiAvis()}/api/reviews`, { cache: "no-store" });
+  const lang = langueAvis();
+  const reponse = await fetch(
+    `${apiAvis()}/api/reviews?lang=${encodeURIComponent(lang)}`,
+    { cache: "no-store" }
+  );
   const data = await reponse.json().catch(() => ({}));
   if (!reponse.ok) throw new Error(messageErreurAvis(reponse, data, t("avis.loadError")));
   return data.reviews || [];
@@ -393,6 +401,7 @@ async function soumettreAvis(e) {
       authorName: authorName || undefined,
       rating: noteSelectionnee,
       comment,
+      locale: langueAvis(),
     };
     if (imageUrls.length) payload.imageUrls = imageUrls;
 
