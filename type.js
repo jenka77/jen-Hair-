@@ -526,7 +526,11 @@ function appliquerMiseAJourStock(stockUpdates) {
 window.appliquerMiseAJourStock = appliquerMiseAJourStock;
 window.rechargerProduitsType = charger;
 
-document.addEventListener("langchange", rendreGrille);
+document.addEventListener("langchange", () => {
+  if (etatType?.coiffeuses || etatType?.coiffeurs) return;
+  if (typeof charger === "function") charger();
+  else rendreGrille();
+});
 document.addEventListener("stockchange", rendreGrille);
 document.addEventListener("basestockchange", charger);
 

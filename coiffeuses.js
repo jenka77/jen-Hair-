@@ -377,10 +377,10 @@ function carteCoiffeuse(c) {
     ? `<span class="coiffeuse-badge coiffeuse-badge--yes">${t("coiffeuses.travelYes")}</span>`
     : `<span class="coiffeuse-badge coiffeuse-badge--no">${t("coiffeuses.travelNo")}</span>`;
 
-  const notes = (c.travelNotes || "").trim();
-  const notesHtml = notes
-    ? `<p class="coiffeuse-travel-notes">${echapperTexteCoiffeuse(notes)}</p>`
-    : "";
+  const notesHtml =
+    typeof htmlNotesDeplacement === "function"
+      ? htmlNotesDeplacement(c.travelAvailable, c.travelNotes, "coiffeuses", echapperTexteCoiffeuse)
+      : "";
 
   const wigInstall = c.wigInstallCustomisation
     ? `<span class="coiffeuse-badge coiffeuse-badge--yes">${t("coiffeuses.wigInstallYes")}</span>`
@@ -597,8 +597,10 @@ async function chargerCoiffeuses(land) {
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
+  const lang =
+    typeof langueActuelle !== "undefined" ? langueActuelle : "fr";
   const reponse = await fetch(
-    `${apiCoiffeuses()}/api/hairdressers?state=${encodeURIComponent(land)}`,
+    `${apiCoiffeuses()}/api/hairdressers?state=${encodeURIComponent(land)}&lang=${encodeURIComponent(lang)}`,
     { cache: "no-store", headers }
   );
   const data = await reponse.json().catch(() => ({}));
@@ -882,6 +884,17 @@ async function soumettreInscriptionCoiffeuse(e) {
     return;
   }
 
+  const erreurDeplacement =
+    typeof validerChampsDeplacement === "function" ? validerChampsDeplacement(form, "coiffeuses") : "";
+  if (erreurDeplacement) {
+    if (messageEl) {
+      messageEl.hidden = false;
+      messageEl.className = "account-message account-message--error";
+      messageEl.textContent = erreurDeplacement;
+    }
+    return;
+  }
+
   const fd = new FormData(form);
   const stateSlug = fd.get("stateSlug");
   if (!stateSlug) {
@@ -942,14 +955,21 @@ async function soumettreInscriptionCoiffeuse(e) {
 
     if (submitBtn) submitBtn.textContent = t("coiffeuses.registerSending");
 
+    const travelAvailable = fd.get("travelAvailable") === "yes";
+    let travelNotes = "";
+    if (travelAvailable && typeof lireNotesDeplacementDepuisFormulaire === "function" && typeof serialiserNotesDeplacement === "function") {
+      const notes = lireNotesDeplacementDepuisFormulaire(form);
+      travelNotes = serialiserNotesDeplacement(notes.area, notes.fee, notes.conditions);
+    }
+
     const payload = {
       stateSlug: String(stateSlug),
       name: String(fd.get("name") || "").trim(),
       email: String(fd.get("email") || "").trim().toLowerCase(),
       phone: String(fd.get("phone") || "").trim(),
       address: String(fd.get("address") || "").trim(),
-      travelAvailable: fd.get("travelAvailable") === "yes",
-      travelNotes: String(fd.get("travelNotes") || "").trim(),
+      travelAvailable,
+      travelNotes,
       wigInstallCustomisation: fd.get("wigInstallCustomisation") === "yes",
       profileImageUrl,
       professionalLinks,
@@ -1198,6 +1218,9 @@ function attacherFormulaireInscription() {
   });
 
   initialiserLiensProInscription();
+  if (typeof attacherBasculerChampsDeplacement === "function") {
+    attacherBasculerChampsDeplacement(form, "coiffeuses-travel-details");
+  }
   mettreAJourSectionInscription(landSelectionne);
 }
 
@@ -1282,10 +1305,7 @@ function pageCoiffeusesHtml() {
             </label>
           </div>
         </fieldset>
-        <label class="field coiffeuses-field--large">
-          <span>${t("coiffeuses.travelNotes")} *</span>
-          <textarea class="coiffeuses-textarea coiffeuses-textarea--xlarge" name="travelNotes" required minlength="2" maxlength="500" rows="5" placeholder="${echapperTexteCoiffeuse(t("coiffeuses.travelNotesHint"))}"></textarea>
-        </label>
+        ${typeof htmlChampsDeplacementAnnuaire === "function" ? htmlChampsDeplacementAnnuaire("coiffeuses", echapperTexteCoiffeuse) : ""}
         <fieldset class="coiffeuses-fieldset">
           <legend>${t("coiffeuses.wigInstall")} *</legend>
           <div class="coiffeuses-radio-group">

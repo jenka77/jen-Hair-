@@ -4236,6 +4236,35 @@ img {
   line-height: 1.45;
 }
 
+.coiffeuse-travel-notes dt {
+  margin: 8px 0 2px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(201, 169, 98, 0.85);
+}
+
+.coiffeuse-travel-notes dt:first-child {
+  margin-top: 0;
+}
+
+.coiffeuse-travel-notes dd {
+  margin: 0 0 4px;
+}
+
+.coiffeuses-travel-details {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(201, 169, 98, 0.15);
+}
+
+.coiffeuses-travel-details[hidden] {
+  display: none;
+}
+
 .coiffeuse-rating {
   margin-bottom: 16px;
   padding-bottom: 16px;

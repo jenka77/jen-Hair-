@@ -15,6 +15,12 @@ const {
   villeAnnuaireSchema,
   villeAnnuaireOptionnelleSchema,
 } = require("../utils/cityName");
+const {
+  resoudreLangueRequete,
+  construireTravelNotesI18n,
+  serialiserTravelNotesI18n,
+  resoudreTravelNotesPourLangue,
+} = require("../services/contentTranslations");
 
 const router = express.Router();
 
@@ -78,7 +84,8 @@ const coiffeuseAdminSchema = z.object({
   phone: z.string().trim().max(40).nullable().optional(),
   address: villeAnnuaireOptionnelleSchema,
   travelAvailable: z.boolean().optional(),
-  travelNotes: z.string().trim().max(500).nullable().optional(),
+  travelNotes: z.string().trim().max(3000).nullable().optional(),
+  locale: z.enum(["fr", "de", "en"]).optional(),
   wigInstallCustomisation: z.boolean().optional(),
   profileImageUrl: z
     .string()
@@ -95,26 +102,36 @@ const coiffeuseAdminSchema = z.object({
   isPublished: z.boolean().optional(),
 });
 
-const coiffeuseSubmitSchema = z.object({
-  stateSlug: z.string().min(1),
-  name: z.string().trim().min(2).max(120),
-  email: z.string().trim().email().max(200),
-  phone: z.string().trim().min(3).max(40),
-  address: villeAnnuaireSchema,
-  travelAvailable: z.boolean(),
-  travelNotes: z.string().trim().min(2).max(500),
-  wigInstallCustomisation: z.boolean(),
-  profileImageUrl: z
-    .string()
-    .trim()
-    .url()
-    .max(500)
-    .refine((url) => url.startsWith("https://"), {
-      message: "L'URL de la photo doit commencer par https://",
-    }),
-  professionalLinks: z.array(lienProSchema).min(1).max(12),
-  locale: z.enum(["fr", "de", "en"]).optional(),
-});
+const coiffeuseSubmitSchema = z
+  .object({
+    stateSlug: z.string().min(1),
+    name: z.string().trim().min(2).max(120),
+    email: z.string().trim().email().max(200),
+    phone: z.string().trim().min(3).max(40),
+    address: villeAnnuaireSchema,
+    travelAvailable: z.boolean(),
+    travelNotes: z.string().trim().max(3000).optional().default(""),
+    wigInstallCustomisation: z.boolean(),
+    profileImageUrl: z
+      .string()
+      .trim()
+      .url()
+      .max(500)
+      .refine((url) => url.startsWith("https://"), {
+        message: "L'URL de la photo doit commencer par https://",
+      }),
+    professionalLinks: z.array(lienProSchema).min(1).max(12),
+    locale: z.enum(["fr", "de", "en"]).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.travelAvailable && data.travelNotes.trim().length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Précisions déplacement requises lorsque le déplacement est proposé.",
+        path: ["travelNotes"],
+      });
+    }
+  });
 
 const noteCoiffeuseSchema = z.object({
   rating: z.coerce.number().int().min(1).max(5),
@@ -256,7 +273,13 @@ function normaliserLiensProfessionnels(raw) {
     .filter(Boolean);
 }
 
-function normaliserCoiffeuse(row, { inclureEmail = false } = {}) {
+async function preparerTravelNotesPourSauvegarde(travelNotes, travelAvailable, sourceLocale) {
+  if (!travelAvailable) return null;
+  const i18n = await construireTravelNotesI18n(travelNotes, sourceLocale || "fr");
+  return i18n ? serialiserTravelNotesI18n(i18n) : null;
+}
+
+function normaliserCoiffeuse(row, { inclureEmail = false, lang = "fr" } = {}) {
   return {
     id: row.id,
     stateSlug: row.state_slug,
@@ -264,7 +287,7 @@ function normaliserCoiffeuse(row, { inclureEmail = false } = {}) {
     phone: row.phone || null,
     address: row.address || null,
     travelAvailable: row.travel_available === true,
-    travelNotes: (row.travel_notes || "").trim() || null,
+    travelNotes: resoudreTravelNotesPourLangue(row.travel_notes, lang),
     wigInstallCustomisation: row.wig_install_customisation === true,
     profileImageUrl: (row.profile_image_url || "").trim() || null,
     professionalLinks: normaliserLiensProfessionnels(row.professional_links),
@@ -341,15 +364,19 @@ router.get("/hairdressers", authOptionnelle, async (req, res, next) => {
       return res.status(400).json({ error: "Land (Bundesland) invalide" });
     }
 
+    const lang = resoudreLangueRequete(req);
     const data = await selectionnerCoiffeusesPubliques(state || "");
     const ids = data.map((row) => row.id);
     const notesUtilisateur = req.user?.id ? await chargerNotesUtilisateur(req.user.id, ids) : {};
 
     const coiffeuses = data.map((row) =>
-      normaliserCoiffeuse({
-        ...row,
-        ...(req.user?.id ? { user_rating: notesUtilisateur[row.id] ?? null } : {}),
-      })
+      normaliserCoiffeuse(
+        {
+          ...row,
+          ...(req.user?.id ? { user_rating: notesUtilisateur[row.id] ?? null } : {}),
+        },
+        { lang }
+      )
     );
 
     res.json({ hairdressers: coiffeuses });
@@ -462,6 +489,12 @@ router.post("/hairdressers/submit", async (req, res, next) => {
       return res.status(400).json({ error: "Photo de profil invalide ou non téléversée." });
     }
 
+    const travelNotesStockees = await preparerTravelNotesPourSauvegarde(
+      travelNotes,
+      travelAvailable,
+      locale || "fr"
+    );
+
     const payload = {
       state_slug: stateSlug,
       name: name.trim(),
@@ -469,7 +502,7 @@ router.post("/hairdressers/submit", async (req, res, next) => {
       phone: phone.trim(),
       address: normaliserNomVille(address),
       travel_available: travelAvailable,
-      travel_notes: travelNotes.trim(),
+      travel_notes: travelNotesStockees,
       wig_install_customisation: wigInstallCustomisation,
       profile_image_url: profileImageUrl.trim(),
       professional_links: normaliserLiensProfessionnels(professionalLinks),
@@ -639,11 +672,18 @@ router.post("/admin/hairdressers", async (req, res, next) => {
       professionalLinks,
       sortOrder,
       isPublished,
+      locale,
     } = validation.data;
 
     if (!estLandAllemandValide(stateSlug)) {
       return res.status(400).json({ error: "Land (Bundesland) invalide" });
     }
+
+    const travelNotesStockees = await preparerTravelNotesPourSauvegarde(
+      travelNotes,
+      travelAvailable ?? false,
+      locale || "fr"
+    );
 
     const payload = {
       state_slug: stateSlug,
@@ -651,7 +691,7 @@ router.post("/admin/hairdressers", async (req, res, next) => {
       phone: phone?.trim() || null,
       address: address != null && address !== "" ? normaliserNomVille(address) : null,
       travel_available: travelAvailable ?? false,
-      travel_notes: travelNotes?.trim() || null,
+      travel_notes: travelNotesStockees,
       wig_install_customisation: wigInstallCustomisation ?? false,
       profile_image_url: profileImageUrl?.trim() || null,
       professional_links: normaliserLiensProfessionnels(professionalLinks || []),
@@ -729,6 +769,7 @@ router.patch("/admin/hairdressers/:id", async (req, res, next) => {
       professionalLinks,
       sortOrder,
       isPublished,
+      locale,
     } = validation.data;
 
     if (stateSlug !== undefined) {
@@ -747,7 +788,17 @@ router.patch("/admin/hairdressers/:id", async (req, res, next) => {
           : null;
     }
     if (travelAvailable !== undefined) payload.travel_available = travelAvailable;
-    if (travelNotes !== undefined) payload.travel_notes = travelNotes?.trim() || null;
+    if (travelNotes !== undefined || travelAvailable !== undefined) {
+      const disponible =
+        travelAvailable !== undefined ? travelAvailable : ficheAvantRow.travel_available === true;
+      payload.travel_notes = disponible
+        ? await preparerTravelNotesPourSauvegarde(
+            travelNotes !== undefined ? travelNotes : ficheAvantRow.travel_notes,
+            disponible,
+            locale || "fr"
+          )
+        : null;
+    }
     if (wigInstallCustomisation !== undefined) {
       payload.wig_install_customisation = wigInstallCustomisation;
     }

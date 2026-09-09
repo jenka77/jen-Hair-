@@ -36,7 +36,10 @@ async function chargerCategoriesMenu() {
   if (!apiBase) return TYPES_MENU_FALLBACK;
 
   try {
-    const reponse = await fetch(`${apiBase}/api/categories`, { cache: "no-store" });
+    const lang = typeof langueActuelle !== "undefined" ? langueActuelle : "fr";
+    const reponse = await fetch(`${apiBase}/api/categories?lang=${encodeURIComponent(lang)}`, {
+      cache: "no-store",
+    });
     if (!reponse.ok) throw new Error("categories indisponibles");
     const data = await reponse.json();
     const liste = (data.categories || [])

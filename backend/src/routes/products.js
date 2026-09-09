@@ -2,8 +2,19 @@ const express = require("express");
 const { z } = require("zod");
 const { supabase } = require("../supabase");
 const { verifierAdmin } = require("../middleware/admin");
+const { normaliserLocale, deeplDisponible } = require("../services/deepl");
+const {
+  resoudreLangueRequete,
+  extraireChampsProduitSource,
+  construireTraductionsProduit,
+  resoudreProduitPourLangue,
+  resoudreCategoriePourLangue,
+} = require("../services/contentTranslations");
 
 const router = express.Router();
+
+const COLS_PRODUIT =
+  "id, category_slug, name, description, wig_type, wig_size, color, lace_size, price, stock, image_url, image_url_2, image_url_3, video_url, is_active, sort_order, created_at, translations, source_locale";
 
 const produitSchema = z.object({
   category_slug: z.string().min(1).optional(),
@@ -21,6 +32,7 @@ const produitSchema = z.object({
   video_url: z.string().optional().nullable(),
   is_active: z.boolean().optional(),
   sort_order: z.coerce.number().int().optional(),
+  source_locale: z.enum(["fr", "de", "en"]).optional(),
 });
 
 const creationProduitSchema = produitSchema.extend({
@@ -37,7 +49,13 @@ function nettoyerPayloadProduit(payload) {
   return resultat;
 }
 
-function normaliserProduit(p) {
+function colonnesTraductionsManquantes(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return message.includes("translations") || message.includes("source_locale");
+}
+
+function normaliserProduit(p, lang = "fr") {
+  const texte = resoudreProduitPourLangue(p, lang);
   const image1 = (p.image_url || "").trim();
   const image2 = (p.image_url_2 || "").trim();
   const image3 = (p.image_url_3 || "").trim();
@@ -45,12 +63,12 @@ function normaliserProduit(p) {
 
   return {
     id: p.id,
-    nom: (p.name || "").trim(),
-    description: (p.description || "").trim(),
-    type: (p.wig_type || "").trim(),
-    taille: (p.wig_size || "").trim(),
-    couleur: (p.color || "").trim(),
-    tailleLace: (p.lace_size || "").trim(),
+    nom: texte.name,
+    description: texte.description,
+    type: texte.wig_type,
+    taille: texte.wig_size,
+    couleur: texte.color,
+    tailleLace: texte.lace_size,
     prix: Number(p.price) || 0,
     stock: Number(p.stock) || 0,
     image: images[0] || "1.jpg",
@@ -61,15 +79,47 @@ function normaliserProduit(p) {
   };
 }
 
+async function appliquerTraductionsProduit(payload, sourceLocale) {
+  const locale = normaliserLocale(sourceLocale);
+  const champs = extraireChampsProduitSource(payload);
+  const translations = await construireTraductionsProduit(champs, locale);
+  const source = translations[locale] || champs;
+
+  return {
+    ...payload,
+    name: source.name,
+    description: source.description || null,
+    wig_type: source.wig_type || null,
+    wig_size: source.wig_size || null,
+    color: source.color || null,
+    lace_size: source.lace_size || null,
+    translations,
+    source_locale: locale,
+  };
+}
+
 router.get("/categories", async (req, res, next) => {
   try {
+    const lang = resoudreLangueRequete(req);
     const { data, error } = await supabase
       .from("categories")
-      .select("slug, name, description, is_learning, sort_order")
+      .select("slug, name, description, is_learning, sort_order, translations, source_locale")
       .order("sort_order", { ascending: true });
 
     if (error) throw error;
-    res.json({ categories: data || [] });
+
+    res.json({
+      categories: (data || []).map((row) => {
+        const texte = resoudreCategoriePourLangue(row, lang);
+        return {
+          slug: row.slug,
+          name: texte.name,
+          description: texte.description,
+          is_learning: row.is_learning,
+          sort_order: row.sort_order,
+        };
+      }),
+    });
   } catch (error) {
     next(error);
   }
@@ -77,25 +127,32 @@ router.get("/categories", async (req, res, next) => {
 
 router.get("/products", async (req, res, next) => {
   try {
+    const lang = resoudreLangueRequete(req);
     const category = req.query.category;
 
     let categorie = null;
     if (category) {
       const { data, error } = await supabase
         .from("categories")
-        .select("slug, name, description, is_learning")
+        .select("slug, name, description, is_learning, translations, source_locale")
         .eq("slug", category)
         .maybeSingle();
 
       if (error) throw error;
-      categorie = data;
+      if (data) {
+        const texte = resoudreCategoriePourLangue(data, lang);
+        categorie = {
+          slug: data.slug,
+          name: texte.name,
+          description: texte.description,
+          is_learning: data.is_learning,
+        };
+      }
     }
 
     let query = supabase
       .from("products")
-      .select(
-        "id, category_slug, name, description, wig_type, wig_size, color, lace_size, price, stock, image_url, image_url_2, image_url_3, video_url, is_active, sort_order, created_at"
-      )
+      .select(COLS_PRODUIT)
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
@@ -104,12 +161,24 @@ router.get("/products", async (req, res, next) => {
       query = query.eq("category_slug", category);
     }
 
-    const { data, error } = await query;
+    let { data, error } = await query;
+    if (error && colonnesTraductionsManquantes(error)) {
+      let fallback = supabase
+        .from("products")
+        .select(
+          "id, category_slug, name, description, wig_type, wig_size, color, lace_size, price, stock, image_url, image_url_2, image_url_3, video_url, is_active, sort_order, created_at"
+        )
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (category) fallback = fallback.eq("category_slug", category);
+      ({ data, error } = await fallback);
+    }
     if (error) throw error;
 
     res.json({
       category: categorie,
-      produits: (data || []).map(normaliserProduit),
+      produits: (data || []).map((row) => normaliserProduit(row, lang)),
     });
   } catch (error) {
     next(error);
@@ -118,18 +187,23 @@ router.get("/products", async (req, res, next) => {
 
 router.get("/products/:id", async (req, res, next) => {
   try {
-    const { data, error } = await supabase
-      .from("products")
-      .select(
-        "id, category_slug, name, description, wig_type, wig_size, color, lace_size, price, stock, image_url, image_url_2, image_url_3, video_url, is_active, sort_order, created_at"
-      )
-      .eq("id", req.params.id)
-      .maybeSingle();
+    const lang = resoudreLangueRequete(req);
+    let { data, error } = await supabase.from("products").select(COLS_PRODUIT).eq("id", req.params.id).maybeSingle();
+
+    if (error && colonnesTraductionsManquantes(error)) {
+      ({ data, error } = await supabase
+        .from("products")
+        .select(
+          "id, category_slug, name, description, wig_type, wig_size, color, lace_size, price, stock, image_url, image_url_2, image_url_3, video_url, is_active, sort_order, created_at"
+        )
+        .eq("id", req.params.id)
+        .maybeSingle());
+    }
 
     if (error) throw error;
     if (!data) return res.status(404).json({ error: "Produit introuvable" });
 
-    res.json({ produit: normaliserProduit(data) });
+    res.json({ produit: normaliserProduit(data, lang) });
   } catch (error) {
     next(error);
   }
@@ -147,22 +221,30 @@ router.post("/products", async (req, res, next) => {
       });
     }
 
-    const payload = nettoyerPayloadProduit({
+    let payload = nettoyerPayloadProduit({
       is_active: true,
       sort_order: 0,
       ...validation.data,
     });
 
-    const { data, error } = await supabase
-      .from("products")
-      .insert(payload)
-      .select(
-        "id, category_slug, name, description, wig_type, wig_size, color, lace_size, price, stock, image_url, image_url_2, image_url_3, video_url, is_active, sort_order, created_at"
-      )
-      .single();
+    payload = await appliquerTraductionsProduit(payload, payload.source_locale || "fr");
+
+    let { data, error } = await supabase.from("products").insert(payload).select(COLS_PRODUIT).single();
+
+    if (error && colonnesTraductionsManquantes(error)) {
+      delete payload.translations;
+      delete payload.source_locale;
+      ({ data, error } = await supabase
+        .from("products")
+        .insert(payload)
+        .select(
+          "id, category_slug, name, description, wig_type, wig_size, color, lace_size, price, stock, image_url, image_url_2, image_url_3, video_url, is_active, sort_order, created_at"
+        )
+        .single());
+    }
 
     if (error) throw error;
-    res.status(201).json({ produit: normaliserProduit(data) });
+    res.status(201).json({ produit: normaliserProduit(data, payload.source_locale || "fr") });
   } catch (error) {
     next(error);
   }
@@ -180,24 +262,54 @@ router.patch("/products/:id", async (req, res, next) => {
       });
     }
 
-    const payload = nettoyerPayloadProduit(validation.data);
+    let payload = nettoyerPayloadProduit(validation.data);
     if (Object.keys(payload).length === 0) {
       return res.status(400).json({ error: "Aucune donnée à modifier" });
     }
 
-    const { data, error } = await supabase
+    const champsTexte = ["name", "description", "wig_type", "wig_size", "color", "lace_size"];
+    const texteModifie = champsTexte.some((cle) => payload[cle] !== undefined);
+
+    if (texteModifie || payload.source_locale) {
+      const { data: existant, error: erreurExistant } = await supabase
+        .from("products")
+        .select(COLS_PRODUIT)
+        .eq("id", req.params.id)
+        .maybeSingle();
+
+      if (erreurExistant && !colonnesTraductionsManquantes(erreurExistant)) throw erreurExistant;
+      if (!existant) return res.status(404).json({ error: "Produit introuvable" });
+
+      const fusion = { ...extraireChampsProduitSource(existant), ...payload };
+      const sourceLocale = payload.source_locale || existant.source_locale || "fr";
+      const traduit = await appliquerTraductionsProduit(fusion, sourceLocale);
+      payload = { ...payload, ...traduit };
+    }
+
+    let { data, error } = await supabase
       .from("products")
       .update(payload)
       .eq("id", req.params.id)
-      .select(
-        "id, category_slug, name, description, wig_type, wig_size, color, lace_size, price, stock, image_url, image_url_2, image_url_3, video_url, is_active, sort_order, created_at"
-      )
+      .select(COLS_PRODUIT)
       .maybeSingle();
+
+    if (error && colonnesTraductionsManquantes(error)) {
+      delete payload.translations;
+      delete payload.source_locale;
+      ({ data, error } = await supabase
+        .from("products")
+        .update(payload)
+        .eq("id", req.params.id)
+        .select(
+          "id, category_slug, name, description, wig_type, wig_size, color, lace_size, price, stock, image_url, image_url_2, image_url_3, video_url, is_active, sort_order, created_at"
+        )
+        .maybeSingle());
+    }
 
     if (error) throw error;
     if (!data) return res.status(404).json({ error: "Produit introuvable" });
 
-    res.json({ produit: normaliserProduit(data) });
+    res.json({ produit: normaliserProduit(data, resoudreLangueRequete(req)) });
   } catch (error) {
     next(error);
   }
@@ -207,7 +319,6 @@ router.delete("/products/:id", async (req, res, next) => {
   if (!verifierAdmin(req, res)) return;
 
   try {
-    // Suppression douce : le produit disparaît du site, mais reste en base.
     const { data, error } = await supabase
       .from("products")
       .update({ is_active: false })
@@ -219,6 +330,87 @@ router.delete("/products/:id", async (req, res, next) => {
     if (!data) return res.status(404).json({ error: "Produit introuvable" });
 
     res.json({ ok: true, id: data.id });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/admin/backfill-translations", async (req, res, next) => {
+  if (!verifierAdmin(req, res)) return;
+
+  try {
+    if (!deeplDisponible()) {
+      return res.status(503).json({
+        error: "DEEPL_API_KEY manquante. Ajoutez-la dans backend/.env puis redémarrez le serveur.",
+      });
+    }
+
+    const scope = String(req.body?.scope || "all");
+    const sourceLocale = normaliserLocale(req.body?.source_locale || "fr");
+    const rapport = { products: 0, hairdressers: 0, barbers: 0, errors: [] };
+
+    if (scope === "all" || scope === "products") {
+      const { data: produits, error } = await supabase.from("products").select(COLS_PRODUIT).eq("is_active", true);
+      if (error && !colonnesTraductionsManquantes(error)) throw error;
+
+      for (const produit of produits || []) {
+        try {
+          const traduit = await appliquerTraductionsProduit(
+            { ...extraireChampsProduitSource(produit), category_slug: produit.category_slug },
+            produit.source_locale || sourceLocale
+          );
+          const { error: updateError } = await supabase
+            .from("products")
+            .update({
+              name: traduit.name,
+              description: traduit.description,
+              wig_type: traduit.wig_type,
+              wig_size: traduit.wig_size,
+              color: traduit.color,
+              lace_size: traduit.lace_size,
+              translations: traduit.translations,
+              source_locale: traduit.source_locale,
+            })
+            .eq("id", produit.id);
+          if (updateError) throw updateError;
+          rapport.products += 1;
+        } catch (itemError) {
+          rapport.errors.push(`product:${produit.id}:${itemError.message}`);
+        }
+      }
+    }
+
+    if (scope === "all" || scope === "directory") {
+      const { construireTravelNotesI18n, serialiserTravelNotesI18n } = require("../services/contentTranslations");
+
+      for (const table of ["hairdressers", "barbers"]) {
+        const { data: fiches, error } = await supabase
+          .from(table)
+          .select("id, travel_notes, travel_available")
+          .eq("travel_available", true)
+          .not("travel_notes", "is", null);
+
+        if (error) throw error;
+
+        for (const fiche of fiches || []) {
+          try {
+            const i18n = await construireTravelNotesI18n(fiche.travel_notes, sourceLocale);
+            if (!i18n) continue;
+            const { error: updateError } = await supabase
+              .from(table)
+              .update({ travel_notes: serialiserTravelNotesI18n(i18n) })
+              .eq("id", fiche.id);
+            if (updateError) throw updateError;
+            if (table === "hairdressers") rapport.hairdressers += 1;
+            else rapport.barbers += 1;
+          } catch (itemError) {
+            rapport.errors.push(`${table}:${fiche.id}:${itemError.message}`);
+          }
+        }
+      }
+    }
+
+    res.json({ ok: true, ...rapport, deepl: true });
   } catch (error) {
     next(error);
   }

@@ -129,10 +129,15 @@ async function chargerProduitsDepuisBase(slug) {
   };
 }
 
+function langueApiSite() {
+  return typeof langueActuelle !== "undefined" ? langueActuelle : "fr";
+}
+
 async function chargerProduitsDepuisBackend(slug) {
   try {
+    const lang = langueApiSite();
     const reponse = await fetch(
-      `${API_BASE_URL}/api/products?category=${encodeURIComponent(slug)}&_=${Date.now()}`,
+      `${API_BASE_URL}/api/products?category=${encodeURIComponent(slug)}&lang=${encodeURIComponent(lang)}&_=${Date.now()}`,
       { cache: "no-store" }
     );
 
