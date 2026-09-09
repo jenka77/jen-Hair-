@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260823" />
+  <link rel="stylesheet" href="style.css?v=20260909j" />
 </head>
 <body class="admin-body">
 
@@ -20,12 +20,12 @@
     <form id="admin-login-form" class="account-card admin-login-card">
       <p class="section-kicker">Administration</p>
       <h1 class="account-title">Jen's &amp; Floran</h1>
-      <p class="account-lead">Espace réservé à Sa'a Mokolo — commandes et avis clients. Sur le site en ligne, une authentification navigateur peut être demandée avant cette page (identifiant&nbsp;: <strong>admin</strong>).</p>
+      <p class="account-lead">Espace réservé à Sa'a Mokolo — commandes, avis et annuaire coiffeuses&nbsp;/ coiffeurs.</p>
       <label class="field">
         <span>Mot de passe admin</span>
-        <input type="password" id="admin-password" name="password" required autocomplete="current-password" />
+        <input type="password" id="admin-password" name="password" required autocomplete="current-password" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" />
       </label>
-      <button type="button" id="admin-login-btn" class="btn-order account-submit">Se connecter</button>
+      <button type="submit" id="admin-login-btn" class="btn-order account-submit">Se connecter</button>
       <p id="admin-login-error" class="account-message account-message--error" hidden></p>
       <noscript>
         <p class="account-message account-message--error">JavaScript est requis pour cette page.</p>
@@ -113,6 +113,6 @@
     </section>
   </div>
 
-  <script src="gestion-commandes.js?v=20260827a"></script>
+  <script src="gestion-commandes.js?v=20260909j"></script>
 </body>
 </html>

@@ -1,7 +1,17 @@
 /**
- * Protection admin.html sur Vercel (Basic Auth).
- * Variables d'environnement Vercel :
- *   ADMIN_PASSWORD      — même mot de passe que Render (obligatoire)
+ * Protection optionnelle de admin.html sur Vercel (Basic Auth navigateur).
+ *
+ * Désactivée par défaut : la popup Basic Auth est peu fiable sur iPhone /
+ * Android (page blanche ou erreur 401 avant le formulaire).
+ *
+ * La page admin reste protégée par le mot de passe applicatif
+ * (gestion-commandes.js → header x-admin-password sur l'API).
+ *
+ * Pour réactiver la double authentification navigateur (desktop) :
+ *   ADMIN_BASIC_AUTH=true sur Vercel
+ *
+ * Variables si Basic Auth activée :
+ *   ADMIN_PASSWORD      — mot de passe (identique à Render)
  *   ADMIN_BASIC_USER    — identifiant (défaut : admin)
  */
 
@@ -36,6 +46,10 @@ export default function middleware(request) {
     return;
   }
 
+  if (process.env.ADMIN_BASIC_AUTH !== "true") {
+    return;
+  }
+
   const expectedPassword = process.env.ADMIN_PASSWORD;
   const expectedUser = process.env.ADMIN_BASIC_USER || "admin";
 
@@ -57,7 +71,7 @@ export default function middleware(request) {
   return new Response("Authentification requise pour accéder à l'administration.", {
     status: 401,
     headers: {
-      "WWW-Authenticate": 'Basic realm="Admin Jen\'s & Floran", charset="UTF-8"',
+      "WWW-Authenticate": 'Basic realm="Admin Jens Floran", charset="UTF-8"',
     },
   });
 }
