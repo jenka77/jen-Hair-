@@ -1,7 +1,6 @@
 const { LANGS, normaliserLocale, traduireTextes } = require("./deepl");
 
 const PRODUCT_FIELDS = ["name", "description", "wig_type", "wig_size", "color", "lace_size"];
-const TRAVEL_FIELDS = ["area", "fee", "conditions"];
 
 function resoudreLangueRequete(req) {
   const lang = String(req?.query?.lang || req?.body?.locale || "fr")
@@ -10,37 +9,89 @@ function resoudreLangueRequete(req) {
   return LANGS.includes(lang) ? lang : "fr";
 }
 
-function estFormatTravelNotesI18n(objet) {
-  return Boolean(objet && typeof objet === "object" && (objet.fr || objet.de || objet.en));
+function estBlocStructure(objet) {
+  return Boolean(
+    objet &&
+      typeof objet === "object" &&
+      !Array.isArray(objet) &&
+      ("area" in objet || "fee" in objet || "conditions" in objet)
+  );
 }
 
-function parserTravelNotesEntree(raw) {
-  if (!raw) return null;
+function nettoyerTexteTravelNotes(texte) {
+  const brut = String(texte || "").trim();
+  if (!brut) return "";
+
+  const seuleCondition = brut.match(/^\*\s*Conditions\s*:\s*(.+)$/is);
+  if (seuleCondition && !/Zone de service|Frais de déplacement|Servicebereich|Anfahrtskosten/i.test(brut)) {
+    return seuleCondition[1].trim();
+  }
+
+  return brut;
+}
+
+function estFormatTravelNotesI18nTexte(objet) {
+  return Boolean(
+    objet &&
+      typeof objet === "object" &&
+      LANGS.some((lang) => typeof objet[lang] === "string")
+  );
+}
+
+function estFormatTravelNotesI18nStructure(objet) {
+  return Boolean(
+    objet &&
+      typeof objet === "object" &&
+      LANGS.some((lang) => estBlocStructure(objet[lang]))
+  );
+}
+
+function texteDepuisBlocStructure(bloc) {
+  if (!bloc || typeof bloc !== "object") return "";
+  const area = String(bloc.area || "").trim();
+  const fee = String(bloc.fee || "").trim();
+  const conditions = String(bloc.conditions || "").trim();
+
+  if (!area && !fee && conditions) return conditions;
+
+  const parties = [];
+  if (area) parties.push(`* Zone de service : ${area}`);
+  if (fee) parties.push(`* Frais de déplacement : ${fee}`);
+  if (conditions) parties.push(`* Conditions : ${conditions}`);
+
+  return parties.join(" ").trim();
+}
+
+function extraireTexteSourceTravelNotes(raw, sourceLocale = "fr") {
+  if (!raw) return "";
   const texte = String(raw).trim();
-  if (!texte) return null;
+  if (!texte) return "";
+
+  if (!texte.startsWith("{")) return nettoyerTexteTravelNotes(texte);
 
   try {
     const objet = JSON.parse(texte);
-    if (!objet || typeof objet !== "object") return null;
+    if (!objet || typeof objet !== "object") return texte;
 
-    if (estFormatTravelNotesI18n(objet)) {
-      const source =
-        LANGS.find((lang) => objet[lang]?.area || objet[lang]?.fee || objet[lang]?.conditions) || "fr";
-      return {
-        area: String(objet[source]?.area || "").trim(),
-        fee: String(objet[source]?.fee || "").trim(),
-        conditions: String(objet[source]?.conditions || "").trim(),
-      };
+    if (estFormatTravelNotesI18nTexte(objet)) {
+      const source = normaliserLocale(sourceLocale);
+      return nettoyerTexteTravelNotes(objet[source] || objet.fr || objet.de || objet.en || "");
     }
 
-    return {
-      area: String(objet.area || "").trim(),
-      fee: String(objet.fee || "").trim(),
-      conditions: String(objet.conditions || "").trim(),
-    };
+    if (estFormatTravelNotesI18nStructure(objet)) {
+      const source = normaliserLocale(sourceLocale);
+      const bloc = objet[source] || objet.fr || objet.de || objet.en;
+      return texteDepuisBlocStructure(bloc);
+    }
+
+    if (estBlocStructure(objet)) {
+      return texteDepuisBlocStructure(objet);
+    }
   } catch {
-    return { area: "", fee: "", conditions: texte };
+    return texte;
   }
+
+  return texte;
 }
 
 function serialiserTravelNotesI18n(blocParLangue) {
@@ -67,9 +118,21 @@ async function traduireChampsVersLangues(champs, sourceLocale) {
 }
 
 async function construireTravelNotesI18n(rawNotes, sourceLocale) {
-  const source = parserTravelNotesEntree(rawNotes);
-  if (!source || !Object.values(source).some(Boolean)) return null;
-  return traduireChampsVersLangues(source, sourceLocale);
+  const source = normaliserLocale(sourceLocale);
+  const texte = extraireTexteSourceTravelNotes(rawNotes, source);
+  if (!texte.trim()) return null;
+
+  const resultat = {};
+  for (const lang of LANGS) {
+    if (lang === source) {
+      resultat[lang] = texte.trim();
+      continue;
+    }
+    const [traduit] = await traduireTextes([texte], source, lang);
+    resultat[lang] = (traduit || texte).trim();
+  }
+
+  return resultat;
 }
 
 function resoudreTravelNotesPourLangue(stored, lang) {
@@ -77,27 +140,33 @@ function resoudreTravelNotesPourLangue(stored, lang) {
   const texte = String(stored).trim();
   if (!texte) return null;
 
+  if (!texte.startsWith("{")) return texte;
+
   try {
     const objet = JSON.parse(texte);
-    if (estFormatTravelNotesI18n(objet)) {
+
+    if (estFormatTravelNotesI18nTexte(objet)) {
       const locale = normaliserLocale(lang);
-      const bloc =
-        objet[locale] ||
-        objet.fr ||
-        objet.de ||
-        objet.en ||
-        null;
-      if (!bloc) return null;
-      return serialiserTravelNotesI18n({
-        area: String(bloc.area || "").trim(),
-        fee: String(bloc.fee || "").trim(),
-        conditions: String(bloc.conditions || "").trim(),
-      });
+      const resolu = nettoyerTexteTravelNotes(objet[locale] || objet.fr || objet.de || objet.en || "");
+      return resolu || null;
     }
-    return texte;
+
+    if (estFormatTravelNotesI18nStructure(objet)) {
+      const locale = normaliserLocale(lang);
+      const bloc = objet[locale] || objet.fr || objet.de || objet.en;
+      const resolu = texteDepuisBlocStructure(bloc);
+      return resolu || null;
+    }
+
+    if (estBlocStructure(objet)) {
+      const resolu = texteDepuisBlocStructure(objet);
+      return resolu || null;
+    }
   } catch {
     return texte;
   }
+
+  return texte;
 }
 
 function extraireChampsProduitSource(row) {
@@ -147,9 +216,8 @@ function resoudreCategoriePourLangue(row, lang) {
 module.exports = {
   LANGS,
   PRODUCT_FIELDS,
-  TRAVEL_FIELDS,
   resoudreLangueRequete,
-  parserTravelNotesEntree,
+  extraireTexteSourceTravelNotes,
   construireTravelNotesI18n,
   serialiserTravelNotesI18n,
   resoudreTravelNotesPourLangue,

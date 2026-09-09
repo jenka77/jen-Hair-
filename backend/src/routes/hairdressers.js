@@ -642,7 +642,9 @@ router.get("/admin/hairdressers", async (req, res, next) => {
     }
 
     if (error) throw error;
-    res.json({ hairdressers: (data || []).map((row) => normaliserCoiffeuse(row, { inclureEmail: true })) });
+    res.json({
+      hairdressers: (data || []).map((row) => normaliserCoiffeuse(row, { inclureEmail: true, lang: "fr" })),
+    });
   } catch (error) {
     next(error);
   }

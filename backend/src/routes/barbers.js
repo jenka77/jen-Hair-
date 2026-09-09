@@ -684,7 +684,9 @@ router.get("/admin/barbers", async (req, res, next) => {
     }
 
     if (error) throw error;
-    res.json({ barbers: (data || []).map((row) => normaliserCoiffeur(row, { inclureEmail: true })) });
+    res.json({
+      barbers: (data || []).map((row) => normaliserCoiffeur(row, { inclureEmail: true, lang: "fr" })),
+    });
   } catch (error) {
     next(error);
   }

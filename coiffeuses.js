@@ -884,17 +884,6 @@ async function soumettreInscriptionCoiffeuse(e) {
     return;
   }
 
-  const erreurDeplacement =
-    typeof validerChampsDeplacement === "function" ? validerChampsDeplacement(form, "coiffeuses") : "";
-  if (erreurDeplacement) {
-    if (messageEl) {
-      messageEl.hidden = false;
-      messageEl.className = "account-message account-message--error";
-      messageEl.textContent = erreurDeplacement;
-    }
-    return;
-  }
-
   const fd = new FormData(form);
   const stateSlug = fd.get("stateSlug");
   if (!stateSlug) {
@@ -956,11 +945,6 @@ async function soumettreInscriptionCoiffeuse(e) {
     if (submitBtn) submitBtn.textContent = t("coiffeuses.registerSending");
 
     const travelAvailable = fd.get("travelAvailable") === "yes";
-    let travelNotes = "";
-    if (travelAvailable && typeof lireNotesDeplacementDepuisFormulaire === "function" && typeof serialiserNotesDeplacement === "function") {
-      const notes = lireNotesDeplacementDepuisFormulaire(form);
-      travelNotes = serialiserNotesDeplacement(notes.area, notes.fee, notes.conditions);
-    }
 
     const payload = {
       stateSlug: String(stateSlug),
@@ -969,7 +953,7 @@ async function soumettreInscriptionCoiffeuse(e) {
       phone: String(fd.get("phone") || "").trim(),
       address: String(fd.get("address") || "").trim(),
       travelAvailable,
-      travelNotes,
+      travelNotes: travelAvailable ? String(fd.get("travelNotes") || "").trim() : "",
       wigInstallCustomisation: fd.get("wigInstallCustomisation") === "yes",
       profileImageUrl,
       professionalLinks,
@@ -1219,7 +1203,7 @@ function attacherFormulaireInscription() {
 
   initialiserLiensProInscription();
   if (typeof attacherBasculerChampsDeplacement === "function") {
-    attacherBasculerChampsDeplacement(form, "coiffeuses-travel-details");
+    attacherBasculerChampsDeplacement(form);
   }
   mettreAJourSectionInscription(landSelectionne);
 }
