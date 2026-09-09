@@ -273,9 +273,10 @@ function normaliserLiensProfessionnels(raw) {
     .filter(Boolean);
 }
 
-async function preparerTravelNotesPourSauvegarde(travelNotes, travelAvailable, sourceLocale) {
-  if (!travelAvailable) return null;
-  const i18n = await construireTravelNotesI18n(travelNotes, sourceLocale || "fr");
+async function preparerTravelNotesPourSauvegarde(travelNotes, sourceLocale) {
+  const texte = String(travelNotes || "").trim();
+  if (!texte) return null;
+  const i18n = await construireTravelNotesI18n(texte, sourceLocale || "fr");
   return i18n ? serialiserTravelNotesI18n(i18n) : null;
 }
 
@@ -489,11 +490,7 @@ router.post("/hairdressers/submit", async (req, res, next) => {
       return res.status(400).json({ error: "Photo de profil invalide ou non téléversée." });
     }
 
-    const travelNotesStockees = await preparerTravelNotesPourSauvegarde(
-      travelNotes,
-      travelAvailable,
-      locale || "fr"
-    );
+    const travelNotesStockees = await preparerTravelNotesPourSauvegarde(travelNotes, locale || "fr");
 
     const payload = {
       state_slug: stateSlug,
@@ -681,11 +678,7 @@ router.post("/admin/hairdressers", async (req, res, next) => {
       return res.status(400).json({ error: "Land (Bundesland) invalide" });
     }
 
-    const travelNotesStockees = await preparerTravelNotesPourSauvegarde(
-      travelNotes,
-      travelAvailable ?? false,
-      locale || "fr"
-    );
+    const travelNotesStockees = await preparerTravelNotesPourSauvegarde(travelNotes, locale || "fr");
 
     const payload = {
       state_slug: stateSlug,
@@ -790,16 +783,11 @@ router.patch("/admin/hairdressers/:id", async (req, res, next) => {
           : null;
     }
     if (travelAvailable !== undefined) payload.travel_available = travelAvailable;
-    if (travelNotes !== undefined || travelAvailable !== undefined) {
-      const disponible =
-        travelAvailable !== undefined ? travelAvailable : ficheAvantRow.travel_available === true;
-      payload.travel_notes = disponible
-        ? await preparerTravelNotesPourSauvegarde(
-            travelNotes !== undefined ? travelNotes : ficheAvantRow.travel_notes,
-            disponible,
-            locale || "fr"
-          )
-        : null;
+    if (travelNotes !== undefined) {
+      payload.travel_notes = await preparerTravelNotesPourSauvegarde(
+        travelNotes,
+        locale || "fr"
+      );
     }
     if (wigInstallCustomisation !== undefined) {
       payload.wig_install_customisation = wigInstallCustomisation;

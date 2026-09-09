@@ -1,8 +1,6 @@
 /* Notes de déplacement annuaire — affichage du texte traduit tel quel */
 
-function htmlNotesDeplacement(travelAvailable, rawNotes, prefix, echapper) {
-  if (!travelAvailable) return "";
-
+function htmlNotesDeplacement(_travelAvailable, rawNotes, _prefix, echapper) {
   const notes = String(rawNotes || "").trim();
   if (!notes) return "";
 
@@ -16,13 +14,13 @@ function mettreAJourVisibiliteChampsDeplacement(form) {
   if (!bloc) return;
 
   const travelOui = form.querySelector('input[name="travelAvailable"][value="yes"]');
-  const visible = !!travelOui?.checked;
+  const obligatoire = !!travelOui?.checked;
   const champ = bloc.querySelector('[name="travelNotes"]');
 
-  bloc.hidden = !visible;
+  bloc.hidden = false;
   if (champ) {
-    champ.required = visible;
-    if (!visible) champ.setCustomValidity("");
+    champ.required = obligatoire;
+    if (!obligatoire) champ.setCustomValidity("");
   }
 }
 
@@ -39,7 +37,7 @@ function attacherBasculerChampsDeplacement(form) {
 
 function htmlChampsDeplacementAnnuaire(prefix, echapper) {
   return `
-    <label class="field coiffeuses-field--large coiffeuses-travel-details" hidden>
+    <label class="field coiffeuses-field--large coiffeuses-travel-details">
       <span>${echapper(typeof t === "function" ? t(`${prefix}.travelNotes`) : "Travel details")} *</span>
       <textarea
         class="coiffeuses-textarea coiffeuses-textarea--xlarge"

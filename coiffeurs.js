@@ -956,7 +956,7 @@ async function soumettreInscriptionCoiffeur(e) {
       phone: String(fd.get("phone") || "").trim(),
       address: String(fd.get("address") || "").trim(),
       travelAvailable,
-      travelNotes: travelAvailable ? String(fd.get("travelNotes") || "").trim() : "",
+      travelNotes: String(fd.get("travelNotes") || "").trim(),
       hairColoringAvailable: fd.get("hairColoringAvailable") === "yes",
       profileImageUrl,
       professionalLinks,
@@ -1369,9 +1369,13 @@ async function rendrePageCoiffeurs() {
 
 window.rendrePageCoiffeurs = rendrePageCoiffeurs;
 
-document.addEventListener("langchange", () => {
-  if (typeof etatType !== "undefined" && etatType.coiffeurs) {
-    rendrePageCoiffeurs();
+document.addEventListener("langchange", async () => {
+  if (typeof etatType === "undefined" || !etatType.coiffeurs) return;
+  const land = landSelectionne;
+  await rendrePageCoiffeurs();
+  if (land) {
+    landSelectionne = land;
+    await afficherCoiffeursLand(land);
   }
 });
 

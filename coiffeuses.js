@@ -953,7 +953,7 @@ async function soumettreInscriptionCoiffeuse(e) {
       phone: String(fd.get("phone") || "").trim(),
       address: String(fd.get("address") || "").trim(),
       travelAvailable,
-      travelNotes: travelAvailable ? String(fd.get("travelNotes") || "").trim() : "",
+      travelNotes: String(fd.get("travelNotes") || "").trim(),
       wigInstallCustomisation: fd.get("wigInstallCustomisation") === "yes",
       profileImageUrl,
       professionalLinks,
@@ -1366,9 +1366,13 @@ async function rendrePageCoiffeuses() {
 
 window.rendrePageCoiffeuses = rendrePageCoiffeuses;
 
-document.addEventListener("langchange", () => {
-  if (typeof etatType !== "undefined" && etatType.coiffeuses) {
-    rendrePageCoiffeuses();
+document.addEventListener("langchange", async () => {
+  if (typeof etatType === "undefined" || !etatType.coiffeuses) return;
+  const land = landSelectionne;
+  await rendrePageCoiffeuses();
+  if (land) {
+    landSelectionne = land;
+    await afficherCoiffeusesLand(land);
   }
 });
 
