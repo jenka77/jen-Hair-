@@ -78,7 +78,10 @@ function appliquerLimitesParRoute(req, res, next) {
 
   if (
     req.method === "POST" &&
-    (req.path === "/paypal/create-order" || req.path === "/paypal/capture-order")
+    (req.path === "/paypal/create-order" ||
+      req.path === "/paypal/capture-order" ||
+      req.path === "/stripe/create-checkout-session" ||
+      req.path === "/stripe/confirm-session")
   ) {
     return limiterPaypal(req, res, next);
   }

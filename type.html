@@ -243,6 +243,26 @@
           </div>
         </div>
 
+        <fieldset class="order-payment-fields">
+          <legend class="order-legal-legend" data-i18n="order.paymentLegend">Mode de paiement</legend>
+          <div class="mode-options">
+            <label class="mode-option">
+              <input type="radio" name="paymentMethod" value="stripe" checked />
+              <span class="mode-card">
+                <strong data-i18n="order.paymentStripe">Carte bancaire (Stripe)</strong>
+                <small data-i18n="order.paymentStripeSub">Visa, Mastercard, Apple Pay, Google Pay</small>
+              </span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="paymentMethod" value="paypal" />
+              <span class="mode-card">
+                <strong data-i18n="order.paymentPaypal">PayPal</strong>
+                <small data-i18n="order.paymentPaypalSub">Compte PayPal ou carte via PayPal</small>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
         <fieldset class="order-legal-fields">
           <legend class="order-legal-legend" data-i18n="order.legalLegend">Acceptation des informations légales</legend>
           <label class="order-legal-field">

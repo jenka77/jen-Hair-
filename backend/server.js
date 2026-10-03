@@ -15,6 +15,7 @@ const accountRouter = require("./src/routes/account");
 const reviewsRouter = require("./src/routes/reviews");
 const hairdressersRouter = require("./src/routes/hairdressers");
 const barbersRouter = require("./src/routes/barbers");
+const stripeRouter = require("./src/routes/stripe");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -73,6 +74,7 @@ app.use("/api", accountRouter);
 app.use("/api", reviewsRouter);
 app.use("/api", hairdressersRouter);
 app.use("/api", barbersRouter);
+app.use("/api", stripeRouter);
 
 app.use((req, res) => {
   res.status(404).json({

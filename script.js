@@ -497,12 +497,18 @@ ${t("order.deliveryFeeNote", { montant: formaterPrix(fraisLivraison) })}`;
   submitBtn.disabled = true;
   submitBtn.textContent = t("order.sending");
 
+  const moyenPaiement =
+    form.querySelector('input[name="paymentMethod"]:checked')?.value === "paypal" ? "paypal" : "stripe";
+
   try {
     if (typeof enregistrerCommandeBase === "function") {
-      const resultatBase = await enregistrerCommandeBase(params, panier);
-      if (resultatBase?.approveUrl) {
+      const resultatBase = await enregistrerCommandeBase(params, panier, {
+        paymentMethod: moyenPaiement,
+      });
+      const urlPaiement = resultatBase?.checkoutUrl || resultatBase?.approveUrl;
+      if (urlPaiement) {
         localStorage.setItem(PENDING_PAYPAL_CART_CLE, JSON.stringify(panier));
-        window.location.href = resultatBase.approveUrl;
+        window.location.href = urlPaiement;
         return;
       }
       if (resultatBase?.skipped) {

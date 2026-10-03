@@ -175,7 +175,28 @@ function construireReturnPath() {
   return "/confirmation.html";
 }
 
-async function enregistrerCommandeBase(params, lignes) {
+function corpsCommandeApi(params, lignesBase) {
+  return {
+    customer: {
+      name: params.nom_client,
+      phone: params.telephone_client,
+      email: params.email_client,
+      pickupMode: Number(params.frais_livraison_num) > 0 ? "delivery" : "pickup",
+      address: Number(params.frais_livraison_num) > 0 ? params.adresse : "",
+      addressDetails: params.adresse_details || null,
+    },
+    items: lignesBase.map((ligne) => ({
+      productId: extraireProductIdBase(ligne.uid),
+      quantity: ligne.quantite,
+    })),
+    returnPath: construireReturnPath(),
+    locale:
+      params.langue_commande ||
+      (typeof langueActuelle !== "undefined" ? langueActuelle : "fr"),
+  };
+}
+
+async function enregistrerCommandeBase(params, lignes, { paymentMethod = "stripe" } = {}) {
   const lignesBase = lignes.filter((ligne) => ligne.fromBase);
   if (lignesBase.length === 0) return { ok: true, skipped: true };
 
@@ -186,31 +207,20 @@ async function enregistrerCommandeBase(params, lignes) {
     );
   }
 
+  const moyen = paymentMethod === "paypal" ? "paypal" : "stripe";
+  const endpoint =
+    moyen === "paypal"
+      ? `${API_BASE_URL}/api/paypal/create-order`
+      : `${API_BASE_URL}/api/stripe/create-checkout-session`;
+
   let reponse;
   try {
     const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
-    reponse = await fetch(`${API_BASE_URL}/api/paypal/create-order`, {
+    reponse = await fetch(endpoint, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        customer: {
-          name: params.nom_client,
-          phone: params.telephone_client,
-          email: params.email_client,
-          pickupMode: Number(params.frais_livraison_num) > 0 ? "delivery" : "pickup",
-          address: Number(params.frais_livraison_num) > 0 ? params.adresse : "",
-          addressDetails: params.adresse_details || null,
-        },
-        items: lignesBase.map((ligne) => ({
-          productId: extraireProductIdBase(ligne.uid),
-          quantity: ligne.quantite,
-        })),
-        returnPath: construireReturnPath(),
-        locale:
-          params.langue_commande ||
-          (typeof langueActuelle !== "undefined" ? langueActuelle : "fr"),
-      }),
+      body: JSON.stringify(corpsCommandeApi(params, lignesBase)),
     });
   } catch (err) {
     throw new Error(
@@ -233,6 +243,42 @@ async function enregistrerCommandeBase(params, lignes) {
     }
     throw new Error(
       typeof traduireErreurApi === "function" ? traduireErreurApi(message, "errors.orderSave") : message
+    );
+  }
+
+  return reponse.json();
+}
+
+async function confirmerCommandeStripe(orderId, sessionId) {
+  const token = typeof obtenirTokenAuth === "function" ? await obtenirTokenAuth() : null;
+  if (!token) {
+    throw new Error(
+      typeof t === "function" ? t("order.loginRequired") : "Connexion requise pour confirmer le paiement"
+    );
+  }
+
+  const reponse = await fetch(`${API_BASE_URL}/api/stripe/confirm-session`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+    body: JSON.stringify({ orderId, sessionId }),
+  });
+
+  if (!reponse.ok) {
+    let message = "Impossible de confirmer le paiement Stripe";
+    try {
+      const erreur = await reponse.json();
+      message = erreur.error || message;
+    } catch (e) {
+      message = await reponse.text();
+    }
+    throw new Error(
+      typeof traduireErreurApi === "function"
+        ? traduireErreurApi(message, "errors.paymentConfirm")
+        : message
     );
   }
 

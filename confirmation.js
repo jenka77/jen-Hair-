@@ -185,7 +185,60 @@ async function chargerEtAfficherCommande(orderId) {
   nettoyerUrl(orderId);
 }
 
+async function traiterRetourStripe() {
+  const params = new URLSearchParams(window.location.search);
+  const statutStripe = params.get("stripe");
+  const orderId = params.get("order_id");
+  const sessionId = params.get("session_id");
+
+  if (statutStripe === "cancel") {
+    afficherEtat("cancel");
+    nettoyerUrl();
+    return true;
+  }
+
+  if (statutStripe !== "success" || !orderId || !sessionId) {
+    return false;
+  }
+
+  try {
+    afficherEtat("loading", "confirm.processing");
+    const resultat = await confirmerCommandeStripe(orderId, sessionId);
+
+    localStorage.removeItem("jf_pending_paypal_cart");
+    if (typeof panier !== "undefined") {
+      panier = [];
+      if (typeof sauverPanier === "function") sauverPanier();
+      if (typeof majPanier === "function") majPanier();
+    }
+
+    document.dispatchEvent(new CustomEvent("basestockchange"));
+    await chargerEtAfficherCommande(orderId);
+
+    if (typeof afficherToast === "function") {
+      const numero = resultat.orderNumber || orderId.slice(0, 8).toUpperCase();
+      afficherToast(t("confirm.toastSuccess", { number: numero }));
+    }
+  } catch (err) {
+    console.error("Erreur confirmation Stripe :", err);
+    try {
+      await chargerEtAfficherCommande(orderId);
+      return true;
+    } catch (resumeErr) {
+      afficherEtat(
+        "error",
+        typeof traduireErreurApi === "function"
+          ? traduireErreurApi(err.message, "confirm.errorLead")
+          : err.message || t("confirm.errorLead")
+      );
+    }
+  }
+  return true;
+}
+
 async function traiterRetourPaypal() {
+  if (await traiterRetourStripe()) return;
+
   const params = new URLSearchParams(window.location.search);
   const statutPaypal = params.get("paypal");
   const orderId = params.get("order_id");
