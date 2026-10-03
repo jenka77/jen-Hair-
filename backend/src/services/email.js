@@ -20,16 +20,27 @@ const {
   texteReceptionCoiffeur,
   normaliserLocale,
   tr,
+  EMAIL_LOGO_CID,
+  pieceJointeLogoEmailInline,
 } = require("./emailTemplates");
 const { supabase } = require("../supabase");
 
-async function envoyerEmail({ to, subject, text, html, replyTo }) {
+async function envoyerEmail({ to, subject, text, html, replyTo, attachments }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM || "Jen's & Floran <onboarding@resend.dev>";
 
   if (!apiKey || apiKey.startsWith("votre_")) {
     console.warn("RESEND_API_KEY manquante : email non envoyé.");
     return { skipped: true };
+  }
+
+  let piecesJointes = Array.isArray(attachments) ? [...attachments] : [];
+  if (
+    html &&
+    html.includes(`cid:${EMAIL_LOGO_CID}`) &&
+    !piecesJointes.some((a) => a.content_id === EMAIL_LOGO_CID)
+  ) {
+    piecesJointes.push(pieceJointeLogoEmailInline());
   }
 
   const payload = {
@@ -44,6 +55,10 @@ async function envoyerEmail({ to, subject, text, html, replyTo }) {
     if (text) payload.text = text;
   } else {
     payload.text = text;
+  }
+
+  if (piecesJointes.length) {
+    payload.attachments = piecesJointes;
   }
 
   const response = await fetch("https://api.resend.com/emails", {

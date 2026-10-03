@@ -1,6 +1,18 @@
 const SITE_URL = (process.env.SITE_URL || "https://www.jens-flora.com").replace(/\/$/, "");
-const LOGO_URL = `${SITE_URL}/logo.png`;
+/** Logo en-tête e-mail : CID inline (Resend) + URL de secours dans l’attribut. */
+const EMAIL_LOGO_CID = "jensfloran-logo";
+const LOGO_URL_REMOTE = `${SITE_URL}/favicon-512.png`;
+const LOGO_URL = `cid:${EMAIL_LOGO_CID}`;
 const GOLD = "#c9a962";
+
+function pieceJointeLogoEmailInline() {
+  return {
+    path: LOGO_URL_REMOTE,
+    filename: "jens-floran-logo.png",
+    content_type: "image/png",
+    content_id: EMAIL_LOGO_CID,
+  };
+}
 
 const EMAIL_I18N = {
   fr: {
@@ -388,7 +400,7 @@ function enveloppeEmail({ titrePage, contenu, locale }) {
           <tr>
             <td align="center" style="padding:36px 32px 20px;">
               <a href="${SITE_URL}" style="text-decoration:none;">
-                <img src="${LOGO_URL}" width="160" alt="Jen's &amp; Floran" style="display:block;border:0;max-width:160px;height:auto;" />
+                <img src="${LOGO_URL}" width="160" height="160" alt="Jen's &amp; Floran" style="display:block;border:0;max-width:160px;height:auto;" />
               </a>
             </td>
           </tr>
@@ -940,4 +952,6 @@ module.exports = {
   texteChangementStatut,
   tr,
   normaliserLocale,
+  EMAIL_LOGO_CID,
+  pieceJointeLogoEmailInline,
 };
