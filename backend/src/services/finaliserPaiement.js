@@ -7,7 +7,7 @@ const {
   chargerCommandeAvecItems,
 } = require("./orderCheckout");
 
-async function finaliserCommandePayee(orderId, userId) {
+async function finaliserCommandePayee(orderId, userId, { locale: localeHint } = {}) {
   const { order, items } = await chargerCommandeAvecItems(orderId);
 
   if (order.user_id && userId && order.user_id !== userId) {
@@ -47,7 +47,7 @@ async function finaliserCommandePayee(orderId, userId) {
     .update({ status: "paid" })
     .eq("id", orderId)
     .select(
-      "id, customer_name, customer_contact, customer_email, customer_locale, pickup_mode, delivery_address, total_amount, status, created_at"
+      "id, customer_name, customer_contact, customer_email, pickup_mode, delivery_address, total_amount, status, created_at"
     )
     .single();
 
@@ -78,7 +78,7 @@ async function finaliserCommandePayee(orderId, userId) {
       subtotal,
       deliveryFee,
       total: expectedTotal,
-      locale: paidOrder.customer_locale || order.customer_locale || "fr",
+      locale: localeHint || paidOrder.customer_locale || order.customer_locale || "fr",
     });
     emailStatus = { sent: true, result: emailResult };
   } catch (emailError) {

@@ -54,6 +54,21 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.get("/api/stripe/status", (req, res) => {
+  const key = String(process.env.STRIPE_SECRET_KEY || "").trim();
+  res.json({
+    ok: Boolean(key),
+    configured: Boolean(key),
+    keyType: key.startsWith("sk_")
+      ? "secret"
+      : key.startsWith("rk_")
+        ? "restricted"
+        : key
+          ? "unknown"
+          : "missing",
+  });
+});
+
 app.get("/api/health/db", async (req, res) => {
   try {
     const { supabase } = require("./src/supabase");

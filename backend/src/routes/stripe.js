@@ -69,6 +69,11 @@ router.post("/stripe/create-checkout-session", authObligatoire, async (req, res,
       total,
     });
   } catch (error) {
+    if (error?.type === "StripeAuthenticationError" || error?.statusCode === 401) {
+      error.status = 503;
+      error.message =
+        "Clé Stripe invalide sur le serveur. Utilisez STRIPE_SECRET_KEY (sk_test_…) dans Render.";
+    }
     next(error);
   }
 });
@@ -101,7 +106,10 @@ router.post("/stripe/confirm-session", authObligatoire, async (req, res, next) =
       return res.status(409).json({ error: "Montant Stripe différent du total commande" });
     }
 
-    const resultat = await finaliserCommandePayee(orderId, req.user?.id);
+    const localeHint = session.metadata?.locale;
+    const resultat = await finaliserCommandePayee(orderId, req.user?.id, {
+      locale: localeHint === "de" || localeHint === "en" ? localeHint : "fr",
+    });
     res.json({ ...resultat, sessionId });
   } catch (error) {
     next(error);

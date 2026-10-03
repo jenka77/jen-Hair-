@@ -71,6 +71,7 @@ async function creerSessionCheckout({
     metadata: {
       order_id: orderId,
       order_number: orderNumber,
+      locale: locale === "de" || locale === "en" ? locale : "fr",
     },
     success_url: `${base}${path}?stripe=success&order_id=${encodeURIComponent(orderId)}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}${path}?stripe=cancel&order_id=${encodeURIComponent(orderId)}`,

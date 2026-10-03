@@ -3,6 +3,9 @@ const { supabase } = require("../supabase");
 
 const DELIVERY_FEE = 7.5;
 
+const COLS_COMMANDE =
+  "id, user_id, customer_name, customer_contact, customer_email, pickup_mode, delivery_address, total_amount, status, created_at";
+
 const orderItemSchema = z.object({
   productId: z.string().uuid(),
   quantity: z.coerce.number().int().min(1),
@@ -132,9 +135,7 @@ async function decrementerStock(lignes) {
 async function chargerCommandeAvecItems(orderId) {
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select(
-      "id, user_id, customer_name, customer_contact, customer_email, customer_locale, pickup_mode, delivery_address, total_amount, status, created_at"
-    )
+    .select(COLS_COMMANDE)
     .eq("id", orderId)
     .maybeSingle();
 
@@ -163,20 +164,21 @@ async function creerCommandeEnAttente({ customer, items, locale, userId }) {
   const deliveryFee = customer.pickupMode === "delivery" ? DELIVERY_FEE : 0;
   const total = subtotal + deliveryFee;
 
+  const payload = {
+    customer_name: customer.name.trim(),
+    customer_contact: `${customer.phone.trim()} / ${customer.email.trim()}`,
+    customer_email: customer.email.trim().toLowerCase(),
+    user_id: userId || null,
+    pickup_mode: customer.pickupMode === "delivery" ? "delivery" : "pickup",
+    delivery_address: formaterAdresse(customer),
+    total_amount: total,
+    status: "pending_payment",
+  };
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .insert({
-      customer_name: customer.name.trim(),
-      customer_contact: `${customer.phone.trim()} / ${customer.email.trim()}`,
-      customer_email: customer.email.trim().toLowerCase(),
-      customer_locale: locale,
-      user_id: userId || null,
-      pickup_mode: customer.pickupMode === "delivery" ? "delivery" : "pickup",
-      delivery_address: formaterAdresse(customer),
-      total_amount: total,
-      status: "pending_payment",
-    })
-    .select("id, customer_name, customer_contact, pickup_mode, delivery_address, total_amount, status, created_at")
+    .insert(payload)
+    .select(COLS_COMMANDE)
     .single();
 
   if (orderError) throw orderError;
@@ -193,12 +195,13 @@ async function creerCommandeEnAttente({ customer, items, locale, userId }) {
   if (itemsError) throw itemsError;
 
   return {
-    order,
+    order: { ...order, customer_locale: locale },
     lignes,
     subtotal,
     deliveryFee,
     total,
     orderNumber: genererNumeroCommande(order),
+    locale,
   };
 }
 
