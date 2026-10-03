@@ -415,7 +415,13 @@ async function charger() {
     rendreGrille();
   } catch (err) {
     titre.textContent = t("type.loadError");
-    grille.innerHTML = `<p class="cart-empty">${t("type.loadError")}<br />${t("type.loadHint")}</p>`;
+    const hint =
+      window.location.protocol === "file:"
+        ? t("type.loadHintFile")
+        : window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+          ? t("type.loadHint")
+          : t("type.loadHintOnline");
+    grille.innerHTML = `<p class="cart-empty">${t("type.loadError")}<br />${hint}</p>`;
     mettreAJourBarreRecherche(0, 0);
     console.error("Erreur chargement catalogue :", err);
   }

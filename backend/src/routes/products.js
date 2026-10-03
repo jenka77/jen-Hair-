@@ -54,6 +54,41 @@ function colonnesTraductionsManquantes(error) {
   return message.includes("translations") || message.includes("source_locale");
 }
 
+const COLS_CATEGORIE = "slug, name, description, is_learning, translations, source_locale";
+const COLS_CATEGORIE_LEGACY = "slug, name, description, is_learning";
+
+async function chargerCategorieParSlug(slug) {
+  let { data, error } = await supabase.from("categories").select(COLS_CATEGORIE).eq("slug", slug).maybeSingle();
+
+  if (error && colonnesTraductionsManquantes(error)) {
+    ({ data, error } = await supabase
+      .from("categories")
+      .select(COLS_CATEGORIE_LEGACY)
+      .eq("slug", slug)
+      .maybeSingle());
+  }
+
+  if (error) throw error;
+  return data;
+}
+
+async function chargerToutesCategories() {
+  let { data, error } = await supabase
+    .from("categories")
+    .select(`${COLS_CATEGORIE}, sort_order`)
+    .order("sort_order", { ascending: true });
+
+  if (error && colonnesTraductionsManquantes(error)) {
+    ({ data, error } = await supabase
+      .from("categories")
+      .select(`${COLS_CATEGORIE_LEGACY}, sort_order`)
+      .order("sort_order", { ascending: true }));
+  }
+
+  if (error) throw error;
+  return data || [];
+}
+
 function normaliserProduit(p, lang = "fr") {
   const texte = resoudreProduitPourLangue(p, lang);
   const image1 = (p.image_url || "").trim();
@@ -101,12 +136,7 @@ async function appliquerTraductionsProduit(payload, sourceLocale) {
 router.get("/categories", async (req, res, next) => {
   try {
     const lang = resoudreLangueRequete(req);
-    const { data, error } = await supabase
-      .from("categories")
-      .select("slug, name, description, is_learning, sort_order, translations, source_locale")
-      .order("sort_order", { ascending: true });
-
-    if (error) throw error;
+    const data = await chargerToutesCategories();
 
     res.json({
       categories: (data || []).map((row) => {
@@ -132,13 +162,7 @@ router.get("/products", async (req, res, next) => {
 
     let categorie = null;
     if (category) {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("slug, name, description, is_learning, translations, source_locale")
-        .eq("slug", category)
-        .maybeSingle();
-
-      if (error) throw error;
+      const data = await chargerCategorieParSlug(category);
       if (data) {
         const texte = resoudreCategoriePourLangue(data, lang);
         categorie = {

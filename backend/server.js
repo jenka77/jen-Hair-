@@ -53,6 +53,19 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.get("/api/health/db", async (req, res) => {
+  try {
+    const { supabase } = require("./src/supabase");
+    const { error } = await supabase.from("categories").select("slug").limit(1);
+    if (error) {
+      return res.status(503).json({ ok: false, error: error.message });
+    }
+    res.json({ ok: true, supabase: true });
+  } catch (err) {
+    res.status(503).json({ ok: false, error: err.message || "Connexion Supabase impossible" });
+  }
+});
+
 app.use("/api", productsRouter);
 app.use("/api", ordersRouter);
 app.use("/api", paypalRouter);
@@ -81,15 +94,29 @@ app.use((error, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   const paypalEnv = process.env.PAYPAL_ENV === "live" ? "live" : "sandbox";
   console.log(`Backend Jen's & Floran lancé sur http://localhost:${PORT}`);
   console.log(`Frontend autorisé: ${FRONTEND_URL} (+ localhost / 127.0.0.1 en dev)`);
+  console.log("Laissez ce terminal ouvert. Ouvrez le site via http://127.0.0.1:8000 (autre terminal : python3 -m http.server 8000 --bind 127.0.0.1).");
   if (paypalEnv === "live") {
     console.log("⚠️  PayPal LIVE actif — les paiements utilisent de VRAI argent.");
   } else {
     console.log("ℹ️  PayPal SANDBOX — aucun vrai paiement (comptes test uniquement).");
   }
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(
+      `\n❌ Le port ${PORT} est déjà utilisé. Un backend tourne peut-être déjà.\n` +
+        `   Test : curl http://127.0.0.1:${PORT}/api/health\n` +
+        `   Sinon : fuser -k ${PORT}/tcp  puis relancez npm run dev\n`
+    );
+  } else {
+    console.error(err);
+  }
+  process.exit(1);
 });
 
 module.exports = app;
