@@ -15,6 +15,7 @@ async function finaliserCommandePayee(orderId, userId, { locale: localeHint } = 
     err.status = 403;
     throw err;
   }
+  // Webhook Stripe : userId null autorisé si la session Stripe a déjà validé le paiement
 
   if (order.status === "paid") {
     return {

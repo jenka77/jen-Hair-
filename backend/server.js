@@ -17,11 +17,19 @@ const hairdressersRouter = require("./src/routes/hairdressers");
 const barbersRouter = require("./src/routes/barbers");
 const stripeRouter = require("./src/routes/stripe");
 
+const { traiterWebhookStripe } = require("./src/services/stripeWebhook");
+
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 const PRODUCTION = process.env.NODE_ENV === "production";
 
 app.set("trust proxy", 1);
+
+app.post(
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  traiterWebhookStripe
+);
 
 app.use(
   cors({

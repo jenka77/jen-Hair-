@@ -251,18 +251,12 @@ async function enregistrerCommandeBase(params, lignes, { paymentMethod = "stripe
 
 async function confirmerCommandeStripe(orderId, sessionId) {
   const token = typeof obtenirTokenAuth === "function" ? await obtenirTokenAuth() : null;
-  if (!token) {
-    throw new Error(
-      typeof t === "function" ? t("order.loginRequired") : "Connexion requise pour confirmer le paiement"
-    );
-  }
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   const reponse = await fetch(`${API_BASE_URL}/api/stripe/confirm-session`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
     cache: "no-store",
     body: JSON.stringify({ orderId, sessionId }),
   });

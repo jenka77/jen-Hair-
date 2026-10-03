@@ -73,8 +73,14 @@ function afficherSuiviCommande(status) {
     </ol>`;
 }
 
+function commandeEstPayee(status) {
+  const s = String(status || "").toLowerCase();
+  return s === "paid" || s === "accepted" || s === "preparing" || s === "ready" || s === "delivered";
+}
+
 function afficherResumeCommande(data) {
   const { order, items } = data;
+  const payee = commandeEstPayee(order.status);
   const lignes = (items || [])
     .map(
       (item) => `
@@ -87,10 +93,16 @@ function afficherResumeCommande(data) {
 
   const adresse = adresseAffichable(order.deliveryAddress);
 
+  const titre = payee ? htmlTitre("confirm.successTitle") : htmlTitre("confirm.pendingTitle");
+  const lead = payee ? htmlLead("confirm.successLead") : htmlLead("confirm.pendingLead");
+  const notesEmail = payee
+    ? `${htmlNote("confirm.emailNote")}${htmlNote("confirm.readyEmailNote")}`
+    : htmlNote("confirm.pendingEmailNote");
+
   return `
-    <div class="confirmation-success">
-      ${htmlTitre("confirm.successTitle")}
-      ${htmlLead("confirm.successLead")}
+    <div class="confirmation-success${payee ? "" : " confirmation-pending"}">
+      ${titre}
+      ${lead}
 
       <div class="confirmation-meta">
         <p><span>${t("confirm.orderNumber")}</span> <strong>${order.orderNumber}</strong></p>
@@ -111,8 +123,7 @@ function afficherResumeCommande(data) {
         ${adresse ? `<p class="confirmation-address">${adresse}</p>` : ""}
       </div>
 
-      ${htmlNote("confirm.emailNote")}
-      ${htmlNote("confirm.readyEmailNote")}
+      ${notesEmail}
 
       <div class="confirmation-actions">
         <a class="btn-order" href="maison.html">${t("confirm.backShop")}</a>
@@ -183,6 +194,56 @@ async function chargerEtAfficherCommande(orderId) {
   if (contenu) contenu.innerHTML = afficherResumeCommande(data);
   etatConfirmationCourant = { type: "success", message: null };
   nettoyerUrl(orderId);
+  return data;
+}
+
+async function relancerFinalisationStripe(orderId, sessionId) {
+  if (!orderId || !sessionId) return null;
+  for (let i = 0; i < 10; i += 1) {
+    let data;
+    try {
+      data = await chargerResumeCommande(orderId);
+    } catch {
+      break;
+    }
+    if (commandeEstPayee(data.order.status)) return data;
+
+    try {
+      await confirmerCommandeStripe(orderId, sessionId);
+    } catch (err) {
+      console.warn("Relance confirmation Stripe :", err.message);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+  }
+  try {
+    return await chargerResumeCommande(orderId);
+  } catch {
+    return null;
+  }
+}
+
+async function attendreSessionAuth(msMax = 10000) {
+  if (typeof obtenirTokenAuth !== "function") return null;
+  const debut = Date.now();
+  while (Date.now() - debut < msMax) {
+    const token = await obtenirTokenAuth();
+    if (token) return token;
+    await new Promise((resolve) => setTimeout(resolve, 350));
+  }
+  return null;
+}
+
+async function confirmerStripeAvecRetry(orderId, sessionId) {
+  let derniereErreur = null;
+  for (let i = 0; i < 3; i += 1) {
+    try {
+      return await confirmerCommandeStripe(orderId, sessionId);
+    } catch (err) {
+      derniereErreur = err;
+      await attendreSessionAuth(4000);
+    }
+  }
+  throw derniereErreur || new Error("Confirmation impossible");
 }
 
 async function traiterRetourStripe() {
@@ -203,7 +264,8 @@ async function traiterRetourStripe() {
 
   try {
     afficherEtat("loading", "confirm.processing");
-    const resultat = await confirmerCommandeStripe(orderId, sessionId);
+    await attendreSessionAuth(8000);
+    const resultat = await confirmerStripeAvecRetry(orderId, sessionId);
 
     localStorage.removeItem("jf_pending_paypal_cart");
     if (typeof panier !== "undefined") {
@@ -213,17 +275,36 @@ async function traiterRetourStripe() {
     }
 
     document.dispatchEvent(new CustomEvent("basestockchange"));
-    await chargerEtAfficherCommande(orderId);
+    let data = await chargerEtAfficherCommande(orderId);
+    if (!commandeEstPayee(data?.order?.status)) {
+      data = (await relancerFinalisationStripe(orderId, sessionId)) || data;
+      const contenu = document.getElementById("confirmation-content");
+      if (contenu && data) contenu.innerHTML = afficherResumeCommande(data);
+    }
 
     if (typeof afficherToast === "function") {
-      const numero = resultat.orderNumber || orderId.slice(0, 8).toUpperCase();
-      afficherToast(t("confirm.toastSuccess", { number: numero }));
+      if (commandeEstPayee(data?.order?.status)) {
+        const numero = resultat.orderNumber || data?.order?.orderNumber || orderId.slice(0, 8).toUpperCase();
+        afficherToast(t("confirm.toastSuccess", { number: numero }));
+      } else {
+        afficherToast(t("confirm.pendingToast"));
+      }
     }
   } catch (err) {
     console.error("Erreur confirmation Stripe :", err);
     try {
-      await chargerEtAfficherCommande(orderId);
-      return true;
+      let data = await relancerFinalisationStripe(orderId, sessionId);
+      if (!data) data = await chargerEtAfficherCommande(orderId);
+      else {
+        const contenu = document.getElementById("confirmation-content");
+        if (contenu) contenu.innerHTML = afficherResumeCommande(data);
+        nettoyerUrl(orderId);
+      }
+      if (typeof afficherToast === "function") {
+        afficherToast(
+          commandeEstPayee(data?.order?.status) ? t("confirm.toastSuccess", { number: data.order.orderNumber }) : t("confirm.pendingToast")
+        );
+      }
     } catch (resumeErr) {
       afficherEtat(
         "error",

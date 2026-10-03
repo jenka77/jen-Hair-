@@ -1,7 +1,7 @@
 const express = require("express");
 const { z } = require("zod");
 const { resoudreOrigineFrontend } = require("../config/origins");
-const { authObligatoire } = require("../middleware/auth");
+const { authObligatoire, authOptionnelle } = require("../middleware/auth");
 const {
   createCheckoutOrderSchema,
   regrouperItems,
@@ -78,7 +78,7 @@ router.post("/stripe/create-checkout-session", authObligatoire, async (req, res,
   }
 });
 
-router.post("/stripe/confirm-session", authObligatoire, async (req, res, next) => {
+router.post("/stripe/confirm-session", authOptionnelle, async (req, res, next) => {
   try {
     const validation = confirmSessionSchema.safeParse(req.body);
     if (!validation.success) {
@@ -101,16 +101,21 @@ router.post("/stripe/confirm-session", authObligatoire, async (req, res, next) =
 
     const { chargerCommandeAvecItems } = require("../services/orderCheckout");
     const { order } = await chargerCommandeAvecItems(orderId);
+
+    if (order.user_id && req.user && order.user_id !== req.user.id) {
+      return res.status(403).json({ error: "Cette commande ne vous appartient pas" });
+    }
+
     const expected = eurosEnCentimes(order.total_amount);
     if (session.amount_total != null && session.amount_total !== expected) {
       return res.status(409).json({ error: "Montant Stripe différent du total commande" });
     }
 
     const localeHint = session.metadata?.locale;
-    const resultat = await finaliserCommandePayee(orderId, req.user?.id, {
+    const resultat = await finaliserCommandePayee(orderId, req.user?.id || null, {
       locale: localeHint === "de" || localeHint === "en" ? localeHint : "fr",
     });
-    res.json({ ...resultat, sessionId });
+    res.json({ ...resultat, sessionId, email: resultat.email });
   } catch (error) {
     next(error);
   }
