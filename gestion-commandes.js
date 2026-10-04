@@ -101,18 +101,42 @@ function libelleStatut(status) {
   return STATUTS.find((s) => s.value === cle)?.label || status;
 }
 
+function statutModifiable(status) {
+  const s = statutEffectif(status);
+  return s !== "delivered" && s !== "cancelled" && s !== "pending_payment";
+}
+
 function optionsStatut(valeurActuelle) {
   const effectif = statutEffectif(valeurActuelle);
   const modifiables = new Set([
-    valeurActuelle,
     ...(TRANSITIONS_STATUT[effectif] || TRANSITIONS_STATUT[valeurActuelle] || []),
   ]);
+  if (!modifiables.size) {
+    return STATUTS.filter((s) => s.value === valeurActuelle)
+      .map((s) => `<option value="${s.value}" selected>${s.label}</option>`)
+      .join("");
+  }
   return STATUTS.filter((s) => modifiables.has(s.value))
-    .map(
-      (s) =>
-        `<option value="${s.value}"${s.value === valeurActuelle ? " selected" : ""}>${s.label}</option>`
-    )
+    .map((s) => `<option value="${s.value}">${s.label}</option>`)
     .join("");
+}
+
+function blocModificationStatut(order) {
+  if (!statutModifiable(order.status)) {
+    return `<p class="admin-order-terminal">Commande au statut final « ${libelleStatut(order.status)} » — plus de changement nécessaire.</p>`;
+  }
+  return `
+      <div class="admin-order-actions">
+        <label class="admin-status-field">
+          <span>Modifier le statut</span>
+          <select class="admin-status-select" data-order-id="${order.id}">
+            ${optionsStatut(order.status)}
+          </select>
+        </label>
+        <button type="button" class="auth-btn auth-btn--fill admin-save-status" data-order-id="${order.id}">
+          Enregistrer
+        </button>
+      </div>`;
 }
 
 function boutonsActionsRapides(order) {
@@ -131,15 +155,21 @@ function boutonsActionsRapides(order) {
     if (estRetraitBoutique(order.pickupMode)) {
       boutons.push({
         status: "ready",
-        label: "Prête (retrait boutique)",
+        label: "Prête en boutique",
+        primary: true,
+      });
+      boutons.push({
+        status: "delivered",
+        label: "Marquer livrée",
         primary: false,
       });
+    } else {
+      boutons.push({
+        status: "delivered",
+        label: "Marquer livrée",
+        primary: true,
+      });
     }
-    boutons.push({
-      status: "delivered",
-      label: "Marquer livrée",
-      primary: true,
-    });
   }
 
   if (s === "ready") {
@@ -222,17 +252,7 @@ function afficherCommandes(orders) {
         <li><span>Total</span><strong>${formaterPrixAdmin(order.totalAmount)}</strong></li>
       </ul>
       ${boutonsActionsRapides(order)}
-      <div class="admin-order-actions">
-        <label class="admin-status-field">
-          <span>Modifier le statut</span>
-          <select class="admin-status-select" data-order-id="${order.id}">
-            ${optionsStatut(order.status)}
-          </select>
-        </label>
-        <button type="button" class="auth-btn auth-btn--fill admin-save-status" data-order-id="${order.id}">
-          Enregistrer
-        </button>
-      </div>
+      ${blocModificationStatut(order)}
       <p class="admin-order-feedback" data-feedback="${order.id}" hidden></p>
     </article>`
     )
@@ -266,6 +286,15 @@ async function mettreAJourStatut(orderId, status) {
     feedback.className = "admin-order-feedback";
   }
 
+  const courante = commandesCache.find((o) => o.id === orderId);
+  if (courante && courante.status === status) {
+    if (feedback) {
+      feedback.textContent = `Statut déjà « ${libelleStatut(status)} » — rien à modifier.`;
+      feedback.classList.add("admin-order-feedback--ok");
+    }
+    return;
+  }
+
   try {
     const data = await requeteAdmin(`/api/orders/${orderId}/status`, {
       method: "PATCH",
@@ -290,6 +319,9 @@ async function mettreAJourStatut(orderId, status) {
         feedback.classList.add("admin-order-feedback--error");
       } else if (data.email?.reason === "email_introuvable") {
         message += " E-mail cliente introuvable en base.";
+        feedback.classList.add("admin-order-feedback--error");
+      } else if (data.email?.reason === "resend_non_configure") {
+        message += " E-mail non envoyé (Resend non configuré sur le serveur).";
         feedback.classList.add("admin-order-feedback--error");
       }
       feedback.textContent = message;

@@ -25,9 +25,19 @@ const {
 } = require("./emailTemplates");
 const { supabase } = require("../supabase");
 
+function adresseExpediteur() {
+  const nomAffiche = (process.env.EMAIL_FROM_NAME || "Jen's & Floran").trim();
+  const brut = String(process.env.EMAIL_FROM || "").trim();
+  const email =
+    brut.match(/<([^>]+)>/)?.[1]?.trim() ||
+    String(process.env.EMAIL_FROM_ADDRESS || "").trim() ||
+    "contact@shop.jens-flora.com";
+  return `${nomAffiche} <${email}>`;
+}
+
 async function envoyerEmail({ to, subject, text, html, replyTo, attachments }) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || "Jen's & Floran <onboarding@resend.dev>";
+  const from = adresseExpediteur();
 
   if (!apiKey || apiKey.startsWith("votre_")) {
     console.warn("RESEND_API_KEY manquante : email non envoyé.");

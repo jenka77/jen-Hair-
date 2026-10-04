@@ -159,9 +159,28 @@ router.patch("/orders/:id/status", async (req, res, next) => {
     if (!existing) return res.status(404).json({ error: "Commande introuvable" });
 
     const nouveauStatut = validation.data.status;
+
+    if (existing.status === nouveauStatut) {
+      const { data: inchangée, error: readError } = await supabase
+        .from("orders")
+        .select(
+          "id, customer_name, customer_contact, customer_email, pickup_mode, delivery_address, total_amount, status, created_at"
+        )
+        .eq("id", req.params.id)
+        .maybeSingle();
+
+      if (readError) throw readError;
+      if (!inchangée) return res.status(404).json({ error: "Commande introuvable" });
+
+      return res.json({
+        order: normaliserCommande(inchangée),
+        email: { skipped: true, reason: "statut_inchange" },
+      });
+    }
+
     if (!transitionStatutAutorisee(existing.status, nouveauStatut)) {
       return res.status(409).json({
-        error: `Transition interdite : ${existing.status} → ${nouveauStatut}. Seul PayPal peut valider un paiement.`,
+        error: `Transition interdite : ${existing.status} → ${nouveauStatut}. Suivez l’ordre Payée → En préparation → Prête (retrait) ou Livrée.`,
       });
     }
 

@@ -3505,6 +3505,12 @@ img {
   color: var(--grey);
 }
 
+.admin-order-terminal {
+  margin-top: 12px;
+  font-size: 0.88rem;
+  color: var(--grey);
+}
+
 .admin-order-feedback {
   margin-top: 10px;
   font-size: 0.88rem;
