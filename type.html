@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20260909g" />
+  <link rel="stylesheet" href="style.css?v=20261008a" />
 </head>
 <body>
 
@@ -156,62 +156,83 @@
     </div>
   </aside>
 
-  <!-- ======================= FORMULAIRE DE COMMANDE (modale) ======================= -->
+  <!-- FORMULAIRE DE COMMANDE (modale) — fragment partagé index.html / type.html -->
   <div id="order-modal" class="order-modal">
     <div class="order-box">
-      <button id="order-close" class="icon-btn order-close" aria-label="Fermer">&times;</button>
-      <p class="section-kicker" data-i18n="order.step">Finaliser</p>
-      <h3 class="order-title" data-i18n="order.title">Votre Commande</h3>
+      <button id="order-close" class="icon-btn order-close" data-i18n-aria="a11y.close">&times;</button>
 
-      <div id="order-summary" class="order-summary"></div>
+      <header class="order-checkout-hero">
+        <img src="logo.png" alt="" class="order-checkout-logo" width="80" height="80" decoding="async" />
+        <p class="order-checkout-brand" aria-label="Jen's and Floran">Jen's &amp; <span>Floran</span></p>
+        <p class="order-checkout-tagline" data-i18n="order.brandTagline">Perruques de luxe · Sa'a Mokolo</p>
+        <h2 class="order-checkout-title" data-i18n="order.checkoutTitle">Passer votre commande</h2>
+        <p class="order-checkout-lead" data-i18n="order.checkoutLead">Votre beauté, notre priorité</p>
+      </header>
+
+      <ol class="order-stepper" aria-hidden="true">
+        <li class="order-step is-active"><span>1</span><em data-i18n="order.stepDelivery">Livraison</em></li>
+        <li class="order-step is-active"><span>2</span><em data-i18n="order.stepPayment">Paiement</em></li>
+        <li class="order-step"><span>3</span><em data-i18n="order.stepConfirm">Confirmation</em></li>
+      </ol>
+
+      <section class="order-panel order-recap-panel">
+        <h3 class="order-panel-title" data-i18n="order.recapTitle">Récapitulatif de votre commande</h3>
+        <div id="order-summary" class="order-summary"></div>
+      </section>
 
       <form id="order-form" class="order-form" novalidate>
-        <div class="field">
-          <label for="nomComplet" data-i18n="order.fullname">Nom complet *</label>
-          <input type="text" id="nomComplet" name="nomComplet" required />
-        </div>
+        <section class="order-panel">
+          <h3 class="order-panel-title" data-i18n="order.sectionContact">Vos coordonnées</h3>
+          <div class="field">
+            <label for="nomComplet" data-i18n="order.fullname">Nom complet *</label>
+            <input type="text" id="nomComplet" name="nomComplet" required autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="telephone" data-i18n="order.phone">Téléphone *</label>
+            <input type="tel" id="telephone" name="telephone" required
+              inputmode="tel" autocomplete="tel"
+              pattern="^\+?[0-9\s().-]{8,20}$"
+              data-i18n-placeholder="order.phonePlaceholder"
+              placeholder="ex : +49 152 12345678" />
+          </div>
+          <div class="field order-field-email">
+            <label for="email" data-i18n="order.email">Adresse e-mail *</label>
+            <input type="email" id="email" name="email" required autocomplete="email"
+              data-i18n-placeholder="order.emailPlaceholder"
+              placeholder="ex : prenom@email.com" />
+            <small class="field-hint" data-i18n="order.emailHint">Votre confirmation de commande sera envoyée à cette adresse.</small>
+          </div>
+        </section>
 
-        <div class="field">
-          <label for="telephone" data-i18n="order.phone">Téléphone *</label>
-          <input type="tel" id="telephone" name="telephone" required
-            inputmode="tel" autocomplete="tel"
-            pattern="^\+?[0-9\s().-]{8,20}$"
-            data-i18n-placeholder="order.phonePlaceholder"
-            placeholder="ex : +49 152 12345678" />
-        </div>
-
-        <div class="field">
-          <label for="email" data-i18n="order.email">Adresse email *</label>
-          <input type="email" id="email" name="email" required
-            data-i18n-placeholder="order.emailPlaceholder"
-            placeholder="ex : prenom@email.com" />
-          <small class="field-hint" data-i18n="order.emailHint">Obligatoire pour recevoir la confirmation de commande.</small>
-        </div>
-
-        <div class="field">
-          <label data-i18n="order.mode">Mode de récupération *</label>
+        <section class="order-panel">
+          <h3 class="order-panel-title" data-i18n="order.sectionDelivery">Mode de livraison / récupération</h3>
           <div class="mode-options">
             <label class="mode-option">
               <input type="radio" name="mode" value="Retrait en boutique chez Saá Mokolo" required />
               <span class="mode-card">
-                <strong data-i18n="order.pickup">Retrait en boutique</strong>
+                <span class="mode-card-top">
+                  <strong data-i18n="order.pickup">Retrait en boutique</strong>
+                  <span class="mode-card-badge mode-card-badge--free" data-i18n="order.pickupFree">Gratuit</span>
+                </span>
                 <small data-i18n="order.pickupSub">Chez Saá Mokolo</small>
               </span>
             </label>
             <label class="mode-option">
               <input type="radio" name="mode" value="Livraison à domicile" />
               <span class="mode-card">
-                <strong data-i18n="order.delivery">Livraison à domicile</strong>
-                <small data-i18n="order.deliverySub">Indiquez votre adresse</small>
+                <span class="mode-card-top">
+                  <strong data-i18n="order.delivery">Livraison à domicile</strong>
+                  <span class="mode-card-badge" id="order-delivery-fee-badge">+ 7,50 €</span>
+                </span>
+                <small data-i18n="order.deliverySub">Indiquez votre adresse en Allemagne</small>
               </span>
             </label>
           </div>
-        </div>
+        </section>
 
-        <div class="delivery-address" id="adresse-field" hidden>
+        <div class="delivery-address order-panel" id="adresse-field" hidden>
           <p class="field-group-title" data-i18n="order.address">Adresse de livraison complète *</p>
           <small class="field-hint" data-i18n="order.addressHint">Requise pour une livraison en Allemagne : rue, numéro, code postal, ville et pays.</small>
-
           <div class="field-row">
             <div class="field">
               <label for="adresseRue" data-i18n="order.street">Rue *</label>
@@ -224,7 +245,6 @@
                 data-i18n-placeholder="order.houseNumberPlaceholder" placeholder="70" />
             </div>
           </div>
-
           <div class="field-row">
             <div class="field field-small">
               <label for="adresseCp" data-i18n="order.postalCode">Code postal *</label>
@@ -237,7 +257,6 @@
                 data-i18n-placeholder="order.cityPlaceholder" placeholder="Gießen" />
             </div>
           </div>
-
           <div class="field">
             <label for="adressePays" data-i18n="order.country">Pays *</label>
             <input type="text" id="adressePays" name="adressePays" value="Deutschland" data-delivery-required
@@ -245,13 +264,13 @@
           </div>
         </div>
 
-        <fieldset class="order-payment-fields">
-          <legend class="order-legal-legend" data-i18n="order.paymentLegend">Mode de paiement</legend>
-          <div class="mode-options">
+        <section class="order-panel order-panel-payment">
+          <h3 class="order-panel-title" data-i18n="order.paymentLegend">Paiement</h3>
+          <div class="mode-options mode-options--payment">
             <label class="mode-option">
               <input type="radio" name="paymentMethod" value="stripe" checked />
               <span class="mode-card">
-                <strong data-i18n="order.paymentStripe">Carte bancaire (Stripe)</strong>
+                <strong data-i18n="order.paymentStripe">Carte bancaire</strong>
                 <small data-i18n="order.paymentStripeSub">Visa, Mastercard, Apple Pay, Google Pay</small>
               </span>
             </label>
@@ -263,7 +282,7 @@
               </span>
             </label>
           </div>
-        </fieldset>
+        </section>
 
         <fieldset class="order-legal-fields">
           <legend class="order-legal-legend" data-i18n="order.legalLegend">Acceptation des informations légales</legend>
@@ -279,10 +298,28 @@
           </label>
         </fieldset>
 
-        <button type="submit" class="btn-order order-submit" data-i18n="order.confirm">Confirmer la commande</button>
+        <div class="order-pay-bar">
+          <div class="order-pay-total">
+            <span data-i18n="cart.total">Total</span>
+            <strong id="order-footer-total">0,00 €</strong>
+          </div>
+          <button type="submit" class="btn-order order-submit">
+            <span class="order-pay-lock" aria-hidden="true">&#128274;</span>
+            <span class="order-submit-label" data-i18n="order.payNow">Payer maintenant</span>
+            <span class="order-pay-arrow" aria-hidden="true">&#8594;</span>
+          </button>
+        </div>
       </form>
+
+      <ul class="order-trust">
+        <li data-i18n="order.trustSecure">Paiement sécurisé</li>
+        <li data-i18n="order.trustDelivery">Livraison &amp; retrait soignés</li>
+        <li data-i18n="order.trustService">Service client réactif</li>
+        <li data-i18n="order.trustBeauty">Jen's &amp; Floran · confiance</li>
+      </ul>
     </div>
   </div>
+
 
   <!-- ======================= MODALE VIDÉO ======================= -->
   <div id="video-modal" class="video-modal">

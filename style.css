@@ -1735,31 +1735,183 @@ img {
 .order-box {
   position: relative;
   width: 100%;
-  max-width: 560px;
-  max-height: 90vh;
+  max-width: 640px;
+  max-height: 92vh;
   overflow-y: auto;
-  background: var(--black-soft);
-  border: 1px solid var(--border);
-  padding: 40px 42px;
+  background: linear-gradient(180deg, #121212 0%, #0a0a0a 100%);
+  border: 1px solid rgba(201, 169, 98, 0.35);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
+  padding: 28px 28px 20px;
+  border-radius: 4px;
 }
 
 .order-close {
   position: absolute;
-  top: 18px;
-  right: 22px;
+  top: 14px;
+  right: 16px;
+  z-index: 2;
 }
 
-.order-title {
+.order-checkout-hero {
+  text-align: center;
+  padding: 8px 12px 20px;
+  border-bottom: 1px solid rgba(201, 169, 98, 0.2);
+  margin-bottom: 18px;
+}
+
+.order-checkout-logo {
+  display: block;
+  margin: 0 auto 12px;
+  width: 80px;
+  height: auto;
+  border-radius: 4px;
+}
+
+.order-checkout-brand {
   font-family: var(--serif);
-  font-size: 2rem;
+  font-size: 1.35rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  margin: 0 0 4px;
+}
+
+.order-checkout-brand span {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.order-checkout-tagline {
+  margin: 0 0 14px;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.order-checkout-title {
+  font-family: var(--serif);
+  font-size: 1.75rem;
+  font-weight: 600;
   color: #fff;
-  margin-bottom: 22px;
+  margin: 0 0 6px;
+}
+
+.order-checkout-lead {
+  margin: 0;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.order-stepper {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+}
+
+.order-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.order-step span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.order-step.is-active {
+  color: var(--gold-light);
+}
+
+.order-step.is-active span {
+  border-color: var(--gold);
+  background: rgba(201, 169, 98, 0.15);
+  color: var(--gold-light);
+}
+
+.order-panel {
+  margin-bottom: 18px;
+}
+
+.order-panel-title {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--gold-light);
+  margin: 0 0 12px;
+  letter-spacing: 0.04em;
+}
+
+.order-recap-panel .order-summary {
+  margin-bottom: 0;
 }
 
 .order-summary {
-  border: 1px solid var(--border);
-  padding: 16px 18px;
-  margin-bottom: 26px;
+  border: 1px solid rgba(201, 169, 98, 0.28);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 14px 16px;
+  margin-bottom: 0;
+  border-radius: 2px;
+}
+
+.summary-item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.summary-item:last-of-type {
+  border-bottom: none;
+}
+
+.summary-item-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.summary-item-head strong {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  color: #fff;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.summary-item-head span {
+  color: var(--gold-light);
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.summary-item-meta {
+  margin: 4px 0 0;
+  font-size: 0.74rem;
+  color: var(--grey);
+  line-height: 1.45;
+}
+
+.summary-line--sub {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
 .summary-line {
@@ -1773,12 +1925,126 @@ img {
 .summary-total {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
+  align-items: center;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(201, 169, 98, 0.35), rgba(201, 169, 98, 0.12));
   font-family: var(--serif);
-  font-size: 1.2rem;
+  font-size: 1.15rem;
+  color: #fff;
+}
+
+.summary-total span:last-child {
   color: var(--gold-light);
+  font-size: 1.25rem;
+}
+
+.mode-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.mode-card-top strong {
+  margin-bottom: 0;
+}
+
+.mode-card-badge {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 169, 98, 0.45);
+  color: var(--gold-light);
+}
+
+.mode-card-badge--free {
+  border-color: rgba(120, 200, 120, 0.45);
+  color: #9be7a0;
+}
+
+.mode-options--payment {
+  grid-template-columns: 1fr;
+}
+
+.order-field-email input:valid:not(:placeholder-shown) {
+  border-color: rgba(155, 231, 160, 0.55);
+}
+
+.order-pay-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 8px;
+  padding: 16px 0 4px;
+  border-top: 1px solid rgba(201, 169, 98, 0.22);
+}
+
+.order-pay-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-pay-total span {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.order-pay-total strong {
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  color: var(--gold-light);
+}
+
+.order-submit {
+  flex: 1;
+  min-width: min(100%, 220px);
+  margin-top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 22px;
+}
+
+.order-pay-lock {
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.order-pay-arrow {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.order-trust {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 12px;
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--grey);
+  text-align: center;
+}
+
+.order-trust li::before {
+  content: "✦ ";
+  color: var(--gold);
 }
 
 .order-form .field {
@@ -1962,10 +2228,6 @@ img {
   }
 }
 
-.order-submit {
-  width: 100%;
-  margin-top: 8px;
-}
 
 /* ============================================================
    PAGE LA MAISON (types de perruques)
@@ -2519,13 +2781,31 @@ img {
 
   .order-box {
     max-height: 92vh;
-    padding: 28px 20px;
+    padding: 22px 18px 16px;
     border-radius: 16px 16px 0 0;
   }
 
-  .order-title {
-    font-size: 1.55rem;
-    padding-right: 36px;
+  .order-checkout-title {
+    font-size: 1.45rem;
+    padding-right: 28px;
+  }
+
+  .order-step {
+    font-size: 0.58rem;
+  }
+
+  .order-pay-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .order-submit {
+    width: 100%;
+  }
+
+  .order-trust {
+    grid-template-columns: 1fr 1fr;
+    font-size: 0.62rem;
   }
 
   .field-row {

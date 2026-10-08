@@ -259,32 +259,54 @@ function livraisonChoisie() {
   return !!choisi && choisi.value === "Livraison à domicile";
 }
 
+function mettreAJourBadgeLivraisonCommande() {
+  const badge = document.getElementById("order-delivery-fee-badge");
+  if (!badge) return;
+  badge.textContent = t("order.deliveryFeeBadge", { amount: formaterPrix(FRAIS_LIVRAISON) });
+}
+
 function rendreRecap() {
   const resume = document.getElementById("order-summary");
   if (!resume) return;
-  const lignes = panier
-    .map(
-      (l) =>
-        `<div class="summary-line"><span>${l.nom} × ${l.quantite}</span><span>${formaterPrix(
-          l.prix * l.quantite
-        )}</span></div>`
-    )
-    .join("");
 
   const livraison = livraisonChoisie();
+  const sousTotal = calculerTotal();
+  const total = sousTotal + (livraison ? FRAIS_LIVRAISON : 0);
+
+  const lignes = panier
+    .map((l) => {
+      const details = [l.type, l.taille, l.couleur, l.tailleLace].filter(Boolean).join(" · ");
+      const meta = details
+        ? `${details} · × ${l.quantite}`
+        : `${t("order.qtyShort")} ${l.quantite}`;
+      return `<article class="summary-item">
+        <div class="summary-item-head">
+          <strong>${l.nom}</strong>
+          <span>${formaterPrix(l.prix * l.quantite)}</span>
+        </div>
+        <p class="summary-item-meta">${meta}</p>
+      </article>`;
+    })
+    .join("");
+
   const ligneFrais = livraison
     ? `<div class="summary-line"><span>${t("order.deliveryFeeLabel")}</span><span>${formaterPrix(
         FRAIS_LIVRAISON
       )}</span></div>`
     : "";
-  const total = calculerTotal() + (livraison ? FRAIS_LIVRAISON : 0);
 
   resume.innerHTML =
     lignes +
+    `<div class="summary-line summary-line--sub"><span>${t("order.lineSubtotal")}</span><span>${formaterPrix(
+      sousTotal
+    )}</span></div>` +
     ligneFrais +
-    `<div class="summary-total"><span>${t("cart.total")}</span><span>${formaterPrix(
-      total
-    )}</span></div>`;
+    `<div class="summary-total"><span>${t("cart.total")}</span><span>${formaterPrix(total)}</span></div>`;
+
+  const footerTotal = document.getElementById("order-footer-total");
+  if (footerTotal) footerTotal.textContent = formaterPrix(total);
+
+  mettreAJourBadgeLivraisonCommande();
 }
 
 function ouvrirCommande() {
@@ -494,8 +516,10 @@ ${t("order.deliveryFeeNote", { montant: formaterPrix(fraisLivraison) })}`;
   };
 
   const submitBtn = form.querySelector(".order-submit");
+  const submitLabel = form.querySelector(".order-submit-label");
   submitBtn.disabled = true;
-  submitBtn.textContent = t("order.sending");
+  if (submitLabel) submitLabel.textContent = t("order.sending");
+  else submitBtn.textContent = t("order.sending");
 
   const moyenPaiement =
     form.querySelector('input[name="paymentMethod"]:checked')?.value === "paypal" ? "paypal" : "stripe";
@@ -523,12 +547,14 @@ ${t("order.deliveryFeeNote", { montant: formaterPrix(fraisLivraison) })}`;
         : err.message || t("toast.emailErr")
     );
     submitBtn.disabled = false;
-    submitBtn.textContent = t("order.confirm");
+    if (submitLabel) submitLabel.textContent = t("order.payNow");
+    else submitBtn.textContent = t("order.payNow");
     return;
   }
 
   submitBtn.disabled = false;
-  submitBtn.textContent = t("order.confirm");
+  if (submitLabel) submitLabel.textContent = t("order.payNow");
+  else submitBtn.textContent = t("order.payNow");
 }
 
 /* ============================================================
@@ -649,5 +675,8 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("langchange", () => {
   majPanier();
   const modal = document.getElementById("order-modal");
-  if (modal && modal.classList.contains("show")) rendreRecap();
+  if (modal && modal.classList.contains("show")) {
+    rendreRecap();
+    mettreAJourBadgeLivraisonCommande();
+  }
 });
