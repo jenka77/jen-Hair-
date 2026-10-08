@@ -35,9 +35,21 @@ function adresseExpediteur() {
   return `${nomAffiche} <${email}>`;
 }
 
+function normaliserDestinataires(to) {
+  const liste = Array.isArray(to) ? to : [to];
+  return liste
+    .map((adresse) => String(adresse || "").trim())
+    .filter((adresse) => adresse.includes("@"));
+}
+
 async function envoyerEmail({ to, subject, text, html, replyTo, attachments }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = adresseExpediteur();
+  const destinataires = normaliserDestinataires(to);
+
+  if (!destinataires.length) {
+    throw new Error("Destinataire email invalide ou manquant");
+  }
 
   if (!apiKey || apiKey.startsWith("votre_")) {
     console.warn("RESEND_API_KEY manquante : email non envoyé.");
@@ -55,10 +67,14 @@ async function envoyerEmail({ to, subject, text, html, replyTo, attachments }) {
 
   const payload = {
     from,
-    to,
+    to: destinataires,
     subject,
-    reply_to: replyTo,
   };
+
+  const reply = String(replyTo || "").trim();
+  if (reply.includes("@")) {
+    payload.reply_to = reply;
+  }
 
   if (html) {
     payload.html = html;
@@ -141,6 +157,38 @@ async function chargerLignesCommandePourEmail(orderId) {
   });
 }
 
+function extraireEmailClient(order) {
+  const direct = String(order?.customer_email || "").trim().toLowerCase();
+  if (direct.includes("@")) return direct;
+
+  const parts = String(order?.customer_contact || "")
+    .split(" / ")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  for (const candidate of parts) {
+    if (candidate.includes("@")) return candidate.toLowerCase();
+  }
+  return null;
+}
+
+function extraireTelephoneClient(order) {
+  const parts = String(order?.customer_contact || "")
+    .split(" / ")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  for (const part of parts) {
+    if (!part.includes("@")) return part;
+  }
+  return "";
+}
+
+function resoudreCoordonneesCliente(order, hint = {}) {
+  const email = extraireEmailClient(order) || String(hint.email || "").trim().toLowerCase();
+  const phone = extraireTelephoneClient(order) || String(hint.phone || "").trim();
+  const name = String(order?.customer_name || hint.name || "").trim();
+  return { name, phone, email: email && email.includes("@") ? email : "" };
+}
+
 async function envoyerEmailsCommande({
   order,
   orderNumber,
@@ -152,7 +200,14 @@ async function envoyerEmailsCommande({
   locale = "fr",
 }) {
   const lang = normaliserLocale(locale || order.customer_locale);
-  const adminEmail = process.env.EMAIL_ADMIN;
+  const adminEmail = String(process.env.EMAIL_ADMIN || "").trim();
+  const coords = resoudreCoordonneesCliente(order, customer);
+  const emailClient = coords.email;
+
+  if (!emailClient) {
+    throw new Error("Email cliente introuvable pour la confirmation de commande");
+  }
+
   const articles = formatLignesCommandeTexte(lignes);
   const fraisLivraisonTexte =
     deliveryFee > 0
@@ -160,11 +215,22 @@ async function envoyerEmailsCommande({
 Les frais de livraison de ${formaterPrix(deliveryFee, lang)} sont inclus dans le total.`
       : "\nFrais de livraison : 0,00 €";
 
-  const commun = `Commande : ${orderNumber}
+  const communAdmin = `Commande : ${orderNumber}
 
-Cliente : ${customer.name}
-Téléphone : ${customer.phone}
-Email : ${customer.email}
+Cliente : ${coords.name}
+Téléphone : ${coords.phone}
+Email : ${emailClient}
+Mode de récupération : ${order.pickup_mode}
+Adresse : ${order.delivery_address}
+
+Articles :
+${articles}
+${fraisLivraisonTexte}
+
+Sous-total : ${formaterPrix(subtotal, lang)}
+Total : ${formaterPrix(total, lang)}`;
+
+  const recapClient = `Commande : ${orderNumber}
 Mode de récupération : ${order.pickup_mode}
 Adresse : ${order.delivery_address}
 
@@ -176,16 +242,16 @@ Sous-total : ${formaterPrix(subtotal, lang)}
 Total : ${formaterPrix(total, lang)}`;
 
   const texteClient = texteConfirmationCommande({
-    customerName: customer.name,
+    customerName: coords.name,
     orderNumber,
     articles,
-    commun,
+    commun: recapClient,
     locale: lang,
   });
 
   const htmlClient = genererHtmlConfirmationCommande({
     orderNumber,
-    customerName: customer.name,
+    customerName: coords.name,
     lignes,
     subtotal,
     deliveryFee,
@@ -201,32 +267,24 @@ Total : ${formaterPrix(total, lang)}`;
     resultats.admin = await envoyerEmail({
       to: adminEmail,
       subject: `Nouvelle commande ${orderNumber}`,
-      replyTo: customer.email,
-      text: `Nouvelle commande reçue.\n\n${commun}`,
+      replyTo: emailClient,
+      text: `Nouvelle commande reçue.\n\n${communAdmin}`,
     });
   }
 
   resultats.client = await envoyerEmail({
-    to: customer.email,
+    to: emailClient,
     subject: sujetEmail("confirmed", orderNumber, lang),
     replyTo: adminEmail,
     text: texteClient,
     html: htmlClient,
   });
 
+  console.log(
+    `Emails commande ${orderNumber} : admin → ${adminEmail || "(non configuré)"}, cliente → ${emailClient}`
+  );
+
   return resultats;
-}
-
-function extraireEmailClient(order) {
-  const direct = String(order.customer_email || "").trim();
-  if (direct.includes("@")) return direct.toLowerCase();
-
-  const parts = String(order.customer_contact || "").split(" / ");
-  for (let i = parts.length - 1; i >= 0; i -= 1) {
-    const candidate = parts[i].trim();
-    if (candidate.includes("@")) return candidate.toLowerCase();
-  }
-  return null;
 }
 
 const STATUTS_AVEC_EMAIL = new Set(["preparing", "ready", "delivered"]);
@@ -475,4 +533,6 @@ module.exports = {
   envoyerEmailNouvelleInscriptionCoiffeur,
   envoyerEmailReceptionCoiffeur,
   envoyerEmailCoiffeurApprouvee,
+  resoudreCoordonneesCliente,
+  extraireEmailClient,
 };

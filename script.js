@@ -434,7 +434,7 @@ async function traiterCommande(event) {
 
   const nomComplet = (data.get("nomComplet") || "").trim();
   const telephone = (data.get("telephone") || "").trim();
-  const email = (user.email || data.get("email") || "").trim();
+  const email = (data.get("email") || user.email || "").trim().toLowerCase();
   const mode = data.get("mode");
   const adresseLivraison = lireAdresseLivraison();
 

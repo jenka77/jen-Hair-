@@ -1,5 +1,5 @@
 const { supabase } = require("../supabase");
-const { envoyerEmailsCommande } = require("./email");
+const { envoyerEmailsCommande, resoudreCoordonneesCliente } = require("./email");
 const {
   genererNumeroCommande,
   recupererProduits,
@@ -55,12 +55,7 @@ async function finaliserCommandePayee(orderId, userId, { locale: localeHint } = 
   if (updateError) throw updateError;
 
   const expectedTotal = Number(order.total_amount) || 0;
-  const [phone, email] = String(order.customer_contact).split(" / ");
-  const customer = {
-    name: order.customer_name,
-    phone: phone || "",
-    email: email || "",
-  };
+  const customer = resoudreCoordonneesCliente(paidOrder);
 
   const subtotal = lignes.reduce(
     (sum, { item, produit }) => sum + Number(produit.price) * item.quantity,
