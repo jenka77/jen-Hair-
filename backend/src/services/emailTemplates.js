@@ -1,8 +1,9 @@
 const SITE_URL = (process.env.SITE_URL || "https://www.jens-flora.com").replace(/\/$/, "");
-/** Logo en-tête e-mail : CID inline (Resend) + URL de secours dans l’attribut. */
+/** Logo en-tête : URL HTTPS (évite les échecs Resend sur pièces jointes CID). */
 const EMAIL_LOGO_CID = "jensfloran-logo";
-const LOGO_URL_REMOTE = `${SITE_URL}/${String(process.env.EMAIL_LOGO_PATH || "email-logo.png").replace(/^\//, "")}`;
-const LOGO_URL = `cid:${EMAIL_LOGO_CID}`;
+/** favicon-512.png est toujours sur le site ; email-logo.png si déployé (Vercel). */
+const LOGO_URL_REMOTE = `${SITE_URL}/${String(process.env.EMAIL_LOGO_PATH || "favicon-512.png").replace(/^\//, "")}`;
+const LOGO_URL = LOGO_URL_REMOTE;
 const GOLD = "#c9a962";
 
 function pieceJointeLogoEmailInline() {
@@ -12,6 +13,10 @@ function pieceJointeLogoEmailInline() {
     content_type: "image/png",
     content_id: EMAIL_LOGO_CID,
   };
+}
+
+function urlLogoEmailPublique() {
+  return LOGO_URL_REMOTE;
 }
 
 const EMAIL_I18N = {
@@ -489,6 +494,52 @@ function genererHtmlConfirmationCommande({
   });
 }
 
+function genererHtmlNotificationCommandeAdmin({
+  orderNumber,
+  customerName,
+  customerPhone,
+  customerEmail,
+  lignes,
+  subtotal,
+  deliveryFee,
+  total,
+  pickupMode,
+  deliveryAddress,
+  locale = "fr",
+}) {
+  const contenu = `
+    <tr>
+      <td align="center" style="padding:0 32px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#b8860b;">
+        Notification vendeur
+      </td>
+    </tr>
+    <tr>
+      <td align="center" style="padding:0 32px 16px;font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:1.35;color:#1a1a1a;font-weight:700;">
+        Nouvelle commande ${echapperHtml(orderNumber)}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0 32px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.7;color:#444444;">
+        <strong>Cliente :</strong> ${echapperHtml(customerName)}<br />
+        <strong>Téléphone :</strong> ${echapperHtml(customerPhone || "—")}<br />
+        <strong>Email :</strong> <a href="mailto:${echapperHtml(customerEmail)}" style="color:${GOLD};">${echapperHtml(customerEmail)}</a>
+      </td>
+    </tr>
+    ${blocArticles(lignes, "Articles commandés", locale)}
+    ${blocRecapitulatif({ subtotal, deliveryFee, total, pickupMode, deliveryAddress, locale })}
+    <tr>
+      <td style="padding:8px 32px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#888888;text-align:center;">
+        La cliente reçoit un e-mail séparé intitulé « Commande confirmée — ${echapperHtml(orderNumber)} ».
+      </td>
+    </tr>`;
+
+  return enveloppeEmail({
+    titrePage: `Nouvelle commande ${orderNumber}`,
+    contenu,
+    locale,
+  });
+}
+
 function genererHtmlChangementStatut({
   orderNumber,
   customerName,
@@ -932,6 +983,7 @@ Jen's & Floran`;
 
 module.exports = {
   genererHtmlConfirmationCommande,
+  genererHtmlNotificationCommandeAdmin,
   genererHtmlChangementStatut,
   genererHtmlNouvelleCoiffeuseAdmin,
   genererHtmlCoiffeuseApprouvee,
@@ -954,4 +1006,5 @@ module.exports = {
   normaliserLocale,
   EMAIL_LOGO_CID,
   pieceJointeLogoEmailInline,
+  urlLogoEmailPublique,
 };

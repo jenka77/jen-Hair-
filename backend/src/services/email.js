@@ -1,5 +1,6 @@
 const {
   genererHtmlConfirmationCommande,
+  genererHtmlNotificationCommandeAdmin,
   genererHtmlChangementStatut,
   formaterPrix,
   nettoyerNomProduit,
@@ -22,6 +23,7 @@ const {
   tr,
   EMAIL_LOGO_CID,
   pieceJointeLogoEmailInline,
+  urlLogoEmailPublique,
 } = require("./emailTemplates");
 const { supabase } = require("../supabase");
 
@@ -57,7 +59,9 @@ async function envoyerEmail({ to, subject, text, html, replyTo, attachments }) {
   }
 
   let piecesJointes = Array.isArray(attachments) ? [...attachments] : [];
+  const logoInline = process.env.EMAIL_LOGO_INLINE === "true";
   if (
+    logoInline &&
     html &&
     html.includes(`cid:${EMAIL_LOGO_CID}`) &&
     !piecesJointes.some((a) => a.content_id === EMAIL_LOGO_CID)
@@ -83,25 +87,42 @@ async function envoyerEmail({ to, subject, text, html, replyTo, attachments }) {
     payload.text = text;
   }
 
+  async function posterPayload(payloadEnvoi) {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payloadEnvoi),
+    });
+
+    const body = await response.text();
+    if (!response.ok) {
+      throw new Error(`Erreur email Resend: ${body}`);
+    }
+
+    return body ? JSON.parse(body) : { ok: true };
+  }
+
   if (piecesJointes.length) {
     payload.attachments = piecesJointes;
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    return await posterPayload(payload);
+  } catch (err) {
+    if (!html || !piecesJointes.length) throw err;
 
-  const body = await response.text();
-  if (!response.ok) {
-    throw new Error(`Erreur email Resend: ${body}`);
+    console.warn(
+      "[email] Envoi avec logo inline échoué, nouvel essai avec image HTTPS:",
+      String(err.message || "").slice(0, 240)
+    );
+
+    const htmlSecours = html.split(`cid:${EMAIL_LOGO_CID}`).join(urlLogoEmailPublique());
+    const { attachments: _ignore, ...sansPiecesJointes } = payload;
+    return posterPayload({ ...sansPiecesJointes, html: htmlSecours });
   }
-
-  return body ? JSON.parse(body) : { ok: true };
 }
 
 function formatLignesCommandeTexte(lignes) {
@@ -262,26 +283,52 @@ Total : ${formaterPrix(total, lang)}`;
   });
 
   const resultats = {};
+  const sujetClient = sujetEmail("confirmed", orderNumber, lang);
+  const sujetAdmin = `Nouvelle commande ${orderNumber}`;
 
-  if (adminEmail) {
-    resultats.admin = await envoyerEmail({
-      to: adminEmail,
-      subject: `Nouvelle commande ${orderNumber}`,
-      replyTo: emailClient,
-      text: `Nouvelle commande reçue.\n\n${communAdmin}`,
-    });
+  if (
+    adminEmail &&
+    emailClient.toLowerCase() === adminEmail.toLowerCase()
+  ) {
+    console.warn(
+      `[email] Commande ${orderNumber} : email cliente = EMAIL_ADMIN (${emailClient}). Deux messages distincts partent vers la même boîte.`
+    );
   }
 
   resultats.client = await envoyerEmail({
     to: emailClient,
-    subject: sujetEmail("confirmed", orderNumber, lang),
-    replyTo: adminEmail,
+    subject: sujetClient,
+    replyTo: adminEmail || undefined,
     text: texteClient,
     html: htmlClient,
   });
 
+  if (adminEmail) {
+    const htmlAdmin = genererHtmlNotificationCommandeAdmin({
+      orderNumber,
+      customerName: coords.name,
+      customerPhone: coords.phone,
+      customerEmail: emailClient,
+      lignes,
+      subtotal,
+      deliveryFee,
+      total,
+      pickupMode: order.pickup_mode,
+      deliveryAddress: order.delivery_address,
+      locale: lang,
+    });
+
+    resultats.admin = await envoyerEmail({
+      to: adminEmail,
+      subject: sujetAdmin,
+      replyTo: emailClient,
+      text: `Nouvelle commande reçue.\n\n${communAdmin}`,
+      html: htmlAdmin,
+    });
+  }
+
   console.log(
-    `Emails commande ${orderNumber} : admin → ${adminEmail || "(non configuré)"}, cliente → ${emailClient}`
+    `Emails commande ${orderNumber} : cliente → ${emailClient} (« ${sujetClient} »), admin → ${adminEmail || "(non configuré)"} (« ${sujetAdmin} »)`
   );
 
   return resultats;
@@ -389,8 +436,8 @@ async function envoyerEmailNouvelleInscriptionCoiffeuse(coiffeuse, locale = "fr"
   return result;
 }
 
-async function envoyerEmailReceptionCoiffeuse(coiffeuse, locale = "fr") {
-  const email = String(coiffeuse.contactEmail || "").trim().toLowerCase();
+async function envoyerEmailReceptionCoiffeuse(coiffeuse, locale = "fr", emailHint = "") {
+  const email = String(coiffeuse.contactEmail || emailHint || "").trim().toLowerCase();
   if (!email || !email.includes("@")) {
     return { skipped: true, reason: "email_introuvable" };
   }
@@ -473,8 +520,8 @@ async function envoyerEmailNouvelleInscriptionCoiffeur(coiffeur, locale = "fr") 
   return result;
 }
 
-async function envoyerEmailReceptionCoiffeur(coiffeur, locale = "fr") {
-  const email = String(coiffeur.contactEmail || "").trim().toLowerCase();
+async function envoyerEmailReceptionCoiffeur(coiffeur, locale = "fr", emailHint = "") {
+  const email = String(coiffeur.contactEmail || emailHint || "").trim().toLowerCase();
   if (!email || !email.includes("@")) {
     return { skipped: true, reason: "email_introuvable" };
   }

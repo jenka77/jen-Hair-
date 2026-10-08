@@ -316,8 +316,12 @@ function normaliserCoiffeur(row, { inclureEmail = false, lang = "fr" } = {}) {
     averageRating: Number(row.average_rating) || 0,
     ratingCount: Number(row.rating_count) || 0,
     ...(row.user_rating !== undefined ? { userRating: Number(row.user_rating) || null } : {}),
-    ...(inclureEmail && row.contact_email !== undefined
-      ? { contactEmail: (row.contact_email || "").trim().toLowerCase() || null }
+    ...(inclureEmail
+      ? {
+          contactEmail: String(row.contact_email || "")
+            .trim()
+            .toLowerCase() || null,
+        }
       : {}),
     ...(row.is_published !== undefined ? { isPublished: row.is_published !== false } : {}),
   };
@@ -576,7 +580,11 @@ router.post("/barbers/submit", async (req, res, next) => {
     }
 
     try {
-      const resultCoiffeur = await envoyerEmailReceptionCoiffeur(coiffeur, locale || "fr");
+      const resultCoiffeur = await envoyerEmailReceptionCoiffeur(
+        coiffeur,
+        locale || "fr",
+        email.trim().toLowerCase()
+      );
       emailStatus.coiffeur = resultCoiffeur?.skipped
         ? { sent: false, ...resultCoiffeur }
         : { sent: true, result: resultCoiffeur };
