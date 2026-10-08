@@ -1,8 +1,8 @@
 const SITE_URL = (process.env.SITE_URL || "https://www.jens-flora.com").replace(/\/$/, "");
 /** Logo en-tête : URL HTTPS (évite les échecs Resend sur pièces jointes CID). */
 const EMAIL_LOGO_CID = "jensfloran-logo";
-/** favicon-512.png est toujours sur le site ; email-logo.png si déployé (Vercel). */
-const LOGO_URL_REMOTE = `${SITE_URL}/${String(process.env.EMAIL_LOGO_PATH || "favicon-512.png").replace(/^\//, "")}`;
+/** logo.png = carré complet (2e capture) ; email-logo.png = même visuel, plus léger (480 px). */
+const LOGO_URL_REMOTE = `${SITE_URL}/${String(process.env.EMAIL_LOGO_PATH || "logo.png").replace(/^\//, "")}`;
 const LOGO_URL = LOGO_URL_REMOTE;
 const GOLD = "#c9a962";
 
@@ -405,7 +405,7 @@ function enveloppeEmail({ titrePage, contenu, locale }) {
           <tr>
             <td align="center" style="padding:28px 32px 16px;background-color:#ffffff;">
               <a href="${SITE_URL}" style="text-decoration:none;display:inline-block;line-height:0;">
-                <img src="${LOGO_URL}" width="200" alt="Jen's &amp; Floran" style="display:block;border:0;max-width:200px;width:100%;height:auto;margin:0 auto;" />
+                <img src="${LOGO_URL}" width="280" alt="Jen's &amp; Floran" style="display:block;border:0;max-width:280px;width:100%;height:auto;margin:0 auto;" />
               </a>
             </td>
           </tr>
