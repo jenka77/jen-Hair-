@@ -253,6 +253,108 @@ function fermerPanier() {
 /* ============================================================
    FORMULAIRE DE COMMANDE
    ============================================================ */
+const ORDER_MODAL_FRAGMENT_VERSION = "20261008b";
+
+function lireEtatFormulaireCommande() {
+  const form = document.getElementById("order-form");
+  if (!form) return null;
+  const mode = form.querySelector('input[name="mode"]:checked');
+  const payment = form.querySelector('input[name="paymentMethod"]:checked');
+  return {
+    nomComplet: form.nomComplet?.value ?? "",
+    telephone: form.telephone?.value ?? "",
+    email: form.email?.value ?? "",
+    mode: mode?.value ?? "",
+    paymentMethod: payment?.value ?? "stripe",
+    acceptLegal: !!form.acceptLegal?.checked,
+    adresseRue: form.adresseRue?.value ?? "",
+    adresseNumero: form.adresseNumero?.value ?? "",
+    adresseCp: form.adresseCp?.value ?? "",
+    adresseVille: form.adresseVille?.value ?? "",
+    adressePays: form.adressePays?.value ?? "",
+  };
+}
+
+function appliquerEtatFormulaireCommande(etat) {
+  if (!etat) return;
+  const form = document.getElementById("order-form");
+  if (!form) return;
+  if (form.nomComplet) form.nomComplet.value = etat.nomComplet;
+  if (form.telephone) form.telephone.value = etat.telephone;
+  if (form.email) form.email.value = etat.email;
+  if (etat.mode) {
+    const radio = form.querySelector(`input[name="mode"][value="${CSS.escape(etat.mode)}"]`);
+    if (radio) radio.checked = true;
+  }
+  if (etat.paymentMethod) {
+    const pay = form.querySelector(`input[name="paymentMethod"][value="${CSS.escape(etat.paymentMethod)}"]`);
+    if (pay) pay.checked = true;
+  }
+  if (form.acceptLegal) form.acceptLegal.checked = etat.acceptLegal;
+  if (form.adresseRue) form.adresseRue.value = etat.adresseRue;
+  if (form.adresseNumero) form.adresseNumero.value = etat.adresseNumero;
+  if (form.adresseCp) form.adresseCp.value = etat.adresseCp;
+  if (form.adresseVille) form.adresseVille.value = etat.adresseVille;
+  if (form.adressePays && etat.adressePays) form.adressePays.value = etat.adressePays;
+  majChampAdresse();
+}
+
+function modalCommandeEstAJour() {
+  const modal = document.getElementById("order-modal");
+  return !!modal?.querySelector(".order-checkout-hero");
+}
+
+function marquerModalCommandeAJour() {
+  document.getElementById("order-modal")?.querySelector(".order-box")?.classList.add("order-checkout-v2");
+}
+
+async function ensureOrderCheckoutMarkup() {
+  const modal = document.getElementById("order-modal");
+  if (!modal) return false;
+
+  if (modalCommandeEstAJour()) {
+    marquerModalCommandeAJour();
+    return false;
+  }
+
+  const etat = lireEtatFormulaireCommande();
+  const fragmentUrl = new URL(`order-modal.html?v=${ORDER_MODAL_FRAGMENT_VERSION}`, document.baseURI);
+
+  try {
+    const res = await fetch(fragmentUrl.href, { cache: "no-store" });
+    if (!res.ok) return false;
+    const html = await res.text();
+    modal.innerHTML = html.trim();
+    marquerModalCommandeAJour();
+    appliquerEtatFormulaireCommande(etat);
+    if (typeof appliquerTraductions === "function") appliquerTraductions();
+    if (typeof mettreAJourLiensLegaux === "function") mettreAJourLiensLegaux();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function brancherFormulaireCommande() {
+  const orderClose = document.getElementById("order-close");
+  if (orderClose && !orderClose.dataset.bound) {
+    orderClose.dataset.bound = "1";
+    orderClose.addEventListener("click", fermerCommande);
+  }
+
+  document.querySelectorAll('input[name="mode"]').forEach((radio) => {
+    if (radio.dataset.bound) return;
+    radio.dataset.bound = "1";
+    radio.addEventListener("change", majChampAdresse);
+  });
+
+  const orderForm = document.getElementById("order-form");
+  if (orderForm && !orderForm.dataset.bound) {
+    orderForm.dataset.bound = "1";
+    orderForm.addEventListener("submit", traiterCommande);
+  }
+}
+
 // Indique si la cliente a coché "Livraison à domicile" dans le formulaire
 function livraisonChoisie() {
   const choisi = document.querySelector('input[name="mode"]:checked');
@@ -629,15 +731,7 @@ function brancherEvenements() {
   const checkoutBtn = document.getElementById("checkout-btn");
   if (checkoutBtn) checkoutBtn.addEventListener("click", ouvrirCommande);
 
-  const orderClose = document.getElementById("order-close");
-  if (orderClose) orderClose.addEventListener("click", fermerCommande);
-
-  document.querySelectorAll('input[name="mode"]').forEach((radio) => {
-    radio.addEventListener("change", majChampAdresse);
-  });
-
-  const orderForm = document.getElementById("order-form");
-  if (orderForm) orderForm.addEventListener("submit", traiterCommande);
+  brancherFormulaireCommande();
 
   const videoClose = document.getElementById("video-close");
   if (videoClose) videoClose.addEventListener("click", fermerVideo);
@@ -662,13 +756,20 @@ function brancherEvenements() {
    INITIALISATION
    ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
-  initBoutonsRetour();
-  chargerPanier();
-  majPanier();
-  brancherEvenements();
-  if (!window.location.pathname.endsWith("confirmation.html")) {
-    gererRetourPaypal();
-  }
+  (async () => {
+    const modalRafraichi = await ensureOrderCheckoutMarkup();
+    initBoutonsRetour();
+    chargerPanier();
+    majPanier();
+    brancherEvenements();
+    if (modalRafraichi) {
+      brancherFormulaireCommande();
+      mettreAJourBadgeLivraisonCommande();
+    }
+    if (!window.location.pathname.endsWith("confirmation.html")) {
+      gererRetourPaypal();
+    }
+  })();
 });
 
 // Re-traduit le contenu dynamique du panier / récapitulatif au changement de langue

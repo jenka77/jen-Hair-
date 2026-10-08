@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20261008a" />
+  <link rel="stylesheet" href="style.css?v=20261008b" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -283,7 +283,7 @@
 
   <!-- FORMULAIRE DE COMMANDE (modale) — fragment partagé index.html / type.html -->
   <div id="order-modal" class="order-modal">
-    <div class="order-box">
+    <div class="order-box order-checkout-v2">
       <button id="order-close" class="icon-btn order-close" data-i18n-aria="a11y.close">&times;</button>
 
       <header class="order-checkout-hero">
@@ -397,11 +397,14 @@
               <span class="mode-card">
                 <strong data-i18n="order.paymentStripe">Carte bancaire</strong>
                 <small data-i18n="order.paymentStripeSub">Visa, Mastercard, Apple Pay, Google Pay</small>
+                <span class="payment-brands" aria-hidden="true">
+                  <span>Visa</span><span>MC</span><span>Apple Pay</span><span>G Pay</span>
+                </span>
               </span>
             </label>
             <label class="mode-option">
               <input type="radio" name="paymentMethod" value="paypal" />
-              <span class="mode-card">
+              <span class="mode-card mode-card--paypal">
                 <strong data-i18n="order.paymentPaypal">PayPal</strong>
                 <small data-i18n="order.paymentPaypalSub">Compte PayPal ou carte via PayPal</small>
               </span>
@@ -459,13 +462,13 @@
   <div id="toast" class="toast"></div>
 
   <!-- Logique e-commerce -->
-  <script src="i18n.js"></script>
+  <script src="i18n.js?v=20261008b"></script>
   <script src="legal-links.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="db.js"></script>
   <script src="announcement-bar.js?v=20260826d"></script>
   <script src="nav-menu.js"></script>
   <script src="auth.js"></script>
-  <script src="script.js"></script>
+  <script src="script.js?v=20261008b"></script>
 </body>
 </html>
